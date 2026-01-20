@@ -1,0 +1,52 @@
+.code_wrapper {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: #1e1e1e; /* VS Code dark bg */
+}
+
+.code_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: #252526; /* VS Code title bar */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 0.8rem;
+    color: #cccccc;
+}
+
+.code_lang {
+    text-transform: capitalize;
+    font-weight: 500;
+}
+
+.copy_button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #cccccc;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.copy_button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.copy_icon {
+    font-size: 0.9em;
+}
+
+.copy_icon_success {
+    color: #4ec9b0;
+}

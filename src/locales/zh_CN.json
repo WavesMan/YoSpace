@@ -8,6 +8,9 @@
     "Profile": {
         "ClickToSwitch": "试试点击我！"
     },
+    "Blog": {
+        "PublishedOn": "发布于"
+    },
     "Error": {
         "404": "404 Not Found",
         "Back": "返回主页",

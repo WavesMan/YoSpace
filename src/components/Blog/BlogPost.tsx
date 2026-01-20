@@ -11,6 +11,7 @@ import Background from '../Common/Background/Background';
 import { fetchPostContentAction } from '@/actions/blog';
 import { useI18n } from '@/context/I18nContext';
 import type { PostContentResponse } from '@/utils/content/local';
+import CodeBlock from './CodeBlock';
 
 interface BlogPostProps {
     initialContent?: PostContentResponse;
@@ -38,6 +39,19 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     const [errorMsg, setErrorMsg] = useState<string>("");
 
     const isFirstRender = useRef(true);
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // 如果是 invalid date，返回原字符串
+        if (isNaN(date.getTime())) return dateString;
+        
+        return date.toLocaleDateString(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+        });
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -89,6 +103,13 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                 : t('Status.Loading')
                     }
                 </h1>
+                {
+                    status === "Done" && articleContent?.publishedTime && (
+                        <div className={style.post_date}>
+                            {t('Blog.PublishedOn')} {formatDate(articleContent.publishedTime)}
+                        </div>
+                    )
+                }
                 <div className={style.post_content}>
                     {
                         status === "Done" && articleContent
@@ -96,6 +117,18 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                 <ReactMarkdown 
                                     remarkPlugins={[remarkGfm]} 
                                     rehypePlugins={[rehypeRaw]}
+                                    components={{
+                                        code({node, className, children, ...props}: any) {
+                                            const match = /language-(\w+)/.exec(className || '')
+                                            return match ? (
+                                                <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} />
+                                            ) : (
+                                                <code className={className} {...props}>
+                                                    {children}
+                                                </code>
+                                            )
+                                        }
+                                    }}
                                 >
                                     {articleContent.content}
                                 </ReactMarkdown>

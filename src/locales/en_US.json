@@ -8,6 +8,9 @@
     "Profile": {
         "ClickToSwitch": "Try click it!"
     },
+    "Blog": {
+        "PublishedOn": "Published on"
+    },
     "Error": {
         "404": "404 Not Found",
         "Back": "Back To Home",
