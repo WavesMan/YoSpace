@@ -1,0 +1,28 @@
+{
+    "Pages": {
+        "Home": "Home",
+        "Blog": "Blog",
+        "State": "State",
+        "Links": "Links"
+    },
+    "Profile": {
+        "ClickToSwitch": "试试点击我！"
+    },
+    "Error": {
+        "404": "404 Not Found",
+        "Back": "返回主页",
+        "BackToBlog": "< 返回文章列表"
+    },
+    "Status": {
+        "Loading": "正在加载...",
+        "Error": "啊哦，出错了 :("
+    },
+    "Controller": {
+        "Pagination": {
+            "First": "首页",
+            "Previous": "上一页",
+            "Next": "下一页",
+            "End": "末页"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "Pages": {
+        "Home": "Home",
+        "Blog": "Blog",
+        "State": "State",
+        "Links": "Links"
+    },
+    "Profile": {
+        "ClickToSwitch": "Try click it!"
+    },
+    "Error": {
+        "404": "404 Not Found",
+        "Back": "Back To Home",
+        "BackToBlog": "< Back to blog list"
+    },
+    "Status": {
+        "Loading": "Now Loading ...",
+        "Error": "Something went wrong :("
+    },
+    "Controller": {
+        "Pagination": {
+            "First": "First",
+            "Previous": "Prev",
+            "Next": "Next",
+            "End": "End"
+        }
+    }
+}

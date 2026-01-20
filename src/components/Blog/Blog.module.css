@@ -1,0 +1,105 @@
+.blog_wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    /* user-select: none; Removed to allow text selection */
+}
+
+.blog_container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+    min-width: 320px;
+    width: 100%;
+    margin-top: calc(80px * 1);
+    margin-bottom: 16rem;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.blog_title {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-page-title);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent-title);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+
+.blog_tip_loading {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-medium);
+    color: var(--color-accent-title);
+    text-align: center;
+    margin-right: 7px;
+    margin-top: 2rem;
+    animation: loading 0.5s ease infinite;
+    transition: all 0.3s ease-in-out;
+}
+
+.blog_tip_error {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-medium);
+    color: var(--color-theme-main-600);
+    margin-top: 2rem;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+    animation: fadeIn 0.5s ease-in-out forwards;
+    opacity: 0;
+}
+
+.blog_tip_error_details {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-small);
+    color: var(--color-theme-main-600);
+    margin-top: 2rem;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+    max-width: 500px;
+    animation: fadeIn 0.5s ease-in-out forwards;
+    opacity: 0;
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0px);
+    }
+}
+
+@keyframes loading {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+
+@media (max-width: 1024px) {
+    .blog_container {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {}

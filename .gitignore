@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#ide
+.vscode
+.idea
+
+# env
+.env
+!.env.local
+!.env.example
+
+# demo repo
+react-homepage/

@@ -1,42 +1,117 @@
+@import url('https://fonts.loli.net/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+
+    --color-theme-main: hsl(5.32, 100%, 69.02%);
+    --color-theme-main-600: hsl(5, 44%, 42%);
+
+    /* 亮色模式颜色变量 */
+    --color-light-bg: hsl(0, 0%, 94%);
+    --color-light-bg-card: hsl(0, 0%, 100%);
+    --color-light-text-primary: hsl(0, 0%, 20%);
+    --color-light-text-secondary: hsl(0, 0%, 27%);
+    --color-light-accent: hsla(0, 70%, 80%, 0.6);
+    --color-light-accent-stroke: hsla(0, 70%, 80%, 0.3);
+    --color-light-accent-solid: hsl(0, 70%, 80%);
+    --color-light-accent-hover: hsl(5.22, 68.05%, 66.86%);
+    --color-light-accent-title: hsl(5.22, 68.05%, 66.86%);
+
+    --color-light-article-title: #ac5353;
+    --color-light-article-text: hsl(0, 0%, 26%);
+    --color-light-article-text-secondary: hsl(0, 0%, 47%);
+    --color-light-article-link: hsl(0, 39%, 40%);
+
+    /* 暗色模式颜色变量 */
+    --color-dark-bg: hsl(0, 0%, 14%);
+    --color-dark-bg-card: hsl(0, 0%, 18.04%);
+    --color-dark-text-primary: hsl(0, 0%, 92%);
+    --color-dark-text-secondary: hsl(0, 0%, 87%);
+    --color-dark-accent: hsla(0, 40%, 60%, 0.6);
+    --color-dark-accent-stroke: hsla(0, 40%, 60%, 0.3);
+    --color-dark-accent-solid: hsl(0, 40%, 60%);
+    --color-dark-accent-hover: hsl(9.57, 100%, 81.57%);
+    --color-dark-accent-title: hsl(5.22, 68.05%, 66.86%);
+
+    --color-dark-article-title: #d28484;
+    --color-dark-article-text: hsl(0, 0%, 81%);
+    --color-dark-article-text-secondary: hsl(0, 0%, 80%);
+    --color-dark-article-link: hsl(0, 0%, 80%);
+
+    /* 通用颜色 */
+    --color-common-accent-stroke: hsla(0, 40%, 60%, 0.3);
+    --color-common-title: hsl(5, 51%, 67%);
+
+    /* 字体变量 */
+    --font-family-main: "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", sans-serif;
+    --font-family-mono: "Roboto Mono", "Courier New", "Courier", monospace;
+    --font-size-page-title: 58px;
+    --font-size-large: 32px;
+    --font-size-medium: 24px;
+    --font-size-main: 16px;
+    --font-size-small: 14px;
+
+    --font-weight-havey: 700;
+    --font-weight-bold: 600;
+    --font-weight-normal: 400;
+    --font-weight-light: 300;
+    --font-weight-thin: 200;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 默认亮色模式变量映射 */
+:root {
+    --color-bg: var(--color-light-bg);
+    --color-bg-card: var(--color-light-bg-card);
+    --color-text-primary: var(--color-light-text-primary);
+    --color-text-secondary: var(--color-light-text-secondary);
+    --color-accent: var(--color-light-accent);
+    --color-accent-stroke: var(--color-light-accent-stroke);
+    --color-accent-solid: var(--color-light-accent-solid);
+    --color-accent-hover: var(--color-light-accent-hover);
+    --color-accent-title: var(--color-light-accent-title);
+
+    --color-theme-shadow: var(--color-theme-main-600);
+
+    --color-article-title: var(--color-light-article-title);
+    --color-article-text: var(--color-light-article-text);
+    --color-article-text-secondary: var(--color-light-text-secondary);
+    --color-article-link: var(--color-light-article-link);
 }
 
-html,
+/* 暗色模式变量映射 */
+[data-theme='dark'] {
+    --color-bg: var(--color-dark-bg);
+    --color-bg-card: var(--color-dark-bg-card);
+    --color-text-primary: var(--color-dark-text-primary);
+    --color-text-secondary: var(--color-dark-text-secondary);
+    --color-accent: var(--color-dark-accent);
+    --color-accent-stroke: var(--color-dark-accent-stroke);
+    --color-accent-solid: var(--color-dark-accent-solid);
+    --color-accent-hover: var(--color-dark-accent-hover);
+    --color-accent-title: var(--color-dark-accent-title);
+
+    --color-theme-shadow: var(--color-theme-main);
+
+    --color-article-title: var(--color-dark-article-title);
+    --color-article-text: var(--color-dark-article-text);
+    --color-article-text-secondary: var(--color-dark-text-secondary);
+    --color-article-link: var(--color-dark-article-link);
+}
+
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
 * {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+    box-sizing: border-box;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+    text-decoration: none;
+    color: inherit;
 }
