@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getLocalPostsList } from '@/utils/content/local';
 
 export const metadata: Metadata = {
-  title: 'Blog | My Website',
+  title: `Blog - ${process.env.NEXT_PUBLIC_SITE_TITLE || 'Weilai'}`,
   description: 'My thoughts and writings',
 };
 
