@@ -26,6 +26,8 @@
 
 ## 快速开始
 
+### 本地化
+
 建议使用 pnpm（仓库包含 pnpm-lock.yaml）。
 
 1) 安装依赖
@@ -45,6 +47,17 @@ pnpm dev
 ```
 
 浏览器访问：`http://localhost:3000`
+
+### 使用 Vercel 部署
+
+#### 一键自动建仓（无需手动Fork）
+点击按钮自动在你的GitHub创建独立仓库，全程Vercel自动化部署，无需本地操作：
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/WavesMan/YoSpace.git)
+
+#### 自定义部署（先Fork再部署，支持后续同步/修改）
+1. 适合需要长期维护、自定义代码、接收上游更新的场景，先Fork本仓库到你的账号，再点击下方按钮部署**你自己的Fork仓库**：
+2. fork 本仓库后，点击 `Deploy` 按钮
+	[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/${{ github.repository }}.git)
 
 ## 常用脚本
 
@@ -115,6 +128,59 @@ pnpm lint
 
 > `netmusic.waveyo.cn` 所提供的API支持是免费的，但是运行维护是需要消耗资源的，如果您使用此API，希望能够前往 [dq.waveyo.cn](https://dq.waveyo.cn) 提供一些支持，并且备注信息赞助Music API，以支撑API运营。
 
+### 友链管理
+
+访问文件 `src\data\friendLinks.json` 修改 `json` 内容控制
+
+json格式形如：( `subtitle` 可留空)
+
+```json
+[
+    {
+        "title": "WaveYo",
+        "subtitle": "WaveYo HomePage",
+        "link": "https://home.waveyo.cn",
+        "avatar": "https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico"
+    },
+    {
+        "title": "KumaKorin",
+        "link": "https://korin.im",
+        "avatar": "https://m1.miaomc.cn/uploads/20210623_b735dde7c665d.jpeg"
+    },
+]
+```
+
+### 个人社交链接管理
+
+访问文件 `src\data\socialLinks.json` 修改 `json` 内容控制
+
+json格式形如：
+
+```json
+[
+  {
+    "name": "bilibili",
+    "url": "https://space.bilibili.com/204818057",
+    "iconPackage": "fa6",
+    "iconName": "FaBilibili"
+  },
+  {
+    "name": "email",
+    "url": "mailto:support@email.example",
+    "iconPackage": "md",
+    "iconName": "MdEmail"
+  },
+  {
+    "name": "github",
+    "url": "https://github.com",
+    "iconPackage": "fa6",
+    "iconName": "FaGithub"
+  }
+]
+```
+
+`iconName` `iconPackage` 参阅 [GitHub Repo | React Icons](https://github.com/react-icons/react-icons) 与 [React Icons](https://react-icons.github.io/react-icons/) 说明
+
 ## 内容管理（本地 Markdown）
 
 本地文章位于：`src/content/posts/`
@@ -160,7 +226,7 @@ public/               静态资源
 - 部署前确保配置好环境变量（尤其是站点信息与音乐 API）。
 - 构建命令：`pnpm build`，启动命令：`pnpm start`。
 
-## 部署你自己的Music API？
+### 部署你自己的Music API？
 
 本项目源码使用的Music API为 [API Enhanced](https://github.com/neteasecloudmusicapienhanced/api-enhanced)，你可以按照此仓库提供的Docs描述自行部署API。
 
