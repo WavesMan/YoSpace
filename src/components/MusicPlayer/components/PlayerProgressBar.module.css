@@ -1,0 +1,16 @@
+.progressSection {
+  padding: 0 1rem 0.5rem 1rem;
+}
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.progressBar {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}

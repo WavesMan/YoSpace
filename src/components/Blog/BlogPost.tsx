@@ -118,7 +118,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                     remarkPlugins={[remarkGfm]} 
                                     rehypePlugins={[rehypeRaw]}
                                     components={{
-                                        code({node, className, children, ...props}: any) {
+                                        code({ className, children, ...props }: { node?: unknown; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
                                             const match = /language-(\w+)/.exec(className || '')
                                             return match ? (
                                                 <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} />

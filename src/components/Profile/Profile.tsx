@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import DynamicIcon from "../Common/Icon/DynamicIcon";
 import style from './Profile.module.css'
 import { profile } from '../../profile'

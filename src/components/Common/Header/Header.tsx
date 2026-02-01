@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AiFillSun, AiFillMoon, AiFillHome } from "react-icons/ai";
@@ -10,6 +10,57 @@ import { MdTranslate } from "react-icons/md";
 import { profile } from "../../../profile";
 import style from './Header.module.css';
 import { useI18n } from "@/context/I18nContext";
+
+type Theme = 'light' | 'dark';
+
+const DEFAULT_THEME: Theme = 'light';
+let themeSnapshot: Theme = DEFAULT_THEME;
+const themeListeners = new Set<() => void>();
+
+const readPreferredTheme = (): Theme => {
+  if (typeof window === 'undefined') return DEFAULT_THEME;
+  const saved = window.localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark') return saved;
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'light';
+};
+
+const emitThemeChange = () => {
+  themeListeners.forEach((listener) => listener());
+};
+
+const setThemeSnapshot = (nextTheme: Theme) => {
+  if (themeSnapshot === nextTheme) return;
+  themeSnapshot = nextTheme;
+
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem('theme', nextTheme);
+  }
+
+  emitThemeChange();
+};
+
+const onThemeStorage = (event: StorageEvent) => {
+  if (event.key !== 'theme') return;
+  setThemeSnapshot(readPreferredTheme());
+};
+
+const subscribeTheme = (listener: () => void) => {
+  themeListeners.add(listener);
+  if (themeListeners.size === 1 && typeof window !== 'undefined') {
+    window.addEventListener('storage', onThemeStorage);
+  }
+
+  return () => {
+    themeListeners.delete(listener);
+    if (themeListeners.size === 0 && typeof window !== 'undefined') {
+      window.removeEventListener('storage', onThemeStorage);
+    }
+  };
+};
+
+const getThemeSnapshot = () => themeSnapshot;
+const getThemeServerSnapshot = () => DEFAULT_THEME;
 
 /**
  * 顶部导航栏组件
@@ -26,31 +77,26 @@ const Header: React.FC = () => {
   const blogMode = process.env.NEXT_PUBLIC_BLOG_MODE;
   const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL;
 
-  // 主题状态管理
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [mounted, setMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
+  const [isMenuOpenState, setIsMenuOpenState] = useState<{ isOpen: boolean; path: string }>(() => {
+    return { isOpen: false, path: pathname || '' };
+  });
 
-  // 初始化主题
+  const isMenuOpen = isMenuOpenState.isOpen && isMenuOpenState.path === (pathname || '');
+
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-    setMounted(true);
+    setThemeSnapshot(readPreferredTheme());
   }, []);
 
   // 监听主题变化并应用到 body
   useEffect(() => {
-    if (!mounted) return;
     document.body.className = theme;
     document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
     
     if (themeToggle.current) {
       themeToggle.current.setAttribute('aria-label', theme === 'light' ? '切换到暗色模式' : '切换到亮色模式');
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   // 滚动状态管理
   const [isScrolled, setIsScrolled] = useState(false);
@@ -66,16 +112,11 @@ const Header: React.FC = () => {
     };
   }, []);
 
-  // 关闭菜单当路由改变时
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [pathname]);
-
   const themeToggle = useRef<HTMLButtonElement | null>(null);
   
   // 切换主题处理函数
   const handleThemeToggle = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    setThemeSnapshot(theme === 'light' ? 'dark' : 'light');
   };
 
   // 切换语言处理函数
@@ -85,12 +126,16 @@ const Header: React.FC = () => {
 
   // 切换移动端菜单
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    const current = pathname || '';
+    setIsMenuOpenState((prev) => {
+      const shouldOpen = !(prev.isOpen && prev.path === current);
+      return { isOpen: shouldOpen, path: current };
+    });
   };
 
   // 关闭移动端菜单
   const closeMenu = () => {
-    setIsMenuOpen(false);
+    setIsMenuOpenState({ isOpen: false, path: pathname || '' });
   };
 
   // 移动端切换语言
@@ -109,11 +154,6 @@ const Header: React.FC = () => {
   const navTitle = locale === 'en-US'
     ? (process.env.NEXT_PUBLIC_NAV_TITLE_EN || profile.navTitle)
     : profile.navTitle;
-
-  // 避免服务端渲染时的不匹配
-  if (!mounted) {
-    return <nav className={style.nav} style={{ opacity: 0 }} />;
-  }
 
   return (
     <nav className={`${style.nav} ${isScrolled ? style.scrolled : ''}`}>

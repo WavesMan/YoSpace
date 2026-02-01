@@ -12,7 +12,7 @@
     position: relative;
     width: 100%;
     height: 4px; /* Visible track height */
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-progress-track);
     border-radius: 2px;
 }
 

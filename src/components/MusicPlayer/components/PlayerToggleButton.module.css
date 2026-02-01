@@ -1,0 +1,50 @@
+.toggleBtn {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  border: none;
+  background-color: var(--color-theme-main);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s;
+  z-index: 51;
+}
+
+.toggleBtn:hover {
+  background-color: var(--color-theme-main-600);
+}
+
+.toggleBtn.open {
+  background-color: var(--color-text-secondary);
+}
+
+.toggleBtn.open:hover {
+  background-color: var(--color-text-primary);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 10s linear infinite;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  .toggleBtn.open {
+    color: #000000;
+  }
+}
+
+@media (max-width: 768px) {
+  .toggleBtn {
+    width: 3.5rem; 
+    height: 3.5rem;
+  }
+}

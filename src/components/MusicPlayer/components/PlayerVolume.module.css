@@ -1,0 +1,29 @@
+.volumeControl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.volumeBar {
+  flex: 1;
+  margin-left: 0.5rem;
+}
+
+.iconBtn {
+  padding: 0.5rem;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.iconBtn:hover {
+  background-color: var(--color-accent-stroke);
+  color: var(--color-theme-main);
+}

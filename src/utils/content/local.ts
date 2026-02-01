@@ -54,8 +54,6 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
     // If requesting 'en', look for *.md (excluding *.zh-CN.md etc) or *.en.md.
     
     // Simplification: exact match on locale suffix, or no suffix for 'en'.
-    const targetSuffix = locale === 'en' ? '.md' : `.${locale}.md`;
-    
     // Special case: 'en' should also match just '.md' but NOT '.zh-CN.md'
     const filteredFiles = fileNames.filter(fileName => {
         if (!fileName.endsWith('.md')) return false;
@@ -98,7 +96,10 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
     const paginatedPosts = sortedPosts.slice(offset * limit, (offset + 1) * limit);
 
     return {
-        items: paginatedPosts.map(({ dateObj, ...rest }) => rest),
+        items: paginatedPosts.map(({ dateObj, ...rest }) => {
+            void dateObj;
+            return rest;
+        }),
         total: sortedPosts.length,
         locale
     };

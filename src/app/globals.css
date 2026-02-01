@@ -85,6 +85,8 @@
     --color-article-text: var(--color-light-article-text);
     --color-article-text-secondary: var(--color-light-text-secondary);
     --color-article-link: var(--color-light-article-link);
+
+    --color-progress-track: rgba(0, 0, 0, 0.1);
 }
 
 /* 暗色模式变量映射 */
@@ -105,6 +107,8 @@
     --color-article-text: var(--color-dark-article-text);
     --color-article-text-secondary: var(--color-dark-text-secondary);
     --color-article-link: var(--color-dark-article-link);
+
+    --color-progress-track: rgba(255, 255, 255, 0.2);
 }
 
 body {

@@ -22,14 +22,7 @@ export default function DraggableProgressBar({
 }: DraggableProgressBarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
-    const [localValue, setLocalValue] = useState(value);
-
-    // Sync local value when prop changes, but only if not dragging
-    useEffect(() => {
-        if (!isDragging) {
-            setLocalValue(value);
-        }
-    }, [value, isDragging]);
+    const [dragValue, setDragValue] = useState<number | null>(null);
 
     const calculateValue = useCallback((clientX: number) => {
         if (!containerRef.current) return 0;
@@ -48,25 +41,27 @@ export default function DraggableProgressBar({
     const handleStart = useCallback((clientX: number) => {
         setIsDragging(true);
         const newValue = calculateValue(clientX);
-        setLocalValue(newValue);
+        setDragValue(newValue);
         onChange(newValue);
     }, [calculateValue, onChange]);
 
     const handleMove = useCallback((clientX: number) => {
         if (!isDragging) return;
         const newValue = calculateValue(clientX);
-        setLocalValue(newValue);
+        setDragValue(newValue);
         onChange(newValue);
     }, [isDragging, calculateValue, onChange]);
 
     const handleEnd = useCallback(() => {
         if (isDragging) {
             setIsDragging(false);
+            const endValue = dragValue ?? value;
             if (onChangeEnd) {
-                onChangeEnd(localValue);
+                onChangeEnd(endValue);
             }
+            setDragValue(null);
         }
-    }, [isDragging, localValue, onChangeEnd]);
+    }, [isDragging, dragValue, value, onChangeEnd]);
 
     // Mouse Events
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -125,7 +120,8 @@ export default function DraggableProgressBar({
         };
     }, [isDragging, handleMove, handleEnd]);
 
-    const percent = (localValue / max) * 100;
+    const displayValue = isDragging ? (dragValue ?? value) : value;
+    const percent = (displayValue / max) * 100;
 
     return (
         <div 

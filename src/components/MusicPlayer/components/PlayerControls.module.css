@@ -1,0 +1,57 @@
+.mainControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btnGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.iconBtn {
+  padding: 0.5rem;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.iconBtn:hover {
+  background-color: var(--color-accent-stroke);
+  color: var(--color-theme-main);
+}
+
+.iconBtn.active {
+  color: var(--color-theme-main);
+  background-color: var(--color-accent-stroke);
+}
+
+.playBtn {
+  padding: 0.75rem;
+  background-color: var(--color-theme-main);
+  color: white;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px var(--color-theme-shadow);
+  transition: all 0.2s;
+}
+
+.playBtn:hover {
+  background-color: var(--color-theme-main-600);
+  transform: scale(1.05);
+}
+
+.playBtn:active {
+  transform: scale(0.95);
+}

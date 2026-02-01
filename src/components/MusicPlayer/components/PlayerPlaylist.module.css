@@ -1,0 +1,92 @@
+.playlist {
+  border-top: 1px solid var(--color-accent-stroke);
+  background-color: var(--color-bg);
+  overflow-y: auto;
+  
+  /* Custom Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-theme-main) var(--color-bg);
+}
+
+.playlist::-webkit-scrollbar {
+  width: 6px;
+}
+
+.playlist::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+.playlist::-webkit-scrollbar-thumb {
+  background-color: var(--color-theme-main);
+  border-radius: 3px;
+}
+
+.playlist::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-theme-main-600);
+}
+
+.playlistList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.playlistItem {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-accent-stroke);
+  transition: background-color 0.2s;
+  color: var(--color-text-primary);
+}
+
+.playlistItem:hover {
+  background-color: var(--color-accent-stroke);
+}
+
+.playlistItem.active {
+  background-color: var(--color-accent-stroke);
+  color: var(--color-theme-main);
+}
+
+.trackIndex {
+  width: 1.5rem;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  text-align: right;
+  margin-right: 0.75rem;
+}
+
+.trackMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.trackName {
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trackArtist {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-secondary);
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  .playlist {
+    scrollbar-color: var(--color-theme-main) var(--color-bg);
+  }
+  
+  .playlistItem {
+    border-color: rgba(55, 65, 81, 0.5);
+  }
+}
