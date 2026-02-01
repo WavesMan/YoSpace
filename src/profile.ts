@@ -1,4 +1,5 @@
 import socialLinksData from './data/socialLinks.json';
+import friendLinksData from './data/friendLinks.json';
 
 export const profile: Profile = {
     sitename: process.env.NEXT_PUBLIC_SITE_TITLE || "未来",
@@ -9,19 +10,7 @@ export const profile: Profile = {
     socialLinks: socialLinksData
 };
 
-export const links: LinkItem[] = [
-    {
-        title: "KumaKorin",
-        link: "https://korin.im",
-        avatar: "https://m1.miaomc.cn/uploads/20210623_b735dde7c665d.jpeg"
-    },
-    {
-        title: "PageGithub",
-        subtitle: "Design by KumaKorin",
-        link: "https://github.com/KumaKorin/react-homepage",
-        avatar: "https://avatars.githubusercontent.com/u/49864285?v=4"
-    }
-];
+export const links: LinkItem[] = friendLinksData;
 
 export interface SocialLink {
     name: string;

@@ -1,0 +1,19 @@
+[
+    {
+        "title": "WaveYo",
+        "subtitle": "WaveYo HomePage",
+        "link": "https://home.waveyo.cn",
+        "avatar": "https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico"
+    },
+    {
+        "title": "KumaKorin",
+        "link": "https://korin.im",
+        "avatar": "https://m1.miaomc.cn/uploads/20210623_b735dde7c665d.jpeg"
+    },
+    {
+        "title": "PageGithub",
+        "subtitle": "Design by KumaKorin",
+        "link": "https://github.com/KumaKorin/react-homepage",
+        "avatar": "https://avatars.githubusercontent.com/u/49864285?v=4"
+    }
+]
