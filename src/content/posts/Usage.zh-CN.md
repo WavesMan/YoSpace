@@ -57,13 +57,8 @@ pnpm dev
 
 ### 使用 Vercel 部署
 
-#### 一键自动建仓（无需手动Fork）
-点击按钮自动在你的GitHub创建独立仓库，全程Vercel自动化部署，无需本地操作：
+点击按钮自动在你的GitHub创建仓库，全程Vercel自动化部署，无需本地操作：
 <br>[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/WavesMan/YoSpace.git)
-
-#### 自定义部署（先Fork再部署，支持后续同步/修改）
-1. 适合需要长期维护、自定义代码、接收上游更新的场景，先Fork本仓库到你的账号，再点击下方按钮部署**你自己的Fork仓库**：
-2. fork 本仓库后，点击您仓库Readme中的位于本段话下方的 `Deploy` 按钮
 
 ## 常用脚本
 

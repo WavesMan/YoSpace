@@ -57,13 +57,9 @@ Open: `http://localhost:3000`
 
 ### Deploy on Vercel
 
-#### One-click repo creation (no manual fork)
-Click the button to create a separate repo in your GitHub automatically. Vercel will handle the deployment end-to-end without local setup:
+#### One-click repo creation
+Click the button to create a repo in your GitHub automatically. Vercel will handle the deployment end-to-end without local setup:
 <br>[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/WavesMan/YoSpace.git)
-
-#### Custom deployment (fork first, keep sync options)
-1. Recommended if you plan to maintain and customize your own version and keep the option to sync upstream changes later. Fork this repo to your account, then deploy **your fork**.
-2. After forking this repository, click the `Deploy` button below this paragraph in your repository's README.
 
 ## Common Scripts
 
