@@ -10,5 +10,11 @@
     "url": "mailto:support@wenuu.cn",
     "iconPackage": "md",
     "iconName": "MdEmail"
+  },
+  {
+    "name": "github",
+    "url": "https://github.com",
+    "iconPackage": "fa6",
+    "iconName": "FaGithub"
   }
 ]

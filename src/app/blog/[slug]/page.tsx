@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
 
 export const metadata: Metadata = {
-  title: `Blog Post - ${process.env.NEXT_PUBLIC_SITE_TITLE || 'Weilai'}`,
+  title: `Blog Post - ${process.env.NEXT_PUBLIC_SITE_TITLE || 'YoSpace'}`,
 };
 
 // ISR: 每小时重新验证一次

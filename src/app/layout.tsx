@@ -6,7 +6,7 @@ import MusicPlayer from "@/components/MusicPlayer/MusicPlayer";
 import { I18nProvider } from "@/context/I18nContext";
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_SITE_TITLE || "Weilai",
+  title: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
   description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "未来是未知的旅程，愿每一步前行，都有爱陪伴左右。",
   // icons 由 src/app/icon.tsx 自动生成，支持圆形裁剪
 };

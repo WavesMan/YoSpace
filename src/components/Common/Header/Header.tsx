@@ -22,6 +22,10 @@ const Header: React.FC = () => {
   const currentPath = pathname;
   const { t, locale, setLocale } = useI18n();
 
+  // 博客外部链接配置
+  const blogMode = process.env.NEXT_PUBLIC_BLOG_MODE;
+  const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL;
+
   // 主题状态管理
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
@@ -84,6 +88,23 @@ const Header: React.FC = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // 关闭移动端菜单
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  // 移动端切换语言
+  const handleMobileLanguageToggle = () => {
+    handleLanguageToggle();
+    closeMenu();
+  };
+
+  // 移动端切换主题
+  const handleMobileThemeToggle = () => {
+    handleThemeToggle();
+    closeMenu();
+  };
+
   // 获取当前语言对应的导航标题
   const navTitle = locale === 'en-US'
     ? (process.env.NEXT_PUBLIC_NAV_TITLE_EN || profile.navTitle)
@@ -104,7 +125,18 @@ const Header: React.FC = () => {
         {/* 桌面端导航 */}
         <div className={style.nav_itemsList}>
           <Link className={`${style.nav_item} ${currentPath === '/' ? style.active : ''}`} href='/'><AiFillHome /> {t('Pages.Home')}</Link>
-          <Link className={`${style.nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'><FaBook /> {t('Pages.Blog')}</Link>
+          {(blogMode === 'external' && blogUrl) ? (
+            <a 
+              className={`${style.nav_item}`} 
+              href={blogUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              <FaBook /> {t('Pages.Blog')}
+            </a>
+          ) : (
+            <Link className={`${style.nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'><FaBook /> {t('Pages.Blog')}</Link>
+          )}
           <Link className={`${style.nav_item} ${currentPath === '/links' ? style.active : ''}`} href='/links'><FaLink /> {t('Pages.Links')}</Link>
           <button 
             className={`${style.nav_item} ${style.nav_toggle}`}  
@@ -137,21 +169,51 @@ const Header: React.FC = () => {
         {/* 移动端菜单面板 */}
         <div className={`${style.mobile_menu} ${isMenuOpen ? style.mobile_menu_open : ''}`}>
             <div className={style.mobile_menu_items}>
-                <Link className={`${style.mobile_nav_item} ${currentPath === '/' ? style.active : ''}`} href='/'><AiFillHome /> {t('Pages.Home')}</Link>
-                <Link className={`${style.mobile_nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'><FaBook /> {t('Pages.Blog')}</Link>
-                <Link className={`${style.mobile_nav_item} ${currentPath === '/links' ? style.active : ''}`} href='/links'><FaLink /> {t('Pages.Links')}</Link>
+                <Link 
+                  className={`${style.mobile_nav_item} ${currentPath === '/' ? style.active : ''}`} 
+                  href='/' 
+                  onClick={closeMenu}
+                >
+                  <AiFillHome /> {t('Pages.Home')}
+                </Link>
+                {(blogMode === 'external' && blogUrl) ? (
+                  <a 
+                    className={`${style.mobile_nav_item}`} 
+                    href={blogUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={closeMenu}
+                  >
+                    <FaBook /> {t('Pages.Blog')}
+                  </a>
+                ) : (
+                  <Link 
+                    className={`${style.mobile_nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} 
+                    href='/blog'
+                    onClick={closeMenu}
+                  >
+                    <FaBook /> {t('Pages.Blog')}
+                  </Link>
+                )}
+                <Link 
+                  className={`${style.mobile_nav_item} ${currentPath === '/links' ? style.active : ''}`} 
+                  href='/links'
+                  onClick={closeMenu}
+                >
+                  <FaLink /> {t('Pages.Links')}
+                </Link>
                 
                 <div className={style.mobile_controls}>
                     <button 
                         className={style.mobile_control_btn}  
-                        onClick={handleLanguageToggle}
+                        onClick={handleMobileLanguageToggle}
                         type="button"
                     >
                         <MdTranslate /> {locale === 'zh-CN' ? 'English' : '中文'}
                     </button>
                     <button 
                         className={style.mobile_control_btn} 
-                        onClick={handleThemeToggle}
+                        onClick={handleMobileThemeToggle}
                         type="button"
                     >
                         {theme === 'light' ? <><AiFillMoon /> 暗色模式</> : <><AiFillSun /> 亮色模式</>}

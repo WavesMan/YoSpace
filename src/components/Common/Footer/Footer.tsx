@@ -29,21 +29,25 @@ const Footer = () => {
             <div className={style.footer_container}>
                 <div className={style.footer_miit}>
                     {icpCode && (
-                        <a href="https://beian.miit.gov.cn" target="_blank" rel="noopener noreferrer">
-                            {icpCode}
-                        </a>
+                        <div className={style.miit_item}>
+                            <a href="https://beian.miit.gov.cn" target="_blank" rel="noopener noreferrer">
+                                {icpCode}
+                            </a>
+                        </div>
                     )}
                     
-                    {icpCode && policeLicense && " | "}
+                    {icpCode && policeLicense && <span className={style.separator}>|</span>}
                     
                     {policeLicense && (
-                        <a 
-                            target="_blank" 
-                            href={policeLicenseNo ? `http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=${policeLicenseNo}` : "http://www.beian.gov.cn/portal/registerSystemInfo"} 
-                            rel="noopener noreferrer"
-                        >
-                            {policeLicense}
-                        </a>
+                        <div className={style.miit_item}>
+                            <a 
+                                target="_blank" 
+                                href={policeLicenseNo ? `http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=${policeLicenseNo}` : "http://www.beian.gov.cn/portal/registerSystemInfo"} 
+                                rel="noopener noreferrer"
+                            >
+                                {policeLicense}
+                            </a>
+                        </div>
                     )}
                 </div>
             </div>

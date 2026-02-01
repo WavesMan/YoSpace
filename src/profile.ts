@@ -2,11 +2,11 @@ import socialLinksData from './data/socialLinks.json';
 import friendLinksData from './data/friendLinks.json';
 
 export const profile: Profile = {
-    sitename: process.env.NEXT_PUBLIC_SITE_TITLE || "未来",
-    navTitle: process.env.NEXT_PUBLIC_NAV_TITLE || "未来",
-    names: process.env.NEXT_PUBLIC_PROFILE_NAMES?.split(',') || ["未来°", "这是未来呐", "这是未来呐"],
+    sitename: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
+    navTitle: process.env.NEXT_PUBLIC_NAV_TITLE || "YoSpace",
+    names: process.env.NEXT_PUBLIC_PROFILE_NAMES?.split(',') || ["WaveYo", "Waves_Man"],
     description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "未来是未知的旅程，愿每一步前行，都有爱陪伴左右。",
-    image: process.env.NEXT_PUBLIC_PROFILE_IMAGE || "https://cravatar.com/avatar/23c51fce715e221bb371b4bd2437d8bc?s=512",
+    image: process.env.NEXT_PUBLIC_PROFILE_IMAGE || "https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico",
     socialLinks: socialLinksData
 };
 

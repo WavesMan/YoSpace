@@ -9,6 +9,11 @@
   font-family: var(--font-family-main);
   user-select: none;
   -webkit-user-select: none;
+  cursor: grab;
+}
+
+.container:active {
+  cursor: grabbing;
 }
 
 .player {
@@ -119,28 +124,9 @@
   margin-bottom: 0.25rem;
 }
 
-.rangeInput {
-  width: 100%;
-  height: 0.25rem;
-  background: var(--color-accent-stroke);
-  border-radius: 0.5rem;
-  appearance: none;
-  cursor: pointer;
-  outline: none;
-}
-
-.rangeInput::-webkit-slider-thumb {
-  appearance: none;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  background: var(--color-theme-main);
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.rangeInput::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+.progressBar {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .controlsSection {
@@ -155,6 +141,7 @@
   align-items: center;
   justify-content: space-between;
 }
+
 
 .btnGroup {
   display: flex;
@@ -213,6 +200,11 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0 0.5rem;
+}
+
+.volumeBar {
+  flex: 1;
+  margin-left: 0.5rem;
 }
 
 .error {
@@ -370,17 +362,20 @@
 
 @media (max-width: 768px) {
   .container {
-    bottom: 2rem;
+    bottom: 5rem; /* Raised to avoid footer overlap */
     right: 1rem;
   }
 
   .toggleBtn {
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem; /* Increased from 3rem */
+    height: 3.5rem;
   }
 
   .player {
     width: calc(100vw - 2rem);
     margin-right: 0;
   }
+
+  /* Improved touch target for range inputs */
+  /* .rangeInput styles removed as they are replaced by custom component */
 }

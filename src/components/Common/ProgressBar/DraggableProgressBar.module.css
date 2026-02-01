@@ -1,0 +1,60 @@
+.progressContainer {
+    position: relative;
+    width: 100%;
+    height: 10px; /* Touchable area height */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    touch-action: none; /* Prevent scrolling while dragging */
+}
+
+.track {
+    position: relative;
+    width: 100%;
+    height: 4px; /* Visible track height */
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--color-theme-main, #4caf50);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.thumb {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    transition: transform 0.1s;
+}
+
+.thumb:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.thumb:active {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.3);
+}
+
+/* Volume variant */
+.volume .track {
+    height: 3px;
+}
+
+.volume .thumb {
+    width: 10px;
+    height: 10px;
+}

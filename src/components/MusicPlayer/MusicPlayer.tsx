@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fi';
 import { BiShuffle } from 'react-icons/bi';
 import { RiRepeatOneFill } from 'react-icons/ri';
+import DraggableProgressBar from '../Common/ProgressBar/DraggableProgressBar';
 import styles from './MusicPlayer.module.css';
 
 // --- Types ---
@@ -313,11 +314,10 @@ export default function MusicPlayer() {
     playTrack(prevIndex);
   };
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
+  const handleSeek = (value: number) => {
     if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setProgress(time);
+      audioRef.current.currentTime = value;
+      setProgress(value);
     }
   };
 
@@ -351,9 +351,11 @@ export default function MusicPlayer() {
   if (!playlist) return null;
 
   return (
-    <div 
+    <motion.div 
       ref={containerRef}
       className={styles.container}
+      drag
+      dragMomentum={false}
     >
       <AnimatePresence>
         {isOpen && (
@@ -400,14 +402,12 @@ export default function MusicPlayer() {
                  <span>{formatTime(progress)}</span>
                  <span>{formatTime(duration || 0)}</span>
                </div>
-               <input
-                 type="range"
-                 min="0"
-                 max={duration || 100}
+               <DraggableProgressBar
                  value={progress}
-                 onChange={handleSeek}
-                 className={styles.rangeInput}
-                 aria-label="Seek"
+                 max={duration || 100}
+                 onChange={(val) => setProgress(val)}
+                 onChangeEnd={handleSeek}
+                 className={styles.progressBar}
                />
             </div>
 
@@ -459,14 +459,12 @@ export default function MusicPlayer() {
                   <button onClick={() => setVolume(v => v === 0 ? 0.7 : 0)} className={styles.iconBtn}>
                     {volume === 0 ? <FiVolumeX size={16} /> : <FiVolume2 size={16} />}
                   </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
+                  <DraggableProgressBar
                     value={volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    className={styles.rangeInput}
+                    max={1}
+                    onChange={(val) => setVolume(val)}
+                    variant="volume"
+                    className={styles.volumeBar}
                   />
                </div>
             </div>
@@ -523,6 +521,6 @@ export default function MusicPlayer() {
       >
         {isOpen ? <FiX size={24} /> : <FiMusic size={24} />}
       </motion.button>
-    </div>
+    </motion.div>
   );
 }
