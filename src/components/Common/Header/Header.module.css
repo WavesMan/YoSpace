@@ -184,11 +184,45 @@ nav.scrolled {
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.mobile_control_btn:hover {
-    background: var(--color-text-primary);
-    color: var(--color-bg-primary);
+/* 桌面端 Hover 效果 */
+@media (hover: hover) {
+    .mobile_control_btn:hover {
+        background: var(--color-text-primary);
+        color: var(--color-bg);
+    }
+    
+    .mobile_control_btn:active {
+        transform: scale(0.95);
+    }
+}
+
+/* 移动端点击反馈动画 */
+@keyframes mobileTapFeedback {
+    0% {
+        background-color: transparent;
+        color: var(--color-text-primary);
+        transform: scale(1);
+    }
+    50% {
+        background-color: var(--color-text-primary);
+        color: var(--color-bg);
+        transform: scale(0.95);
+    }
+    100% {
+        background-color: transparent;
+        color: var(--color-text-primary);
+        transform: scale(1);
+    }
+}
+
+/* 移动端 Active 效果 */
+@media (hover: none) {
+    .mobile_control_btn:active {
+        animation: mobileTapFeedback 0.4s ease-out;
+    }
 }
 
 /* Responsive Breakpoints */
