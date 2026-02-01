@@ -83,6 +83,13 @@ This project uses `NEXT_PUBLIC_*` variables (exposed to the browser). Do not put
 
 See [.env.example](./.env.example) for a full list. Key options:
 
+### Server Actions (Proxy / CDN)
+
+- `SERVER_ACTIONS_ALLOWED_ORIGINS`: Comma-separated allowlist of origin domains that can trigger Server Actions.
+- When to use: If you put the site behind a CDN/reverse proxy and see errors like `Invalid Server Actions request` caused by `x-forwarded-host` not matching `origin`.
+- Format: Domains only (may include port). Do not include protocol (`https://`) or paths.
+- Example: `yospace.waveyo.cn,yospace-vercel.waveyo.cn`
+
 ### Contentful (optional)
 
 The repo keeps Contentful-related variables, but the current blog implementation uses local Markdown files by default.

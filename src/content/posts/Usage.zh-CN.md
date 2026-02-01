@@ -82,6 +82,13 @@ pnpm lint
 
 可以参考 [.env.example](./.env.example)。核心配置如下：
 
+### Server Actions（反向代理 / CDN 场景）
+
+- `SERVER_ACTIONS_ALLOWED_ORIGINS`：允许触发 Server Actions 的来源域名白名单（逗号分隔）。
+- 适用场景：站点在 CDN / 反向代理套壳后，出现 `x-forwarded-host` 与 `origin` 不一致，导致 `Invalid Server Actions request`。
+- 填写规则：仅填写域名（可包含端口），不要带协议（`https://`）与路径。
+- 示例：`yospace.waveyo.cn,yospace-vercel.waveyo.cn`
+
 ### Contentful（可选）
 
 仓库保留了 Contentful 的变量字段，但当前博客实现默认使用本地 Markdown 文件作为内容源。
