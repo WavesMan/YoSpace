@@ -45,11 +45,16 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
   onToggleMode,
   onTogglePlaylist
 }) => {
+  const blurOnPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.blur();
+  };
+
   return (
     <div className={styles.mainControls}>
       {/* 模式切换按钮 */}
       <button 
         onClick={onToggleMode}
+        onPointerUp={blurOnPointerUp}
         className={`${styles.iconBtn} ${mode !== 'sequence' ? styles.active : ''}`}
         title={`Mode: ${mode}`}
         aria-label="Toggle play mode"
@@ -61,17 +66,18 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
 
       {/* 核心控制组 */}
       <div className={styles.btnGroup}>
-        <button onClick={onPrev} className={styles.iconBtn} aria-label="Previous track">
+        <button onClick={onPrev} onPointerUp={blurOnPointerUp} className={styles.iconBtn} aria-label="Previous track">
           <FiSkipBack size={24} />
         </button>
         <button 
           onClick={onTogglePlay} 
+          onPointerUp={blurOnPointerUp}
           className={styles.playBtn}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? <FiPause size={24} /> : <FiPlay size={24} fill="currentColor" />}
         </button>
-        <button onClick={onNext} className={styles.iconBtn} aria-label="Next track">
+        <button onClick={onNext} onPointerUp={blurOnPointerUp} className={styles.iconBtn} aria-label="Next track">
           <FiSkipForward size={24} />
         </button>
       </div>
@@ -79,6 +85,7 @@ const PlayerControls: React.FC<PlayerControlsProps> = ({
       {/* 播放列表切换按钮 */}
       <button 
         onClick={onTogglePlaylist}
+        onPointerUp={blurOnPointerUp}
         className={`${styles.iconBtn} ${showPlaylist ? styles.active : ''}`}
         aria-label="Toggle playlist"
       >

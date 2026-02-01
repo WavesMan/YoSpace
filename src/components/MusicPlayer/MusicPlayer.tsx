@@ -32,6 +32,7 @@ export default function MusicPlayer() {
   const [isOpen, setIsOpen] = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const playRequestIdRef = useRef(0);
 
   // --- Logic Hooks ---
   const {
@@ -41,6 +42,7 @@ export default function MusicPlayer() {
     duration,
     volume,
     error: audioError,
+    playUrl,
     togglePlay: toggleAudio,
     seek,
     setVolume,
@@ -69,6 +71,8 @@ export default function MusicPlayer() {
   const playTrack = useCallback(async (index: number) => {
     if (index < 0 || index >= playlist.length) return;
 
+    const requestId = (playRequestIdRef.current += 1);
+
     // 更新索引
     setCurrentTrackIndex(index);
     localStorage.setItem('music_player_index', index.toString());
@@ -78,6 +82,10 @@ export default function MusicPlayer() {
 
     // 准备资源
     const { url, error } = await prepareTrack(index);
+
+    if (requestId !== playRequestIdRef.current) {
+      return;
+    }
     
     if (error || !url) {
       setAudioError(error || '获取资源失败');
@@ -86,9 +94,9 @@ export default function MusicPlayer() {
     }
 
     // 播放
-    await toggleAudio(url);
+    await playUrl(url);
     setIsLoading(false);
-  }, [playlist, prepareTrack, setCurrentTrackIndex, setAudioError, setIsLoading, toggleAudio]);
+  }, [playlist, prepareTrack, setCurrentTrackIndex, setAudioError, setIsLoading, playUrl]);
 
   // 切歌逻辑
   const handleNext = useCallback((auto = false) => {

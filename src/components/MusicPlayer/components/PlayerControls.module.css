@@ -21,6 +21,10 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .iconBtn:hover {
@@ -45,6 +49,10 @@
   justify-content: center;
   box-shadow: 0 10px 15px -3px var(--color-theme-shadow);
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .playBtn:hover {

@@ -10,7 +10,8 @@ interface AudioState {
 
 interface UseAudioReturn extends AudioState {
   audioRef: React.MutableRefObject<HTMLAudioElement | null>;
-  togglePlay: (url?: string | null) => Promise<void>;
+  playUrl: (url: string) => Promise<boolean>;
+  togglePlay: () => Promise<boolean>;
   seek: (time: number) => void;
   setVolume: (volume: number) => void;
   setDuration: (duration: number) => void;
@@ -83,6 +84,11 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
     volumeStore.getServerSnapshot
   );
 
+  const volumeRef = useRef(volume);
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const saved = window.localStorage.getItem('music_player_volume');
@@ -123,28 +129,57 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
     }
   }, []);
 
-  const togglePlay = useCallback(async (url?: string | null) => {
-    if (!audioRef.current) return;
+  const playUrl = useCallback(async (url: string) => {
+    const audio = audioRef.current;
+    if (!audio) return false;
 
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      // 如果有新的 URL 传入，则先设置
-      if (url && audioRef.current.src !== url) {
-        audioRef.current.src = url;
+    setError(null);
+    setProgress(0);
+    setDuration(0);
+
+    try {
+      const srcChanged = audio.src !== url;
+      audio.pause();
+      audio.volume = volumeRef.current;
+
+      if (srcChanged) {
+        audio.src = url;
+        audio.load();
+      } else {
+        audio.currentTime = 0;
       }
-      
+
+      await audio.play();
+      return true;
+    } catch (e) {
+      console.error('Playback failed', e);
+      setError('播放失败');
+      return false;
+    }
+  }, []);
+
+  const togglePlay = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio) return false;
+
+    if (audio.paused) {
+      if (!audio.src) return false;
+      setError(null);
+      audio.volume = volumeRef.current;
+
       try {
-        await audioRef.current.play();
-        setIsPlaying(true);
+        await audio.play();
+        return true;
       } catch (e) {
-        console.error("Playback failed", e);
-        setIsPlaying(false);
-        setError("播放失败");
+        console.error('Playback failed', e);
+        setError('播放失败');
+        return false;
       }
     }
-  }, [isPlaying]);
+
+    audio.pause();
+    return true;
+  }, []);
 
   // 事件监听在组件层通过 useEffect 绑定，或者在这里绑定
   // 为了更好的控制，我们在 Hook 内部绑定核心事件，但允许外部传入回调
@@ -166,6 +201,18 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
       }
     };
 
+    const handlePlay = () => {
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+    };
+
     const handleError = () => {
       setIsPlaying(false);
       setError("Playback error");
@@ -178,11 +225,17 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
     
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
   }, []);
@@ -194,6 +247,7 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
     duration,
     volume,
     error,
+    playUrl,
     togglePlay,
     seek,
     setVolume,
