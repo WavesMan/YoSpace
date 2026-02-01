@@ -58,6 +58,7 @@
     .links_container {
         max-width: 90%;
         min-width: auto;
+        margin-bottom: 8rem;
     }
 
     .links_card_container {
@@ -66,6 +67,16 @@
 }
 
 @media (max-width: 768px) {
+    .links_container {
+        margin-top: 40px;
+        margin-bottom: 6rem;
+    }
+
+    .links_title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
     .links_bg_top {
         position: absolute;
         top: 40px;
@@ -79,5 +90,6 @@
 
     .links_card_container {
         grid-template-columns: repeat(1, 1fr);
+        gap: 16px;
     }
 }

@@ -57,6 +57,16 @@
     --font-weight-thin: 200;
 }
 
+@media (max-width: 768px) {
+    :root {
+        --font-size-page-title: 36px;
+        --font-size-large: 24px;
+        --font-size-medium: 20px;
+        --font-size-main: 14px;
+        --font-size-small: 12px;
+    }
+}
+
 /* 默认亮色模式变量映射 */
 :root {
     --color-bg: var(--color-light-bg);

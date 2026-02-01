@@ -144,33 +144,71 @@
     }
 }
 
+@media (max-width: 1024px) {
+    .profile_container {
+        padding: 40px;
+    }
+
+    .profile_image {
+        min-width: 140px;
+        margin-right: 2rem;
+    }
+    
+    .profile_info_name {
+        font-size: calc(var(--font-size-page-title) * 0.8);
+    }
+}
+
 @media (max-width: 768px) {
     .profile_container {
         flex-direction: column;
         height: auto;
         text-align: center;
         max-height: none;
+        padding: 20px;
+        justify-content: center;
     }
 
     .profile_image {
         margin-right: 0;
         margin-bottom: 2rem;
+        width: 150px;
+        height: 150px;
     }
 
     .profile_content_wrapper {
         align-items: center;
+        width: 100%;
     }
 
     .profile_info_wrapper {
         align-items: center;
         align-self: center;
+        width: 100%;
     }
 
     .profile_info_name {
         transform-origin: center;
+        text-align: center;
+        font-size: 2.5rem; /* Better size for mobile */
     }
     
     .profile_info_signature {
         transform-origin: center;
+        text-align: center;
+        font-size: 1.1rem;
+        padding: 0 20px;
+    }
+
+    .profile_social_wrapper {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 24px;
+    }
+
+    .profile_background {
+        font-size: 15vw; /* 使用视口单位确保完整显示 */
+        /* 保持居中 */
+        top: 10%;
     }
 }

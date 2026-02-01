@@ -1,0 +1,14 @@
+[
+  {
+    "name": "bilibili",
+    "url": "https://space.bilibili.com/204818057",
+    "iconPackage": "fa6",
+    "iconName": "FaBilibili"
+  },
+  {
+    "name": "email",
+    "url": "mailto:support@wenuu.cn",
+    "iconPackage": "md",
+    "iconName": "MdEmail"
+  }
+]

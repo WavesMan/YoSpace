@@ -102,7 +102,7 @@ body {
 
 ## Images
 
-![Placeholder Image](https://via.placeholder.com/600x400 "Placeholder Image Title")
+![Placeholder Image](https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico "Placeholder Image Title")
 
 ## HTML Elements
 

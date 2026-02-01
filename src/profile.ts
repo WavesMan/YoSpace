@@ -1,15 +1,12 @@
+import socialLinksData from './data/socialLinks.json';
+
 export const profile: Profile = {
-    sitename: "未来",
-    names: ["未来°", "这是未来呐", "这是未来呐"],
-    description: "未来是未知的旅程，愿每一步前行，都有爱陪伴左右。",
-    image: "https://cravatar.com/avatar/23c51fce715e221bb371b4bd2437d8bc?s=512",
-    socialLinks: {
-        // github: "https://github.com/KumaKorin",
-        // youtube: "https://www.youtube.com/@KumaKorin",
-        bilibili: "https://space.bilibili.com/204818057",
-        // telegram: "https://t.me/KumaKorin",
-        email: "mailto:support@wenuu.cn"
-    }
+    sitename: process.env.NEXT_PUBLIC_SITE_TITLE || "未来",
+    navTitle: process.env.NEXT_PUBLIC_NAV_TITLE || "未来",
+    names: process.env.NEXT_PUBLIC_PROFILE_NAMES?.split(',') || ["未来°", "这是未来呐", "这是未来呐"],
+    description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "未来是未知的旅程，愿每一步前行，都有爱陪伴左右。",
+    image: process.env.NEXT_PUBLIC_PROFILE_IMAGE || "https://cravatar.com/avatar/23c51fce715e221bb371b4bd2437d8bc?s=512",
+    socialLinks: socialLinksData
 };
 
 export const links: LinkItem[] = [
@@ -26,14 +23,21 @@ export const links: LinkItem[] = [
     }
 ];
 
+export interface SocialLink {
+    name: string;
+    url: string;
+    iconUrl?: string;
+    iconPackage?: string;
+    iconName?: string;
+}
+
 export interface Profile {
     sitename: string;
+    navTitle: string;
     names: string[];
     description: string;
     image: string;
-    socialLinks: {
-        [key: string]: string;
-    };
+    socialLinks: SocialLink[];
 }
 
 export interface LinkItem {

@@ -102,7 +102,7 @@ body {
 
 ## 图片
 
-![占位图](https://via.placeholder.com/600x400 "占位图标题")
+![占位图](https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico "占位图标题")
 
 ## HTML 元素
 

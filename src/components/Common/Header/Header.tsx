@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AiFillSun, AiFillMoon, AiFillHome } from "react-icons/ai";
-import { FaLink, FaBook } from "react-icons/fa";
+import { FaLink, FaBook, FaBars } from "react-icons/fa";
+import { FiX } from "react-icons/fi";
 import { MdTranslate } from "react-icons/md";
 import { profile } from "../../../profile";
 import style from './Header.module.css';
@@ -24,6 +25,7 @@ const Header: React.FC = () => {
   // 主题状态管理
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // 初始化主题
   useEffect(() => {
@@ -60,6 +62,11 @@ const Header: React.FC = () => {
     };
   }, []);
 
+  // 关闭菜单当路由改变时
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
   const themeToggle = useRef<HTMLButtonElement | null>(null);
   
   // 切换主题处理函数
@@ -72,6 +79,16 @@ const Header: React.FC = () => {
     setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN');
   };
 
+  // 切换移动端菜单
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // 获取当前语言对应的导航标题
+  const navTitle = locale === 'en-US'
+    ? (process.env.NEXT_PUBLIC_NAV_TITLE_EN || profile.navTitle)
+    : profile.navTitle;
+
   // 避免服务端渲染时的不匹配
   if (!mounted) {
     return <nav className={style.nav} style={{ opacity: 0 }} />;
@@ -81,8 +98,10 @@ const Header: React.FC = () => {
     <nav className={`${style.nav} ${isScrolled ? style.scrolled : ''}`}>
       <div className={style.nav_wrapper}>
         <div className={style.nav_title}>
-          <Link className={style.nav_logo} href="/">{profile.sitename}</Link>
+          <Link className={style.nav_logo} href="/">{navTitle}</Link>
         </div>
+
+        {/* 桌面端导航 */}
         <div className={style.nav_itemsList}>
           <Link className={`${style.nav_item} ${currentPath === '/' ? style.active : ''}`} href='/'><AiFillHome /> {t('Pages.Home')}</Link>
           <Link className={`${style.nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'><FaBook /> {t('Pages.Blog')}</Link>
@@ -104,6 +123,41 @@ const Header: React.FC = () => {
           >
             {theme === 'light' ? <AiFillMoon /> : <AiFillSun />}
           </button>
+        </div>
+
+        {/* 移动端汉堡菜单按钮 */}
+        <button 
+            className={style.hamburger} 
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+        >
+            {isMenuOpen ? <FiX /> : <FaBars />}
+        </button>
+
+        {/* 移动端菜单面板 */}
+        <div className={`${style.mobile_menu} ${isMenuOpen ? style.mobile_menu_open : ''}`}>
+            <div className={style.mobile_menu_items}>
+                <Link className={`${style.mobile_nav_item} ${currentPath === '/' ? style.active : ''}`} href='/'><AiFillHome /> {t('Pages.Home')}</Link>
+                <Link className={`${style.mobile_nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'><FaBook /> {t('Pages.Blog')}</Link>
+                <Link className={`${style.mobile_nav_item} ${currentPath === '/links' ? style.active : ''}`} href='/links'><FaLink /> {t('Pages.Links')}</Link>
+                
+                <div className={style.mobile_controls}>
+                    <button 
+                        className={style.mobile_control_btn}  
+                        onClick={handleLanguageToggle}
+                        type="button"
+                    >
+                        <MdTranslate /> {locale === 'zh-CN' ? 'English' : '中文'}
+                    </button>
+                    <button 
+                        className={style.mobile_control_btn} 
+                        onClick={handleThemeToggle}
+                        type="button"
+                    >
+                        {theme === 'light' ? <><AiFillMoon /> 暗色模式</> : <><AiFillSun /> 亮色模式</>}
+                    </button>
+                </div>
+            </div>
         </div>
       </div>
     </nav>

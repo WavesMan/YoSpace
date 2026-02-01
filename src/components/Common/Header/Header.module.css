@@ -7,6 +7,8 @@
     /* background-color: var(--color-common-accent-stroke); */
     z-index: 100;
     transition: all 0.3s ease;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 nav.scrolled {
@@ -30,6 +32,7 @@ nav.scrolled {
     justify-content: space-between;
     margin: auto;
     transition: all 0.3s ease;
+    align-items: center; /* 确保所有元素垂直居中 */
 }
 
 .nav_logo {
@@ -97,8 +100,121 @@ nav.scrolled {
     transform: scale(0.9);
 }
 
+/* Hamburger Menu Button */
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 102;
+    transition: all 0.3s ease;
+}
+
+/* Mobile Menu Overlay */
+.mobile_menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 0;
+    background-color: var(--color-accent);
+    backdrop-filter: blur(15px);
+    z-index: 101;
+    overflow: hidden;
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.mobile_menu_open {
+    height: 100vh;
+}
+
+.mobile_menu_items {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease 0.1s;
+}
+
+.mobile_menu_open .mobile_menu_items {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mobile_nav_item {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.mobile_nav_item:hover,
+.mobile_nav_item.active {
+    color: var(--color-accent-hover);
+    transform: scale(1.1);
+}
+
+.mobile_controls {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.mobile_control_btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1px solid var(--color-text-secondary);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile_control_btn:hover {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+    .nav_wrapper {
+        width: calc(100vw - 40px);
+        max-width: none;
+    }
+    
+    .nav_itemsList {
+        gap: 20px; /* Tablet optimization */
+    }
+}
+
 @media (max-width: 768px) {
     .nav_logo {
-        display: none;
+        display: block; /* Show logo on mobile */
+    }
+
+    .nav_itemsList {
+        display: none; /* Hide desktop menu */
+    }
+
+    .hamburger {
+        display: flex; /* Show hamburger menu */
+        align-items: center;
+        justify-content: center;
     }
 }
