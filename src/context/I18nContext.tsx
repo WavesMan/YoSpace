@@ -32,7 +32,9 @@ const flattenObject = (obj: Record<string, unknown>, prefix = ''): Record<string
 const DEFAULT_LOCALE: Locale = 'zh-CN';
 
 const isI18nEnabled = () => {
-  return process.env.NEXT_PUBLIC_I18N === 'true';
+  const flag = process.env.NEXT_PUBLIC_I18N;
+  if (flag === undefined || flag === '') return true;
+  return flag !== 'false';
 };
 
 const readPreferredLocale = (): Locale => {

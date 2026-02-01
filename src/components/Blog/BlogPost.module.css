@@ -184,6 +184,24 @@
     border-radius: 8px;
 }
 
+.md_inline_indent {
+    display: inline-block;
+    margin-left: 1.5rem;
+}
+
+.vercel_button_link {
+    display: inline-block;
+}
+
+.vercel_button_img {
+    margin: 0.5rem 0 0;
+    border-radius: 4px;
+    height: 32px;
+    width: auto;
+    max-width: none;
+    display: block;
+}
+
 
 .tip_loading {
     font-family: var(--font-family-main);

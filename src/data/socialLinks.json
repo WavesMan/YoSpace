@@ -7,13 +7,13 @@
   },
   {
     "name": "email",
-    "url": "mailto:support@wenuu.cn",
+    "url": "mailto:waveyo@waveyo.cn",
     "iconPackage": "md",
     "iconName": "MdEmail"
   },
   {
     "name": "github",
-    "url": "https://github.com",
+    "url": "https://github.com/WavesMan",
     "iconPackage": "fa6",
     "iconName": "FaGithub"
   }

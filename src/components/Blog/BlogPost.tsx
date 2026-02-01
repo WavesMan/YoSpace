@@ -13,6 +13,45 @@ import { useI18n } from '@/context/I18nContext';
 import type { PostContentResponse } from '@/utils/content/local';
 import CodeBlock from './CodeBlock';
 
+const isVercelButtonSrc = (src: string) => {
+    return src.includes('vercel.com/button');
+};
+
+const hasVercelButtonChild = (children: React.ReactNode) => {
+    return React.Children.toArray(children).some((child) => {
+        if (!React.isValidElement(child)) return false;
+        const src = (child.props as { src?: unknown })?.src;
+        return typeof src === 'string' && isVercelButtonSrc(src);
+    });
+};
+
+const transformMarkdownUrl = (url: string) => {
+    const input = url.trim();
+    if (!input) return input;
+    if (/^javascript:/i.test(input)) return '';
+
+    if (input.startsWith('#')) {
+        return input;
+    }
+
+    if (input.startsWith('/')) {
+        return encodeURI(input);
+    }
+
+    try {
+        const parsed = new URL(input);
+
+        if (parsed.searchParams.has('repository-url')) {
+            const repositoryUrl = parsed.searchParams.get('repository-url') || '';
+            parsed.searchParams.set('repository-url', repositoryUrl);
+        }
+
+        return parsed.toString();
+    } catch {
+        return encodeURI(input);
+    }
+};
+
 interface BlogPostProps {
     initialContent?: PostContentResponse;
     initialLocale?: string;
@@ -117,7 +156,83 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                 <ReactMarkdown 
                                     remarkPlugins={[remarkGfm]} 
                                     rehypePlugins={[rehypeRaw]}
+                                    urlTransform={transformMarkdownUrl}
                                     components={{
+                                        p({ children, node: _node, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
+                                            if (hasVercelButtonChild(children)) {
+                                                const items = React.Children.toArray(children);
+                                                const buttonIndex = items.findIndex((child) => {
+                                                    if (!React.isValidElement(child)) return false;
+                                                    const childProps = child.props as { children?: React.ReactNode };
+                                                    return hasVercelButtonChild(childProps.children);
+                                                });
+
+                                                if (buttonIndex >= 0) {
+                                                    return (
+                                                        <p {...props}>
+                                                            {items.slice(0, buttonIndex)}
+                                                            <br />
+                                                            <span className={style.md_inline_indent}>
+                                                                {items[buttonIndex]}
+                                                            </span>
+                                                            {items.slice(buttonIndex + 1)}
+                                                        </p>
+                                                    );
+                                                }
+                                            }
+
+                                            return (
+                                                <p {...props}>
+                                                    {children}
+                                                </p>
+                                            );
+                                        },
+                                        a({ href, children, node: _node, target, rel, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) {
+                                            const nextHref = href || '';
+                                            if (nextHref.startsWith('/')) {
+                                                return (
+                                                    <Link href={nextHref} {...props}>
+                                                        {children}
+                                                    </Link>
+                                                );
+                                            }
+
+                                            const isHttp = nextHref.startsWith('http://') || nextHref.startsWith('https://');
+                                            const nextTarget = target ?? (isHttp ? '_blank' : undefined);
+                                            const nextRel = rel ?? (isHttp ? 'noopener noreferrer' : undefined);
+                                            const nextClassName = [
+                                                props.className,
+                                                hasVercelButtonChild(children) ? style.vercel_button_link : undefined,
+                                            ].filter(Boolean).join(' ');
+
+                                            return (
+                                                <a
+                                                    href={nextHref}
+                                                    target={nextTarget}
+                                                    rel={nextRel}
+                                                    className={nextClassName || undefined}
+                                                    {...props}
+                                                >
+                                                    {children}
+                                                </a>
+                                            );
+                                        },
+                                        img({ src, alt, node: _node, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { node?: unknown }) {
+                                            const nextSrc = typeof src === 'string' ? src : '';
+                                            const nextClassName = [
+                                                props.className,
+                                                nextSrc && isVercelButtonSrc(nextSrc) ? style.vercel_button_img : undefined,
+                                            ].filter(Boolean).join(' ');
+
+                                            return (
+                                                <img
+                                                    src={nextSrc}
+                                                    alt={alt || ''}
+                                                    className={nextClassName || undefined}
+                                                    {...props}
+                                                />
+                                            );
+                                        },
                                         code({ className, children, ...props }: { node?: unknown; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
                                             const match = /language-(\w+)/.exec(className || '')
                                             return match ? (
