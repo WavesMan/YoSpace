@@ -1,17 +1,17 @@
 import { join } from 'path';
 import { readFileSync, existsSync } from 'fs';
 
-// Route segment config
+// 路由段配置
 export const runtime = 'nodejs';
 
-// Image metadata
+// 图片元数据
 export const size = {
   width: 256,
   height: 256,
 };
 export const contentType = 'image/svg+xml'; // 修改为 SVG
 
-// Image generation
+// 图像生成
 export default async function Icon() {
   try {
     // 获取环境变量配置的路径，默认为 /weilai.png
@@ -113,7 +113,7 @@ export default async function Icon() {
     });
 
   } catch {
-    // Fallback icon (SVG circle with letter)
+    // 回退图标（SVG 圆形与字母）
     const fallbackSvg = `
 <svg width="${size.width}" height="${size.height}" viewBox="0 0 ${size.width} ${size.height}" xmlns="http://www.w3.org/2000/svg">
   <circle cx="${size.width / 2}" cy="${size.height / 2}" r="${size.width / 2}" fill="black" />

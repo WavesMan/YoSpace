@@ -2,20 +2,22 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import style from "./Footer.module.css"
+import style from "./Footer.module.css";
 
 /**
  * 底部页脚组件
- * 
- * 显示ICP备案信息等。
- * 环境变量:
- * - NEXT_PUBLIC_ICP_CODE: ICP备案号 (e.g., ICP备XXXXXX号)
- * - NEXT_PUBLIC_POLICE_LICENSE: 公安联网备案号 (e.g., 浙公网安备 33052202000779号)
+ *
+ * 用于展示站点版权信息、ICP备案号与公安备案号等。
+ * 依赖环境变量：
+ * - NEXT_PUBLIC_ICP_CODE: 工信部ICP备案号
+ * - NEXT_PUBLIC_POLICE_LICENSE: 公安备案号
+ * - NEXT_PUBLIC_SITE_NAME: 站点名称
+ * - NEXT_PUBLIC_SITE_START_YEAR: 站点起始年份（用于显示年份区间）
  */
 const Footer = () => {
     const pathname = usePathname();
 
-    // Next.js 中访问公共环境变量需要使用 NEXT_PUBLIC_ 前缀
+    // NOTE: 来自 Next.js 公共环境变量的站点配置
     const icpCode: string | undefined = process.env.NEXT_PUBLIC_ICP_CODE;
     const policeLicense: string | undefined = process.env.NEXT_PUBLIC_POLICE_LICENSE;
     const siteNameRaw: string | undefined = process.env.NEXT_PUBLIC_SITE_NAME;
@@ -24,10 +26,8 @@ const Footer = () => {
     const [currentYear] = useState<number>(new Date().getFullYear());
     const [shouldStaticOnMobile, setShouldStaticOnMobile] = useState(false);
 
-    
-
+    // NOTE: 在移动端根据页面是否可滚动决定页脚是否固定在底部
     useEffect(() => {
-        if (typeof window === 'undefined') return;
 
         const measure = () => {
             const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -47,11 +47,14 @@ const Footer = () => {
     }, [pathname]);
 
     const siteName = (siteNameRaw || "WaveYo").trim();
+
+    // NOTE: 解析并缓存站点起始年份，用于拼接版权时间段
     const startYear = useMemo(() => {
         const parsed = Number.parseInt((siteStartYearRaw || "").trim(), 10);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
     }, [siteStartYearRaw]);
 
+    // NOTE: 根据当前年份与起始年份生成版权文案
     const copyrightText = useMemo(() => {
         if (!currentYear) return null;
         if (startYear && startYear < currentYear) {
@@ -60,10 +63,10 @@ const Footer = () => {
         return `© ${currentYear} ${siteName}`;
     }, [currentYear, siteName, startYear]);
 
-    // 提取公安备案号中的数字用于生成链接
-    // 假设格式为 "浙公网安备 33052202000779号" -> 提取 "33052202000779"
+    // NOTE: 从公安备案号中提取纯数字编码，用于拼接公安备案链接
     const policeLicenseNo = policeLicense ? policeLicense.match(/\d+/)?.[0] : undefined;
 
+    // NOTE: 动态组装需要展示的版权与备案项
     const footerItems: React.ReactElement[] = [];
 
     if (copyrightText) {
@@ -101,9 +104,11 @@ const Footer = () => {
     }
 
     if (footerItems.length === 0) {
+        // NOTE: 当没有任何备案信息时不渲染页脚，避免占用额外布局空间
         return null;
     }
 
+    // NOTE: 桌面端始终贴底展示，移动端按 shouldStaticOnMobile 控制是否固定
     return (
         <div className={`${style.footer_wrapper} ${shouldStaticOnMobile ? style.footer_wrapper_mobile_static : ''}`}>
             <div className={style.footer_container}>

@@ -3,6 +3,7 @@ import styles from './StatusIcon.module.css';
 
 import { StatusCode } from './types';
 
+// NOTE: 403 禁止访问图标
 const ForbiddenIcon: FC = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -20,6 +21,7 @@ const ForbiddenIcon: FC = () => (
   </svg>
 );
 
+// NOTE: 404 未找到资源图标
 const NotFoundIcon: FC = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -38,11 +40,13 @@ const NotFoundIcon: FC = () => (
   </svg>
 );
 
+// NOTE: 状态码到具体图标组件的映射关系
 const iconMap: Partial<Record<StatusCode, FC>> = {
   403: ForbiddenIcon,
   404: NotFoundIcon,
 };
 
+// NOTE: 根据状态码选择并渲染对应的状态图标，未知状态码时不渲染
 export const StatusIcon: FC<{ code: StatusCode }> = ({ code }) => {
   const Icon = iconMap[code];
   if (!Icon) return null;

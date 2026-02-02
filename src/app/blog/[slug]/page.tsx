@@ -2,6 +2,7 @@ import BlogPost from '@/components/Blog/BlogPost';
 import { Metadata } from 'next';
 import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
 
+// 博客文章页面
 export const metadata: Metadata = {
   title: `Blog Post - ${process.env.NEXT_PUBLIC_SITE_TITLE || 'YoSpace'}`,
 };
@@ -22,6 +23,7 @@ export async function generateStaticParams() {
     }
 }
 
+// 博客文章页面
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     // 默认预渲染英文内容
@@ -35,6 +37,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         // 如果服务端获取失败，不中断渲染，让客户端尝试或显示错误
     }
 
+    // 渲染博客文章组件
     return (
         <BlogPost 
             initialContent={initialContent} 

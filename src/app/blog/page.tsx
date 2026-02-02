@@ -2,6 +2,7 @@ import Blog from '@/components/Blog/Blog';
 import { Metadata } from 'next';
 import { getLocalPostsList } from '@/utils/content/local';
 
+// 博客页面
 export const metadata: Metadata = {
   title: `Blog - ${process.env.NEXT_PUBLIC_SITE_TITLE || 'YoSpace'}`,
   description: 'My thoughts and writings',
@@ -23,6 +24,7 @@ export default async function BlogPage() {
       console.error("Failed to fetch initial blog posts", e);
   }
 
+  // 渲染博客组件
   return (
     <Blog 
         initialPosts={initialData?.items} 
