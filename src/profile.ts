@@ -6,7 +6,7 @@ export const profile: Profile = {
     navTitle: process.env.NEXT_PUBLIC_NAV_TITLE || "YoSpace",
     names: process.env.NEXT_PUBLIC_PROFILE_NAMES?.split(',') || ["WaveYo", "Waves_Man"],
     description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "从群众出发，扎根群众。向前，无限进步",
-    image: process.env.NEXT_PUBLIC_PROFILE_IMAGE || "https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico",
+    image: process.env.NEXT_PUBLIC_PROFILE_IMAGE || "/WaveYo.jpg",
     socialLinks: socialLinksData
 };
 

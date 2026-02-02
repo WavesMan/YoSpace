@@ -36,7 +36,8 @@ const Profile = () => {
     }
 
     // 获取头像 URL，优先使用环境变量，否则回退到 profile.ts 中的配置
-    const profileImage = process.env.NEXT_PUBLIC_PROFILE_IMAGE || profile.image;
+    const rawProfileImage = process.env.NEXT_PUBLIC_PROFILE_IMAGE || profile.image;
+    const profileImage = rawProfileImage.replace(/(?<!:)\/\//g, '/');
 
     return (
         <div className={style.profile_wrapper}>
@@ -46,7 +47,7 @@ const Profile = () => {
                         使用 img 标签以保持原样式兼容性。
                         如果使用 Next.js Image 组件，需要注意 CSS 适配。
                     */}
-                    <Image src={profileImage} className={style.profile_image} alt="Profile Avatar" width={96} height={96} priority />
+                    <Image src={profileImage} className={style.profile_image} alt="Profile Avatar" width={256} height={256} priority />
                 </div>
                 <div className={style.profile_content_wrapper}>
                     <div className={style.profile_info_wrapper}>
