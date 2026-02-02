@@ -29,7 +29,7 @@ const LinksCard: React.FC<LinksCardProps> = ({ title, subtitle, link, avatar }) 
                     }
                 }}
             >
-                <Image className={style.links_card_avatar} src={avatar} alt={`${title}'s avatar`} width={48} height={48} />
+                <Image className={style.links_card_avatar} src={avatar} alt={`${title}'s avatar`} width={48} height={48} unoptimized />
                 <div className={style.links_card_content}>
                     <h1 className={style.links_card_title}>{title}</h1>
                     {subtitle && <p className={style.links_card_subtitle}>{subtitle}</p>}
