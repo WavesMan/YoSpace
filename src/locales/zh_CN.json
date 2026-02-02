@@ -12,7 +12,22 @@
         "PublishedOn": "发布于"
     },
     "Error": {
-        "404": "404 Not Found",
+        "400": {
+            "Title": "请求有误",
+            "Description": "请求参数可能不正确，或者页面暂时不可用。"
+        },
+        "401": {
+            "Title": "需要登录",
+            "Description": "你还没有登录，或登录已过期。"
+        },
+        "403": {
+            "Title": "没有权限",
+            "Description": "你没有访问该页面的权限。"
+        },
+        "404": {
+            "Title": "页面不存在",
+            "Description": "你访问的页面可能已被移动或删除。"
+        },
         "Back": "返回主页",
         "BackToBlog": "< 返回文章列表"
     },
@@ -26,6 +41,52 @@
             "Previous": "上一页",
             "Next": "下一页",
             "End": "末页"
+        }
+    },
+    "Admin": {
+        "Common": {
+            "BackToSite": "返回前台",
+            "Logout": "退出登录",
+            "Navigation": "管理导航",
+            "UnknownError": "发生未知错误"
+        },
+        "Login": {
+            "Title": "管理员登录",
+            "UsernameLabel": "用户名",
+            "PasswordLabel": "密码",
+            "Submit": "登录",
+            "Submitting": "正在登录...",
+            "UnknownError": "登录失败，请重试"
+        },
+        "Dashboard": {
+            "Title": "仪表盘",
+            "FetchError": "获取仪表盘数据失败",
+            "Empty": "暂无数据",
+            "AccessOverview": "访问概览",
+            "PVLabel": "页面浏览量（PV）",
+            "UVLabel": "独立访客（UV）",
+            "PVUVHint": "PV 为页面访问次数；UV 为去重访客数（按设备标识估算）。仅统计主页与博客页。",
+            "TopPages": "热门页面",
+            "TopSources": "来源渠道",
+            "NoRankData": "暂无统计数据",
+            "ContentStatus": "内容状态",
+            "Published": "已发布",
+            "Drafts": "草稿",
+            "LastUpdate": "最近更新",
+            "HealthSecurity": "健康与安全",
+            "Uptime": "运行时间",
+            "Version": "版本",
+            "Logins24h": "24小时登录",
+            "LoginFails24h": "24小时失败"
+        },
+        "Security": {
+            "Title": "安全",
+            "ConfigTitle": "配置",
+            "AdminPath": "后台路径",
+            "ValueConfigured": "已配置",
+            "ConfigHint": "账号信息与密钥由环境变量提供。需要修改时，请在部署平台或本地环境变量中更新并重新部署。",
+            "SessionTitle": "会话",
+            "LogoutAll": "退出所有会话"
         }
     }
 }

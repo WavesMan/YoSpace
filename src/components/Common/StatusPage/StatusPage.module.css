@@ -1,0 +1,103 @@
+.page {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    padding: calc(120px + env(safe-area-inset-top)) 20px calc(60px + env(safe-area-inset-bottom));
+}
+
+.container {
+    width: calc(100vw - 80px);
+    max-width: 960px;
+    background-color: var(--color-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--color-common-accent-stroke);
+    padding: 40px;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.code {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-large);
+    font-weight: var(--font-weight-havey);
+    color: var(--color-common-title);
+    letter-spacing: 0.04em;
+}
+
+.title {
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.description {
+    margin: 0;
+    font-size: var(--font-size-main);
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    min-height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--color-common-accent-stroke);
+    background-color: transparent;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.primary {
+    background-color: var(--color-accent-hover);
+    border-color: transparent;
+    color: var(--color-bg-card);
+}
+
+
+@media (hover: hover) and (pointer: fine) {
+    .button:hover {
+        transform: scale(1.02);
+    }
+
+    .primary:hover {
+        transform: scale(1.02);
+    }
+}
+
+@media (max-width: 1024px) {
+    .container {
+        border-radius: 0px;
+        padding: 28px 24px;
+    }
+}
+
+@media (max-width: 600px) {
+    .page {
+        padding: calc(96px + env(safe-area-inset-top)) 0 calc(40px + env(safe-area-inset-bottom));
+    }
+
+    .container {
+        width: 100%;
+        padding: 24px 16px;
+    }
+}
