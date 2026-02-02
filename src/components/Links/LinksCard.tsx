@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 import style from "./LinksCard.module.css"
 
@@ -28,7 +29,7 @@ const LinksCard: React.FC<LinksCardProps> = ({ title, subtitle, link, avatar }) 
                     }
                 }}
             >
-                <img className={style.links_card_avatar} src={avatar} alt={`${title}'s avatar`} />
+                <Image className={style.links_card_avatar} src={avatar} alt={`${title}'s avatar`} width={48} height={48} />
                 <div className={style.links_card_content}>
                     <h1 className={style.links_card_title}>{title}</h1>
                     {subtitle && <p className={style.links_card_subtitle}>{subtitle}</p>}

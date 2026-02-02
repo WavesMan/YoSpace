@@ -21,12 +21,10 @@ const Footer = () => {
     const siteNameRaw: string | undefined = process.env.NEXT_PUBLIC_SITE_NAME;
     const siteStartYearRaw: string | undefined = process.env.NEXT_PUBLIC_SITE_START_YEAR;
 
-    const [currentYear, setCurrentYear] = useState<number | null>(null);
+    const [currentYear] = useState<number>(new Date().getFullYear());
     const [shouldStaticOnMobile, setShouldStaticOnMobile] = useState(false);
 
-    useEffect(() => {
-        setCurrentYear(new Date().getFullYear());
-    }, []);
+    
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -128,7 +129,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         };
         
         fetchData();
-    }, [slug, locale, initialContent, initialLocale]);
+    }, [slug, locale, initialContent, initialLocale, t]);
 
     return (
         <div className={style.post_wrapper}>
@@ -158,7 +159,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                     rehypePlugins={[rehypeRaw]}
                                     urlTransform={transformMarkdownUrl}
                                     components={{
-                                        p({ children, node: _node, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
+                                        p({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
                                             if (hasVercelButtonChild(children)) {
                                                 const items = React.Children.toArray(children);
                                                 const buttonIndex = items.findIndex((child) => {
@@ -187,7 +188,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                                 </p>
                                             );
                                         },
-                                        a({ href, children, node: _node, target, rel, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) {
+                                        a({ href, children, target, rel, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) {
                                             const nextHref = href || '';
                                             if (nextHref.startsWith('/')) {
                                                 return (
@@ -217,7 +218,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                                 </a>
                                             );
                                         },
-                                        img({ src, alt, node: _node, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { node?: unknown }) {
+                                        img({ src, alt, width, height, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { node?: unknown }) {
                                             const nextSrc = typeof src === 'string' ? src : '';
                                             const nextClassName = [
                                                 props.className,
@@ -225,10 +226,13 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                             ].filter(Boolean).join(' ');
 
                                             return (
-                                                <img
+                                                <Image
                                                     src={nextSrc}
                                                     alt={alt || ''}
                                                     className={nextClassName || undefined}
+                                                    width={Number(width) || 700}
+                                                    height={Number(height) || 400}
+                                                    loading="lazy"
                                                     {...props}
                                                 />
                                             );

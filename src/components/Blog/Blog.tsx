@@ -79,7 +79,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
             }
         };
         fetchPosts();
-    }, [currentPage, locale, initialPosts, initialLocale]); // 依赖项包含 locale，切换语言时会自动重新获取
+    }, [currentPage, locale, initialPosts, initialLocale, itemsLimit, t]); // 依赖项包含 locale，切换语言时会自动重新获取
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);

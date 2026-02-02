@@ -1,18 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useI18n } from '@/context/I18nContext';
 import styles from './StatusPage.module.css';
-
-type StatusCode = 400 | 401 | 403 | 404;
-
-const getDefaultCopyKeyPrefix = (code: StatusCode) => {
-  if (code === 400) return 'Error.400';
-  if (code === 401) return 'Error.401';
-  if (code === 403) return 'Error.403';
-  return 'Error.404';
-};
+import { StatusIcon } from './StatusIcon';
+import { StatusCode } from './types';
 
 export default function StatusPage({
   code,
@@ -23,13 +16,24 @@ export default function StatusPage({
   homeHref?: string;
   secondaryHref?: { href: string; labelKey: string };
 }) {
+  const getCopyKeyPrefix = (code: StatusCode) => {
+    const prefixMap: Record<StatusCode, string> = {
+      400: 'Error.400',
+      401: 'Error.401',
+      403: 'Error.403',
+      404: 'Error.404',
+    };
+    return prefixMap[code] || 'Error.404';
+  };
+
   const { t } = useI18n();
 
-  const prefix = useMemo(() => getDefaultCopyKeyPrefix(code), [code]);
+  const prefix = useMemo(() => getCopyKeyPrefix(code), [code]);
 
   return (
     <div className={styles.page}>
       <section className={styles.container} aria-labelledby="status-title">
+        <StatusIcon code={code} />
         <header className={styles.header}>
           <div className={styles.code}>{code}</div>
           <h1 id="status-title" className={styles.title}>
@@ -50,6 +54,7 @@ export default function StatusPage({
           ) : null}
         </div>
       </section>
+      <div className={styles.backgroundText}>{`<${code}>`}</div>
     </div>
   );
 }

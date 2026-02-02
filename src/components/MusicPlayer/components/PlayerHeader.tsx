@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React from 'react';
 import { FiX, FiMusic } from 'react-icons/fi';
 import { Track } from '../types';
@@ -33,10 +34,12 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ currentTrack, onClose }) =>
         {/* 封面图占位或实际图片 */}
         <div className={styles.cover}>
           {currentTrack && getCover(currentTrack) ? (
-            <img 
+            <Image 
               src={getCover(currentTrack)} 
               alt="Cover" 
-              className={styles.coverImg} 
+              className={styles.coverImg}
+              width={40}
+              height={40}
             />
           ) : (
             <FiMusic size={24} />

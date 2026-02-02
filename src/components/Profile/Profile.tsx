@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useRef, useState } from "react";
 import DynamicIcon from "../Common/Icon/DynamicIcon";
 import style from './Profile.module.css'
@@ -45,7 +46,7 @@ const Profile = () => {
                         使用 img 标签以保持原样式兼容性。
                         如果使用 Next.js Image 组件，需要注意 CSS 适配。
                     */}
-                    <img src={profileImage} className={style.profile_image} alt="Profile Avatar" />
+                    <Image src={profileImage} className={style.profile_image} alt="Profile Avatar" width={96} height={96} priority />
                 </div>
                 <div className={style.profile_content_wrapper}>
                     <div className={style.profile_info_wrapper}>
@@ -70,10 +71,12 @@ const Profile = () => {
                                 aria-label={item.name}
                             >
                                 {item.iconUrl ? (
-                                    <img 
+                                    <Image 
                                         src={item.iconUrl} 
                                         alt={item.name} 
-                                        style={{ width: '1em', height: '1em', objectFit: 'contain' }} 
+                                        width={20}
+                                        height={20}
+                                        style={{ objectFit: 'contain' }} 
                                     />
                                 ) : (
                                     item.iconPackage && item.iconName ? (
