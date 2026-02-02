@@ -4,6 +4,9 @@ description: "A comprehensive guide to Markdown syntax and formatting features s
 date: "2026-01-20T10:00:00Z"
 tags: ["Markdown", "Test", "Guide"]
 isPinned: true
+pinnedRank: 01
+isRecommended: true
+recommendRank: 00
 ---
 
 # Heading Level 1

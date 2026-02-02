@@ -9,7 +9,16 @@
         "ClickToSwitch": "试试点击我！"
     },
     "Blog": {
-        "PublishedOn": "发布于"
+        "PublishedOn": "发布于",
+        "Pinned": "置顶文章",
+        "Series": "系列文章",
+        "Recommend": "推荐阅读",
+        "Sort": {
+            "Label": "排序",
+            "Recommend": "推荐排序",
+            "DateDesc": "时间（新→旧）",
+            "DateAsc": "时间（旧→新）"
+        }
     },
     "Error": {
         "400": {

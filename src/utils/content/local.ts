@@ -2,13 +2,33 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-// NOTE: 本地 Markdown 博文类型定义，用于替代远程 CMS 文档结构
+export interface PostCategory {
+    id: string;
+    labelZh?: string;
+    labelEn?: string;
+    i18nKey?: string;
+    colorToken?: string;
+    order?: number;
+}
+
+export interface PostSeries {
+    id: string;
+    index?: number;
+    label?: string;
+}
+
 export interface PostItem {
     title: string;
     description: string;
     slug: string;
     publishedTime: string;
     isPinned?: boolean;
+    isRecommended?: boolean;
+    recommendRank?: number;
+    pinnedRank?: number;
+    category?: PostCategory;
+    tags?: string[];
+    series?: PostSeries;
 }
 
 export interface PostListResponse {
@@ -19,12 +39,17 @@ export interface PostListResponse {
 
 export interface PostContentResponse {
     title: string;
-    // NOTE: 文章主体内容，Markdown 文本
     content: string;
     publishedTime: string;
     isPinned?: boolean;
+    isRecommended?: boolean;
+    recommendRank?: number;
+    pinnedRank?: number;
     locale?: string;
     description?: string;
+    category?: PostCategory;
+    tags?: string[];
+    series?: PostSeries;
 }
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
@@ -68,8 +93,29 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
         const fileContents = fs.readFileSync(fullPath, 'utf8');
         const { data } = matter(fileContents);
         
-        // NOTE: 从文件名中提取 slug（去除语言后缀）
         const { slug } = parseFileMetadata(fileName);
+
+        const rawRank = (data as unknown as { recommendRank?: unknown }).recommendRank;
+        let recommendRank: number | undefined;
+        if (typeof rawRank === 'number' && Number.isFinite(rawRank)) {
+            recommendRank = rawRank;
+        } else if (typeof rawRank === 'string') {
+            const parsed = parseInt(rawRank, 10);
+            if (Number.isFinite(parsed)) {
+                recommendRank = parsed;
+            }
+        }
+
+        const rawPinnedRank = (data as unknown as { pinnedRank?: unknown }).pinnedRank;
+        let pinnedRank: number | undefined;
+        if (typeof rawPinnedRank === 'number' && Number.isFinite(rawPinnedRank)) {
+            pinnedRank = rawPinnedRank;
+        } else if (typeof rawPinnedRank === 'string') {
+            const parsedPinned = parseInt(rawPinnedRank, 10);
+            if (Number.isFinite(parsedPinned)) {
+                pinnedRank = parsedPinned;
+            }
+        }
 
         return {
             slug,
@@ -77,7 +123,12 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
             description: data.description || '',
             publishedTime: data.date || '',
             isPinned: data.isPinned || false,
-            // NOTE: 保留时间对象用于排序，不暴露给最终返回结果
+            isRecommended: data.isRecommended || false,
+            recommendRank,
+            pinnedRank,
+            category: data.category,
+            tags: Array.isArray(data.tags) ? data.tags : undefined,
+            series: data.series,
             dateObj: new Date(data.date || 0)
         };
     });
@@ -100,34 +151,78 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
 };
 
 export const getLocalPostContent = async (slug: string, locale: string = 'en'): Promise<PostContentResponse> => {
-    // NOTE: 根据 slug 与语言构造文件名，优先使用语言后缀；英文默认为 slug.md
-    let fileName = `${slug}.${locale}.md`;
+    const candidates: { fileName: string; locale: string }[] = [];
+
     if (locale === 'en') {
-        fileName = `${slug}.md`;
+        candidates.push({ fileName: `${slug}.md`, locale: 'en' });
+        candidates.push({ fileName: `${slug}.zh-CN.md`, locale: 'zh-CN' });
+    } else if (locale === 'zh-Hans') {
+        candidates.push({ fileName: `${slug}.zh-CN.md`, locale: 'zh-CN' });
+        candidates.push({ fileName: `${slug}.md`, locale: 'en' });
+    } else {
+        candidates.push({ fileName: `${slug}.${locale}.md`, locale });
+        if (locale !== 'zh-CN') {
+            candidates.push({ fileName: `${slug}.zh-CN.md`, locale: 'zh-CN' });
+        }
+        if (locale !== 'en') {
+            candidates.push({ fileName: `${slug}.md`, locale: 'en' });
+        }
     }
-    
-    let fullPath = path.join(postsDirectory, fileName);
 
-    if (!fs.existsSync(fullPath)) {
-         // NOTE: 为兼容部分场景，将 zh-Hans 归一为 zh-CN 文件后缀
-         if (locale === 'zh-Hans') fileName = `${slug}.zh-CN.md`;
-         fullPath = path.join(postsDirectory, fileName);
+    let selectedPath: string | null = null;
+    let selectedLocale = locale;
+
+    for (const item of candidates) {
+        const fullPathCandidate = path.join(postsDirectory, item.fileName);
+        if (fs.existsSync(fullPathCandidate)) {
+            selectedPath = fullPathCandidate;
+            selectedLocale = item.locale;
+            break;
+        }
     }
 
-    if (!fs.existsSync(fullPath)) {
+    if (!selectedPath) {
         throw new Error(`Post not found: ${slug} (${locale})`);
     }
 
-    const fileContents = fs.readFileSync(fullPath, 'utf8');
+    const fileContents = fs.readFileSync(selectedPath, 'utf8');
     const { data, content } = matter(fileContents);
+
+    const rawRank = (data as unknown as { recommendRank?: unknown }).recommendRank;
+    let recommendRank: number | undefined;
+    if (typeof rawRank === 'number' && Number.isFinite(rawRank)) {
+        recommendRank = rawRank;
+    } else if (typeof rawRank === 'string') {
+        const parsed = parseInt(rawRank, 10);
+        if (Number.isFinite(parsed)) {
+            recommendRank = parsed;
+        }
+    }
+
+    const rawPinnedRank = (data as unknown as { pinnedRank?: unknown }).pinnedRank;
+    let pinnedRank: number | undefined;
+    if (typeof rawPinnedRank === 'number' && Number.isFinite(rawPinnedRank)) {
+        pinnedRank = rawPinnedRank;
+    } else if (typeof rawPinnedRank === 'string') {
+        const parsedPinned = parseInt(rawPinnedRank, 10);
+        if (Number.isFinite(parsedPinned)) {
+            pinnedRank = parsedPinned;
+        }
+    }
 
     return {
         title: data.title || slug,
         content: content,
         publishedTime: data.date || '',
         isPinned: data.isPinned || false,
-        locale,
-        description: data.description || ''
+        isRecommended: data.isRecommended || false,
+        recommendRank,
+        pinnedRank,
+        locale: selectedLocale,
+        description: data.description || '',
+        category: data.category,
+        tags: Array.isArray(data.tags) ? data.tags : undefined,
+        series: data.series
     };
 };
 

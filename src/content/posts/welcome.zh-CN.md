@@ -2,7 +2,20 @@
 title: "欢迎来到我的博客"
 description: "这是一篇使用 Markdown 文件的示例文章。"
 date: "2026-01-20T10:00:00Z"
-tags: ["Next.js", "Markdown"]
+category:
+  id: "status-page"
+  labelEn: "Status Page"
+  labelZh: "状态页"
+  colorToken: "blue"
+tags: ["Cloudflare", "宕机", "Rust", "数据库", "502 Bad Gateway"]
+series:
+  id: "demo-series"
+  index: 1
+  label: "体验系列"
+isPinned: true
+pinnedRank: 00
+isRecommended: true
+recommendRank: 01
 ---
 
 # 欢迎来到我的博客

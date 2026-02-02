@@ -13,6 +13,11 @@
 - 主题切换：亮色/暗色模式
 - 国际化：中英文切换（可通过环境变量开关）
 
+线上示例与详细博客说明可访问：
+
+- 站点首页：https://yospace.waveyo.cn/
+- 博客与使用说明（推荐查看 `博客内容模型与前端功能使用指南` 一文）：https://yospace.waveyo.cn/blog
+
 ## 技术栈
 
 - 框架：Next.js（App Router）

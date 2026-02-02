@@ -89,7 +89,22 @@ const subscribeLocale = (listener: () => void) => {
   };
 };
 
-const getLocaleSnapshot = () => localeSnapshot;
+const getLocaleSnapshot = () => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_LOCALE;
+  }
+
+  if (!isI18nEnabled()) {
+    localeSnapshot = DEFAULT_LOCALE;
+    return localeSnapshot;
+  }
+
+  if (localeSnapshot === DEFAULT_LOCALE) {
+    localeSnapshot = readPreferredLocale();
+  }
+
+  return localeSnapshot;
+};
 const getLocaleServerSnapshot = () => DEFAULT_LOCALE;
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {

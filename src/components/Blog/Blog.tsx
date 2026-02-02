@@ -6,6 +6,7 @@ import Background from "../Common/Background/Background";
 import Pagination from "../Common/Pagination/Pagination";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
+import type { PostCategory, PostSeries } from "@/utils/content/local";
 
 /**
  * 文章列表项接口
@@ -16,6 +17,12 @@ export interface PostsListShape {
     slug: string;
     publishedTime: string;
     isPinned?: boolean;
+    isRecommended?: boolean;
+    recommendRank?: number;
+    pinnedRank?: number;
+    category?: PostCategory;
+    tags?: string[];
+    series?: PostSeries;
 }
 
 interface BlogProps {
@@ -39,6 +46,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     const [totalItems, setTotalItems] = useState<number>(initialTotal || 0);
     const [posts, setPosts] = useState<PostsListShape[]>(initialPosts || []);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [sortMode, setSortMode] = useState<"recommend" | "date-desc" | "date-asc">("recommend");
     
     // 如果有初始数据且在第一页，状态默认为 Done，否则为 Loading
     const [status, setStatus] = useState<"Loading" | "Error" | "Done">(
@@ -97,11 +105,133 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const pinnedStyle = process.env.NEXT_PUBLIC_BLOG_PINNED_STYLE || 'separate-section';
+
+    const getEffectiveRank = (post: PostsListShape) => {
+        if (typeof post.recommendRank === "number" && Number.isFinite(post.recommendRank)) {
+            return post.recommendRank;
+        }
+        return Number.MAX_SAFE_INTEGER;
+    };
+
+    const getTimeValue = (post: PostsListShape) => {
+        if (!post.publishedTime) {
+            return 0;
+        }
+        const time = new Date(post.publishedTime).getTime();
+        if (Number.isFinite(time)) {
+            return time;
+        }
+        return 0;
+    };
+
+    const getEffectivePinnedRank = (post: PostsListShape) => {
+        if (typeof post.pinnedRank === "number" && Number.isFinite(post.pinnedRank)) {
+            return post.pinnedRank;
+        }
+        return Number.MAX_SAFE_INTEGER;
+    };
+
+    const compareRecommend = (a: PostsListShape, b: PostsListShape) => {
+        const rankDiff = getEffectiveRank(a) - getEffectiveRank(b);
+        if (rankDiff !== 0) {
+            return rankDiff;
+        }
+        const pinnedScoreA = a.isPinned ? 1 : 0;
+        const pinnedScoreB = b.isPinned ? 1 : 0;
+        if (pinnedScoreA !== pinnedScoreB) {
+            return pinnedScoreB - pinnedScoreA;
+        }
+        return getTimeValue(b) - getTimeValue(a);
+    };
+
+    const compareDateDesc = (a: PostsListShape, b: PostsListShape) => {
+        return getTimeValue(b) - getTimeValue(a);
+    };
+
+    const compareDateAsc = (a: PostsListShape, b: PostsListShape) => {
+        return getTimeValue(a) - getTimeValue(b);
+    };
+
+    const pinnedPosts = posts
+        .filter(post => post.isPinned)
+        .slice()
+        .sort((a, b) => {
+            const rankDiff = getEffectivePinnedRank(a) - getEffectivePinnedRank(b);
+            if (rankDiff !== 0) {
+                return rankDiff;
+            }
+            return getTimeValue(b) - getTimeValue(a);
+        });
+    const normalPostsBase = posts.filter(post => !post.isPinned);
+
+    const normalPosts = (() => {
+        if (sortMode === "date-desc") {
+            return normalPostsBase.slice().sort(compareDateDesc);
+        }
+        if (sortMode === "date-asc") {
+            return normalPostsBase.slice().sort(compareDateAsc);
+        }
+        return normalPostsBase.slice().sort((a, b) => {
+            const rankDiff = getEffectiveRank(a) - getEffectiveRank(b);
+            if (rankDiff !== 0) {
+                return rankDiff;
+            }
+            return getTimeValue(b) - getTimeValue(a);
+        });
+    })();
+
+    const renderPostCard = (post: PostsListShape, index: number) => (
+        <BlogCard
+            key={post.slug}
+            articleId={post.slug}
+            articleTitle={post.title}
+            articleDescription={post.description}
+            articleDate={post.publishedTime}
+            category={post.category}
+            tags={post.tags}
+            currentLocale={locale}
+            cardStyle={{ animationDelay: `${index * 0.1}s` }}
+        />
+    );
+
     return (
         <>
             <div className={style.blog_wrapper}>
                 <div className={style.blog_container}>
                     <h1 className={style.blog_title}>{t('Pages.Blog')}</h1>
+                    <div className={style.blog_sort_bar} aria-label={t('Blog.Sort.Label')}>
+                        <span className={style.blog_sort_label}>{t('Blog.Sort.Label')}</span>
+                        <div className={style.blog_sort_group} role="radiogroup">
+                            <button
+                                type="button"
+                                className={sortMode === "recommend" ? style.blog_sort_button_active : style.blog_sort_button}
+                                onClick={() => setSortMode("recommend")}
+                                role="radio"
+                                aria-checked={sortMode === "recommend"}
+                            >
+                                {t('Blog.Sort.Recommend')}
+                            </button>
+                            <button
+                                type="button"
+                                className={sortMode === "date-desc" ? style.blog_sort_button_active : style.blog_sort_button}
+                                onClick={() => setSortMode("date-desc")}
+                                role="radio"
+                                aria-checked={sortMode === "date-desc"}
+                            >
+                                {t('Blog.Sort.DateDesc')}
+                            </button>
+                            <button
+                                type="button"
+                                className={sortMode === "date-asc" ? style.blog_sort_button_active : style.blog_sort_button}
+                                onClick={() => setSortMode("date-asc")}
+                                role="radio"
+                                aria-checked={sortMode === "date-asc"}
+                            >
+                                {t('Blog.Sort.DateAsc')}
+                            </button>
+                        </div>
+                    </div>
                     <div className={style.blog_card_wrapper}>
                         {
                             posts.length === 0 && status === "Done" ? (
@@ -113,16 +243,31 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                                 <div className={style.blog_tip_loading}>{t('Status.Loading')}</div>
                             ) :
                                 status === "Done" ? (
-                                    posts.map((post, index) => (
-                                        <BlogCard
-                                            key={post.slug}
-                                            articleId={post.slug}
-                                            articleTitle={post.title}
-                                            articleDescription={post.description}
-                                            articleDate={post.publishedTime}
-                                            cardStyle={{ animationDelay: `${index * 0.1}s` }}
-                                        />
-                                    ))
+                                    <>
+                                        {pinnedStyle === 'separate-section' && pinnedPosts.length > 0 && (
+                                            <>
+                                                <div className={style.blog_pinned_section}>
+                                                    <div className={style.blog_pinned_label}>{t('Blog.Pinned')}</div>
+                                                    {pinnedPosts.map((post, index) => renderPostCard(post, index))}
+                                                </div>
+                                                <div className={style.blog_pinned_divider} aria-hidden="true" />
+                                            </>
+                                        )}
+                                        {pinnedStyle === 'separate-section'
+                                            ? normalPosts.map((post, index) => renderPostCard(post, pinnedPosts.length + index))
+                                            : posts
+                                                .slice()
+                                                .sort((a, b) => {
+                                                    if (sortMode === "date-desc") {
+                                                        return compareDateDesc(a, b);
+                                                    }
+                                                    if (sortMode === "date-asc") {
+                                                        return compareDateAsc(a, b);
+                                                    }
+                                                    return compareRecommend(a, b);
+                                                })
+                                                .map((post, index) => renderPostCard(post, index))}
+                                    </>
                                 ) : status === "Error" ? (
                                     <>
                                         <div className={style.blog_tip_error}>{t('Status.Error')}</div>

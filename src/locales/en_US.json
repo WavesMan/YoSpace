@@ -9,7 +9,16 @@
         "ClickToSwitch": "Try click it!"
     },
     "Blog": {
-        "PublishedOn": "Published on"
+        "PublishedOn": "Published on",
+        "Pinned": "Pinned posts",
+        "Series": "Series",
+        "Recommend": "Recommended",
+        "Sort": {
+            "Label": "Sort",
+            "Recommend": "Recommended",
+            "DateDesc": "Date (newest first)",
+            "DateAsc": "Date (oldest first)"
+        }
     },
     "Error": {
         "400": {

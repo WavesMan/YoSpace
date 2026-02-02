@@ -10,7 +10,7 @@ import rehypeRaw from 'rehype-raw';
 import style from './BlogPost.module.css';
 import Background from '../Common/Background/Background';
 import { useI18n } from '@/context/I18nContext';
-import type { PostContentResponse } from '@/utils/content/local';
+import type { PostContentResponse, PostItem } from '@/utils/content/local';
 import CodeBlock from './CodeBlock';
 
 /**
@@ -92,6 +92,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     );
     const [articleContent, setArticleContent] = useState<PostContentResponse | null>(initialContent || null);
     const [errorMsg, setErrorMsg] = useState<string>("");
+    const [seriesPosts, setSeriesPosts] = useState<PostItem[]>([]);
+    const [recommendPosts, setRecommendPosts] = useState<PostItem[]>([]);
 
     // NOTE: 通过标记首渲染，在有服务端初始内容时避免重复请求
     const isFirstRender = useRef(true);
@@ -158,9 +160,107 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         fetchData();
     }, [slug, locale, initialContent, initialLocale, t]);
 
+    const showCategory = process.env.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED !== 'false';
+    const showTags = process.env.NEXT_PUBLIC_BLOG_TAGS_ENABLED !== 'false';
+    const showSeries = process.env.NEXT_PUBLIC_BLOG_SERIES_ENABLED !== 'false';
+
+    const labelStrategy = process.env.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY || 'i18n-first';
+
+    const resolvedLocale = locale === 'en-US' ? 'en-US' : 'zh-CN';
+
+    const categoryLabel = (() => {
+        if (!articleContent?.category) return undefined;
+        const category = articleContent.category;
+        const id = category.id;
+        if (labelStrategy === 'frontmatter-first') {
+            if (resolvedLocale === 'en-US' && category.labelEn) return category.labelEn;
+            if (resolvedLocale !== 'en-US' && category.labelZh) return category.labelZh;
+            return id;
+        }
+        if (resolvedLocale === 'en-US') {
+            if (category.labelEn) return category.labelEn;
+        } else {
+            if (category.labelZh) return category.labelZh;
+        }
+        return id;
+    })();
+
+    const tagVariantCount = 5;
+
+    const getVariantIndex = (value: string) => {
+        let hash = 0;
+        for (let i = 0; i < value.length; i += 1) {
+            hash += value.charCodeAt(i);
+        }
+        return Math.abs(hash) % tagVariantCount;
+    };
+
+    const getPostTagClassName = (tag: string) => {
+        const index = getVariantIndex(tag);
+        const variantClass = style[`post_tag_variant_${index}`] || '';
+        return `${style.post_tag} ${variantClass}`.trim();
+    };
+
+    useEffect(() => {
+        const shouldLoadRelated = status === 'Done' && articleContent;
+        if (!shouldLoadRelated) {
+            return;
+        }
+
+        const loadRelated = async () => {
+            const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
+            const limit = Number.parseInt(process.env.NEXT_PUBLIC_BLOG_RELATED_LIMIT || '50', 10) || 50;
+            try {
+                const response = await fetch(`/api/blog/list?offset=0&limit=${encodeURIComponent(String(limit))}&locale=${encodeURIComponent(queryLocale)}`);
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json() as { items?: PostItem[] };
+                const items = Array.isArray(data.items) ? data.items : [];
+
+                if (showSeries && articleContent.series) {
+                    const filteredSeries = items
+                        .filter(item => item.series && item.series.id === articleContent.series?.id);
+                    setSeriesPosts(filteredSeries);
+                } else {
+                    setSeriesPosts([]);
+                }
+
+                if (process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false') {
+                    const filteredRecommend = items
+                        .filter(item => item.isRecommended && item.slug !== slug);
+
+                    if (filteredRecommend.length === 0) {
+                        setRecommendPosts([]);
+                        return;
+                    }
+
+                    const shuffled = [...filteredRecommend];
+                    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        const tmp = shuffled[i];
+                        shuffled[i] = shuffled[j];
+                        shuffled[j] = tmp;
+                    }
+
+                    const maxRecommendCount = 4;
+                    setRecommendPosts(shuffled.slice(0, maxRecommendCount));
+                } else {
+                    setRecommendPosts([]);
+                }
+            } catch {
+            }
+        };
+
+        loadRelated();
+    }, [status, articleContent, locale, slug, showSeries]);
+
     return (
         <div className={style.post_wrapper}>
             <div className={style.post_container}>
+                {showCategory && categoryLabel && (
+                    <div className={style.post_category}>{categoryLabel}</div>
+                )}
                 <h1 className={style.post_title}>
                     {
                         status === "Done" && articleContent
@@ -177,6 +277,20 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         </div>
                     )
                 }
+                {status === 'Done' && articleContent && (showTags || showSeries) && (
+                    <div className={style.post_meta_row}>
+                        {showSeries && articleContent.series && (
+                            <span className={style.post_series_badge}>{articleContent.series.label || articleContent.series.id}</span>
+                        )}
+                        {showTags && articleContent.tags && articleContent.tags.length > 0 && (
+                            <div className={style.post_tags}>
+                                {articleContent.tags.map(tag => (
+                                    <span key={tag} className={getPostTagClassName(tag)}>{tag}</span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div className={style.post_content}>
                     {
                         status === "Done" && articleContent
@@ -303,6 +417,30 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                             : null
                     }
                 </div>
+                {showSeries && articleContent?.series && seriesPosts.length > 1 && (
+                    <section className={style.post_series_section}>
+                        <h2 className={style.post_series_title}>{t('Blog.Series')}</h2>
+                        <ul className={style.post_series_list}>
+                            {seriesPosts.map(item => (
+                                <li key={item.slug} className={item.slug === slug ? style.post_series_item_active : style.post_series_item}>
+                                    <Link href={`/blog/${item.slug}`}>{item.title}</Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+                {process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false' && recommendPosts.length > 0 && (
+                    <section className={style.post_recommend_section}>
+                        <h2 className={style.post_recommend_title}>{t('Blog.Recommend')}</h2>
+                        <ul className={style.post_recommend_list}>
+                            {recommendPosts.map(item => (
+                                <li key={item.slug} className={style.post_recommend_item}>
+                                    <Link href={`/blog/${item.slug}`}>{item.title}</Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
             </div>
             <Background text="BLOG" />
         </div>
