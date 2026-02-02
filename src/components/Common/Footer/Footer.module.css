@@ -43,6 +43,11 @@
     font-size: 0.875rem;
 }
 
+.copyright {
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+}
+
 .separator {
     color: var(--color-text-primary);
     margin: 0 0.25rem;
@@ -65,4 +70,14 @@
     .footer_miit a {
         font-size: 0.75rem;
     }
+
+    .copyright {
+        font-size: 0.75rem;
+    }
+}
+
+.footer_wrapper_mobile_static {
+    position: static;
+    bottom: auto;
+    left: auto;
 }
