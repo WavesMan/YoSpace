@@ -3,6 +3,10 @@ title: "YoSpace 使用说明"
 description: "一个基于 Next.js App Router 的个人主页项目，包含个人介绍、博客、友链与全站音乐播放器。整体以组件化组织，强调响应式体验与可维护性。"
 date: "2026-02-01T14:25:00Z"
 tags: ["Next.js", "Markdown"]
+series:
+  id: "usage-series"
+  index: 2
+  label: "使用说明"
 isPinned: true
 pinnedRank: 02
 isRecommended: true

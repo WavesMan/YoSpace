@@ -9,9 +9,9 @@ category:
   colorToken: "blue"
 tags: ["Cloudflare", "Outage", "Rust", "Database", "502 Bad Gateway"]
 series:
-  id: "demo-series"
+  id: "usage-series"
   index: 1
-  label: "Demo Series"
+  label: "Usage Guide"
 isPinned: true
 pinnedRank: 00
 isRecommended: true

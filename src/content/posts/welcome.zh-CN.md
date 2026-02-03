@@ -9,9 +9,9 @@ category:
   colorToken: "blue"
 tags: ["Cloudflare", "宕机", "Rust", "数据库", "502 Bad Gateway"]
 series:
-  id: "demo-series"
-  index: 1
-  label: "体验系列"
+  id: "usage-series"
+  index: 2
+  label: "使用说明"
 isPinned: true
 pinnedRank: 00
 isRecommended: true

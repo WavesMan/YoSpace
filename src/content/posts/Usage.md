@@ -3,6 +3,10 @@ title: "YoSpace Usage Guide"
 description: "A personal homepage built with Next.js App Router, featuring profile, blog, links, and a global music player. Designed with modular components for responsive, maintainable UI."
 date: "2026-02-01T14:25:00Z"
 tags: ["Next.js", "Markdown"]
+series:
+  id: "usage-series"
+  index: 1
+  label: "Usage Guide"
 isPinned: true
 pinnedRank: 02
 isRecommended: true

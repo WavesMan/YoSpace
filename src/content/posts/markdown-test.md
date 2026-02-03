@@ -3,6 +3,10 @@ title: "Markdown Syntax Guide"
 description: "A comprehensive guide to Markdown syntax and formatting features supported by this blog."
 date: "2026-01-20T10:00:00Z"
 tags: ["Markdown", "Test", "Guide"]
+series:
+  id: "usage-series"
+  index: 1
+  label: "Usage Guide"
 isPinned: true
 pinnedRank: 01
 isRecommended: true
