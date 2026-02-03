@@ -18,6 +18,30 @@
 - 站点首页：https://yospace.waveyo.cn/
 - 博客与使用说明（推荐查看 `博客内容模型与前端功能使用指南` 一文）：https://yospace.waveyo.cn/blog
 
+### 界面预览
+
+首页（桌面端）：
+
+![YoSpace 首页（桌面端）](./images/home-view.png)
+
+首页（移动端）：
+
+![YoSpace 首页（移动端）](./images/phone-home.png)
+
+博客列表（中文）：
+
+![博客列表（中文）](./images/blog-view_zh.png)
+
+博客列表（英文）：
+
+![Blog list (English)](./images/blog-view_en.png)
+
+友链与音乐播放器：
+
+![友链页面](./images/links-view.png)
+
+![全站音乐播放器](./images/musicplayer.png)
+
 ## 技术栈
 
 - 框架：Next.js（App Router）

@@ -52,6 +52,7 @@ next-env.d.ts
 # demo repo
 react-homepage/
 demo/
+next-blog-promo.md
 
 # test scripts
 yo-stats/
