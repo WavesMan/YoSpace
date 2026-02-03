@@ -2,6 +2,16 @@
 
 一个基于 Next.js App Router 的个人主页项目，包含个人介绍、博客、友链与全站音乐播放器。整体以组件化组织，强调响应式体验与可维护性。
 
+当你已经：
+
+- 日常写 React / TypeScript；
+- 使用 Next.js 做 SSR / SSG / App Router；
+- 在 GitHub / Vercel / 各类静态或函数部署 上管理一切；
+
+那不妨让博客也加入这条流水线：内容跟着代码走，样式由组件掌控，部署与监控沿用现有实践。YoSpace 想做的，就是把这条路铺好，让你开箱即用的同时，随时可以深度定制。
+
+你的下一个 Blog，何必再在 Hexo / Halo / WordPress 之间纠结？
+
 > 本项目原始灵感与UI/UX设计源于 [KumaKorin/react-homepage](https://github.com/KumaKorin/react-homepage)，佬的个人主页：[KumaKorin](https://korin.im/)
 
 ## 功能概览
