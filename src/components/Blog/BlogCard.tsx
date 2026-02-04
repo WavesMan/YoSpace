@@ -102,7 +102,15 @@ const BlogCard: React.FC<BlogCardProps> = ({
         <div className={style.blog_card_wrapper}>
             <div className={style.blog_card_container} style={cardStyle}>
                 {showCategory && category && categoryPosition === "above-title" && categoryLabel && (
-                    <div className={getCategoryClassName(categoryLabel, false)}>{categoryLabel}</div>
+                    category.id
+                        ? (
+                            <Link href={`/category/${encodeURIComponent(category.id)}`} className={getCategoryClassName(categoryLabel, false)}>
+                                {categoryLabel}
+                            </Link>
+                        )
+                        : (
+                            <div className={getCategoryClassName(categoryLabel, false)}>{categoryLabel}</div>
+                        )
                 )}
                 <Link className={style.blog_card_title} href={`/blog/${articleId}`}>
                     {categoryPosition === "inline-title" && showCategory && category && categoryLabel && (
@@ -117,7 +125,9 @@ const BlogCard: React.FC<BlogCardProps> = ({
                             <FaTag />
                         </span>
                         {visibleTags.map(tag => (
-                            <span key={tag} className={getTagClassName(tag)}>{tag}</span>
+                            <Link key={tag} href={`/tag/${encodeURIComponent(tag)}`} className={getTagClassName(tag)}>
+                                {tag}
+                            </Link>
                         ))}
                         {hiddenTagsCount > 0 && (
                             <span className={style.blog_card_tag_more}>+{hiddenTagsCount}</span>

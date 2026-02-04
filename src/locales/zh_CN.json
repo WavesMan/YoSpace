@@ -3,7 +3,9 @@
         "Home": "Home",
         "Blog": "Blog",
         "State": "State",
-        "Links": "Links"
+        "Links": "Links",
+        "Tags": "Tags",
+        "Categories": "Categories"
     },
     "Profile": {
         "ClickToSwitch": "试试点击我！"
@@ -97,5 +99,22 @@
             "SessionTitle": "会话",
             "LogoutAll": "退出所有会话"
         }
+    },
+    "Archive": {
+        "Title": "Archive"
+    },
+    "Tags": {
+        "Title": "Tags",
+        "PostsSuffix": "篇文章"
+    },
+    "Categories": {
+        "Title": "Categories",
+        "PostsSuffix": "篇文章"
+    },
+    "Search": {
+        "Title": "站内搜索",
+        "Placeholder": "搜索标题或描述...",
+        "NoResult": "没有找到匹配的文章",
+        "InputLabel": "搜索"
     }
 }

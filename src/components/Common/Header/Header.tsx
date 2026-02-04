@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AiFillSun, AiFillMoon, AiFillHome } from "react-icons/ai";
-import { FaLink, FaBook, FaBars } from "react-icons/fa";
+import { FaLink, FaBook, FaBars, FaTags, FaFolderOpen, FaArchive } from "react-icons/fa";
 import { FiX } from "react-icons/fi";
 import { MdTranslate } from "react-icons/md";
 import { profile } from "../../../profile";
@@ -164,7 +164,9 @@ const Header: React.FC = () => {
 
         {/* 桌面端导航 */}
         <div className={style.nav_itemsList}>
-          <Link className={`${style.nav_item} ${currentPath === '/' ? style.active : ''}`} href='/'><AiFillHome /> {t('Pages.Home')}</Link>
+          <Link className={`${style.nav_item} ${currentPath === '/' ? style.active : ''}`} href='/'>
+            <AiFillHome /> {t('Pages.Home')}
+          </Link>
           {(blogMode === 'external' && blogUrl) ? (
             <a 
               className={`${style.nav_item}`} 
@@ -175,9 +177,22 @@ const Header: React.FC = () => {
               <FaBook /> {t('Pages.Blog')}
             </a>
           ) : (
-            <Link className={`${style.nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'><FaBook /> {t('Pages.Blog')}</Link>
+            <Link className={`${style.nav_item} ${currentPath.startsWith('/blog') ? style.active : ''}`} href='/blog'>
+              <FaBook /> {t('Pages.Blog')}
+            </Link>
           )}
-          <Link className={`${style.nav_item} ${currentPath === '/links' ? style.active : ''}`} href='/links'><FaLink /> {t('Pages.Links')}</Link>
+          <Link className={`${style.nav_item} ${currentPath === '/archive' ? style.active : ''}`} href='/archive'>
+            <FaArchive /> {t('Archive.Title')}
+          </Link>
+          <Link className={`${style.nav_item} ${currentPath === '/tags' ? style.active : ''}`} href='/tags'>
+            <FaTags /> {t('Pages.Tags')}
+          </Link>
+          <Link className={`${style.nav_item} ${currentPath === '/categories' ? style.active : ''}`} href='/categories'>
+            <FaFolderOpen /> {t('Pages.Categories')}
+          </Link>
+          <Link className={`${style.nav_item} ${currentPath === '/links' ? style.active : ''}`} href='/links'>
+            <FaLink /> {t('Pages.Links')}
+          </Link>
           <button 
             className={`${style.nav_item} ${style.nav_toggle}`}  
             onClick={handleLanguageToggle}
@@ -207,8 +222,14 @@ const Header: React.FC = () => {
         </button>
 
         {/* 移动端菜单面板 */}
-        <div className={`${style.mobile_menu} ${isMenuOpen ? style.mobile_menu_open : ''}`}>
-            <div className={style.mobile_menu_items}>
+        <div 
+            className={`${style.mobile_menu} ${isMenuOpen ? style.mobile_menu_open : ''}`}
+            onClick={closeMenu}
+        >
+            <div 
+                className={style.mobile_menu_items}
+                onClick={(event) => event.stopPropagation()}
+            >
                 <Link 
                   className={`${style.mobile_nav_item} ${currentPath === '/' ? style.active : ''}`} 
                   href='/' 
@@ -235,6 +256,27 @@ const Header: React.FC = () => {
                     <FaBook /> {t('Pages.Blog')}
                   </Link>
                 )}
+                <Link 
+                  className={`${style.mobile_nav_item} ${currentPath === '/archive' ? style.active : ''}`} 
+                  href='/archive'
+                  onClick={closeMenu}
+                >
+                  <FaArchive /> {t('Archive.Title')}
+                </Link>
+                <Link 
+                  className={`${style.mobile_nav_item} ${currentPath === '/tags' ? style.active : ''}`} 
+                  href='/tags'
+                  onClick={closeMenu}
+                >
+                  <FaTags /> {t('Pages.Tags')}
+                </Link>
+                <Link 
+                  className={`${style.mobile_nav_item} ${currentPath === '/categories' ? style.active : ''}`} 
+                  href='/categories'
+                  onClick={closeMenu}
+                >
+                  <FaFolderOpen /> {t('Pages.Categories')}
+                </Link>
                 <Link 
                   className={`${style.mobile_nav_item} ${currentPath === '/links' ? style.active : ''}`} 
                   href='/links'

@@ -3,7 +3,9 @@
         "Home": "Home",
         "Blog": "Blog",
         "State": "State",
-        "Links": "Links"
+        "Links": "Links",
+        "Tags": "Tags",
+        "Categories": "Categories"
     },
     "Profile": {
         "ClickToSwitch": "Try click it!"
@@ -51,5 +53,22 @@
             "Next": "Next",
             "End": "End"
         }
+    },
+    "Archive": {
+        "Title": "Archive"
+    },
+    "Tags": {
+        "Title": "Tags",
+        "PostsSuffix": " posts"
+    },
+    "Categories": {
+        "Title": "Categories",
+        "PostsSuffix": " posts"
+    },
+    "Search": {
+        "Title": "Search",
+        "Placeholder": "Search by title or description...",
+        "NoResult": "No matching posts found",
+        "InputLabel": "Search"
     }
 }

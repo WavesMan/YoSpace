@@ -233,7 +233,13 @@ nav.scrolled {
     }
     
     .nav_itemsList {
-        gap: 20px; /* Tablet optimization */
+        display: none;
+    }
+
+    .hamburger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 }
 

@@ -258,7 +258,12 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     return (
         <div className={style.post_wrapper}>
             <div className={style.post_container}>
-                {showCategory && categoryLabel && (
+                {showCategory && categoryLabel && articleContent?.category?.id && (
+                    <Link href={`/category/${encodeURIComponent(articleContent.category.id)}`} className={style.post_category}>
+                        {categoryLabel}
+                    </Link>
+                )}
+                {showCategory && categoryLabel && !articleContent?.category?.id && (
                     <div className={style.post_category}>{categoryLabel}</div>
                 )}
                 <h1 className={style.post_title}>
@@ -285,7 +290,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         {showTags && articleContent.tags && articleContent.tags.length > 0 && (
                             <div className={style.post_tags}>
                                 {articleContent.tags.map(tag => (
-                                    <span key={tag} className={getPostTagClassName(tag)}>{tag}</span>
+                                    <Link key={tag} href={`/tag/${encodeURIComponent(tag)}`} className={getPostTagClassName(tag)}>
+                                        {tag}
+                                    </Link>
                                 ))}
                             </div>
                         )}

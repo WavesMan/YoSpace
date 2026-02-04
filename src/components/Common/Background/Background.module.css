@@ -24,7 +24,7 @@
 
 .background_bg_top {
     position: absolute;
-    top: -40px;
+    top: 80px;
     left: 10%;
     transition: all 0.3s ease;
     animation: topFadeIn 0.5s ease-in-out;
@@ -71,7 +71,7 @@
 
     .background_bg_top {
         position: absolute;
-        top: 40px;
+        top: 100px;
         left: 50%;
         transform: translate(-50%, -50%);
         animation: none;
@@ -85,7 +85,7 @@
 @media (max-width: 768px) {
     .background_bg_top {
         position: absolute;
-        top: 40px;
+        top: 100px;
         left: 50%;
         transform: translate(-50%, -50%);
         animation: none;
