@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import DynamicIcon from "../Common/Icon/DynamicIcon";
 import style from './Profile.module.css'
 import { profile } from '../../profile'
@@ -15,7 +15,8 @@ import { useI18n } from "@/context/I18nContext";
 const Profile = () => {
     const { t, locale } = useI18n();
 
-    const [nameClicked, setNameClicked] = useState(0) // 初始为0更符合数组索引习惯
+    const [nameClicked, setNameClicked] = useState(0)
+    const [isLoaded, setIsLoaded] = useState(false)
     const profileName = useRef<HTMLHeadingElement | null>(null)
 
     const isEn = locale === 'en-US';
@@ -27,6 +28,10 @@ const Profile = () => {
     const description = isEn
         ? (process.env.NEXT_PUBLIC_SITE_DESCRIPTION_EN || profile.description)
         : profile.description;
+
+    useEffect(() => {
+        setIsLoaded(true)
+    }, [])
 
     const handleNameClick = () => {
         const nextIndex = (nameClicked + 1) % profileNames.length;
@@ -50,7 +55,7 @@ const Profile = () => {
                     <Image src={profileImage} className={style.profile_image} alt="Profile Avatar" width={256} height={256} priority />
                 </div>
                 <div className={style.profile_content_wrapper}>
-                    <div className={style.profile_info_wrapper}>
+                    <div className={`${style.profile_info_wrapper} ${isLoaded ? style.profile_info_wrapper_animated : ""}`}>
                         <h1 
                             className={style.profile_info_name} 
                             ref={profileName} 
@@ -68,7 +73,8 @@ const Profile = () => {
                                 href={item.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={style.profile_social_item}
+                                className={`${style.profile_social_item} ${isLoaded ? style.profile_social_item_animated : ""}`}
+                                style={isLoaded ? { animationDelay: `${0.6 + index * 0.08}s` } : undefined}
                                 aria-label={item.name}
                             >
                                 {item.iconUrl ? (

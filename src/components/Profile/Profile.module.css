@@ -59,6 +59,8 @@
     align-self: flex-start;
     margin-top: 0;
     padding-top: 0;
+    opacity: 0;
+    transform: translateY(16px);
 }
 
 .profile_info_name {
@@ -112,11 +114,50 @@
     font-size: 24px;
     color: var(--color-text-secondary);
     transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateX(-16px);
 }
 
 .profile_social_item:hover {
     transform: scale(1.2);
     filter: drop-shadow(0 0 20px var(--color-theme-shadow));
+}
+
+.profile_info_wrapper_animated {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: profileInfoFadeUp 0.6s ease-out forwards;
+    animation-delay: 0.1s;
+}
+
+@keyframes profileInfoFadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile_social_item_animated {
+    opacity: 0;
+    transform: translateX(-16px);
+    animation: profileSocialFadeInRight 0.5s ease-out forwards;
+}
+
+@keyframes profileSocialFadeInRight {
+    0% {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .profile_background {
