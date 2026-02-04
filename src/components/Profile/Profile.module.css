@@ -145,7 +145,7 @@
 .profile_social_item_animated {
     opacity: 0;
     transform: translateX(-16px);
-    animation: profileSocialFadeInRight 0.5s ease-out forwards;
+    animation: profileSocialFadeInRight 0.8s ease-out forwards;
 }
 
 @keyframes profileSocialFadeInRight {
