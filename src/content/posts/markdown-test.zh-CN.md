@@ -125,3 +125,65 @@ body {
 ## 自动链接
 
 https://www.example.com
+
+## 提示块（Callouts）
+
+> [!NOTE]
+> 这是一个说明提示块，用于补充一些额外的上下文信息。
+>
+> 支持多行内容，也可以在其中使用 **加粗**、链接等格式。
+
+> [!TIP]
+> 这是一个提示提示块，用于给出最佳实践或小技巧。
+
+> [!WARNING]
+> 这是一个警告提示块，用于强调潜在风险或需要注意的地方。
+
+> [!IMPORTANT]
+> 这是一个重要提示块，用于突出关键信息。
+
+> [!CAUTION]
+> 这是一个注意提示块，用于提醒读者谨慎操作，例如执行脚本前先检查环境。
+
+## Tabs 示例
+
+=== "macOS 和 Linux"
+
+    使用 `curl` 下载脚本并用 `sh` 执行：
+
+    ```console
+    $ curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+    如果系统没有 `curl`，可以使用 `wget`：
+
+    ```console
+    $ wget -qO- https://astral.sh/uv/install.sh | sh
+    ```
+
+    通过在 URL 中包含版本号请求指定版本：
+
+    ```console
+    $ curl -LsSf https://astral.sh/uv/0.10.2/install.sh | sh
+    ```
+
+=== "Windows"
+
+    使用 `powershell` 下载脚本并通过 `iex` 执行：
+
+    ```pwsh-session
+    PS> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    ```
+
+    适当调整 PowerShell 的执行策略可以允许执行来自互联网的脚本：
+
+    ```pwsh-session
+    PS> Get-ExecutionPolicy
+    PS> Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
+
+    同样可以通过在 URL 中包含版本号请求指定版本：
+
+    ```pwsh-session
+    PS> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/0.10.2/install.ps1 | iex"
+    ```

@@ -125,3 +125,65 @@ body {
 ## Auto Links
 
 https://www.example.com
+
+## Callouts (Tips)
+
+> [!NOTE]
+> This is a note callout, used to provide additional context.
+>
+> It supports multiple lines and can contain **bold text**, links, and more.
+
+> [!TIP]
+> This is a tip callout, used for best practices or useful tricks.
+
+> [!WARNING]
+> This is a warning callout, used to highlight potential risks.
+
+> [!IMPORTANT]
+> This is an important callout, used to emphasize key information.
+
+> [!CAUTION]
+> This is a caution callout, used to remind readers to be careful, for example when running scripts.
+
+## Tabs Example
+
+=== "macOS and Linux"
+
+    Use `curl` to download the script and execute it with `sh`:
+
+    ```console
+    $ curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+    If your system doesn't have `curl`, you can use `wget`:
+
+    ```console
+    $ wget -qO- https://astral.sh/uv/install.sh | sh
+    ```
+
+    Request a specific version by including it in the URL:
+
+    ```console
+    $ curl -LsSf https://astral.sh/uv/0.10.2/install.sh | sh
+    ```
+
+=== "Windows"
+
+    Use `powershell` to download the script and execute it with `iex`:
+
+    ```pwsh-session
+    PS> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    ```
+
+    Adjusting PowerShell's execution policy can allow running scripts from the internet:
+
+    ```pwsh-session
+    PS> Get-ExecutionPolicy
+    PS> Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
+
+    You can also request a specific version by including it in the URL:
+
+    ```pwsh-session
+    PS> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/0.10.2/install.ps1 | iex"
+    ```
