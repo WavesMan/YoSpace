@@ -188,3 +188,11 @@ export const transformMarkdownUrl = (url: string) => {
         return encodeURI(input);
     }
 };
+
+export const isOptimizableMarkdownImageSrc = (src: string) => {
+    const value = src.trim().toLowerCase();
+    if (!value) return false;
+    if (value.startsWith('data:')) return false;
+    if (value.endsWith('.ico')) return false;
+    return true;
+};

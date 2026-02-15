@@ -12,6 +12,7 @@ import {
     isVercelButtonSrc,
     hasVercelButtonChild,
     transformMarkdownUrl,
+    isOptimizableMarkdownImageSrc,
 } from './markdownUtils';
 
 interface MarkdownTabsProps {
@@ -152,11 +153,26 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
                     );
                 },
                 img({ src, alt, width, height, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { node?: unknown }) {
-                    const nextSrc = typeof src === 'string' ? src : '';
+                    const rawSrc = typeof src === 'string' ? src : '';
+                    const nextSrc = transformMarkdownUrl(rawSrc);
                     const nextClassName = [
                         props.className,
                         nextSrc && isVercelButtonSrc(nextSrc) ? style.vercel_button_img : undefined,
                     ].filter(Boolean).join(' ');
+
+                    if (!isOptimizableMarkdownImageSrc(nextSrc)) {
+                        if (!nextSrc) {
+                            return null;
+                        }
+                        return (
+                            <img
+                                src={nextSrc}
+                                alt={alt || ''}
+                                className={nextClassName || undefined}
+                                {...props}
+                            />
+                        );
+                    }
 
                     return (
                         <Image
