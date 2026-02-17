@@ -29,12 +29,12 @@ const MarkdownTabs: React.FC<MarkdownTabsProps> = ({ children }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const childArray = React.Children.toArray(children)
         .filter(React.isValidElement) as React.ReactElement<{ label?: string; children?: React.ReactNode }>[];
-    const safeIndex = activeIndex < childArray.length ? activeIndex : 0;
     if (childArray.length === 0) {
         return null;
     }
 
     const safeIndex = activeIndex < childArray.length ? activeIndex : 0;
+    const activeTab = childArray[safeIndex];
 
 
     return (
@@ -87,8 +87,12 @@ const renderHeading = (
     );
 };
 
+type MarkdownComponents = Components & {
+    tabs?: React.ComponentType<{ children?: React.ReactNode }>;
+};
+
 export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, locale }) => {
-    const components: Components = {
+    const components: MarkdownComponents = {
         p({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
             if (hasVercelButtonChild(children)) {
                 const items = React.Children.toArray(children);

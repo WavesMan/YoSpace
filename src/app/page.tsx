@@ -46,16 +46,16 @@ const searchEngines = [
         type: "site",
     },
     {
-        id: "google",
-        label: "Google",
-        type: "external",
-        template: "https://www.google.com/search?q={query}",
-    },
-    {
         id: "bing",
         label: "Bing",
         type: "external",
         template: "https://www.bing.com/search?q={query}",
+    },
+    {
+        id: "google",
+        label: "Google",
+        type: "external",
+        template: "https://www.google.com/search?q={query}",
     },
     {
         id: "baidu",
@@ -79,7 +79,7 @@ export default function Home() {
     const [status, setStatus] = useState<SearchStatus>("Idle");
     const [posts, setPosts] = useState<SearchPostItem[]>([]);
     const [query, setQuery] = useState("");
-    const [engineId, setEngineId] = useState<SearchEngineId>("site");
+    const [engineId, setEngineId] = useState<SearchEngineId>("bing");
     const [isTabsExpanded, setIsTabsExpanded] = useState(true);
     const transitionLockRef = useRef(false);
     const transitionTimerRef = useRef<number | null>(null);
