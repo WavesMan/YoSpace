@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Profile from "@/components/Profile/Profile";
 import BlogCard from "@/components/Blog/BlogCard";
 import profileStyles from "@/components/Profile/Profile.module.css";
@@ -8,6 +9,7 @@ import { useI18n } from "@/context/I18nContext";
 import type { PostCategory, PostSeries } from "@/utils/content/local";
 import styles from "./Home.module.css";
 import HomeTabs from "@/components/Home/HomeTabs";
+import navigationData from "@/data/navigation.json";
 
 interface SearchPostItem {
     title: string;
@@ -25,6 +27,24 @@ interface SearchPostItem {
 
 type SearchStatus = "Idle" | "Loading" | "Error" | "Ready";
 type HomePageId = "profile" | "search";
+
+type NavigationLocaleText = {
+    zh: string;
+    en: string;
+};
+
+type NavigationFavicon = {
+    type: "auto" | "url" | "local";
+    value?: string;
+};
+
+type NavigationItem = {
+    id: string;
+    name: NavigationLocaleText;
+    desc: NavigationLocaleText;
+    url: string;
+    favicon?: NavigationFavicon;
+};
 
 const normalize = (value: string) => value.toLowerCase();
 
@@ -87,6 +107,7 @@ export default function Home() {
 
     const isSearchPage = activePageId === "search";
     const isSiteEngine = engineId === "site";
+    const navigationItems = navigationData as NavigationItem[];
 
     useEffect(() => {
         if (!isSearchPage || !isSiteEngine) return;
@@ -149,6 +170,30 @@ export default function Home() {
         }));
     }, [t]);
 
+    const resolveNavigationText = useCallback((value: NavigationLocaleText) => {
+        return locale === "zh-CN" ? value.zh : value.en;
+    }, [locale]);
+
+    const resolveNavigationFavicon = useCallback((item: NavigationItem) => {
+        const fallback = "/favicon.ico";
+        if (item.favicon?.type === "local") {
+            return item.favicon.value || fallback;
+        }
+        if (item.favicon?.type === "url") {
+            return item.favicon.value || fallback;
+        }
+        try {
+            const hostname = new URL(item.url).hostname.replace(/^www\./, "");
+            const parts = hostname.split(".").filter(Boolean);
+            const domain = parts.length <= 2
+                ? hostname
+                : `${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
+            return `https://favicon.pub/${domain}`;
+        } catch {
+            return fallback;
+        }
+    }, []);
+
     const triggerPageChange = useCallback((nextId: HomePageId) => {
         if (nextId === activePageId) return;
         if (transitionLockRef.current) return;
@@ -167,6 +212,10 @@ export default function Home() {
 
     useEffect(() => {
         const handleWheel = (event: WheelEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest(`.${styles.home_navigation_panel}`)) {
+                return;
+            }
             if (transitionLockRef.current) return;
             const delta = event.deltaY;
             if (Math.abs(delta) < 8) return;
@@ -286,7 +335,41 @@ export default function Home() {
                                         ))}
                                     </div>
                                 )}
-                                <div className={`${styles.home_search_nav_placeholder} ${styles.home_search_nav_animated}`} />
+                                {!isSiteEngine && (
+                                    <div className={`${styles.home_navigation_panel} ${styles.home_search_nav_animated}`}>
+                                        <div className={styles.home_navigation_list}>
+                                            {navigationItems.map(item => {
+                                                const name = resolveNavigationText(item.name);
+                                                const desc = resolveNavigationText(item.desc);
+                                                const faviconUrl = resolveNavigationFavicon(item);
+                                                const isLocalFavicon = faviconUrl.startsWith("/");
+                                                return (
+                                                    <a
+                                                        key={item.id}
+                                                        className={styles.home_navigation_card}
+                                                        href={item.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        <div className={styles.home_navigation_favicon}>
+                                                            <Image
+                                                                src={faviconUrl}
+                                                                alt={name}
+                                                                width={32}
+                                                                height={32}
+                                                                unoptimized={!isLocalFavicon}
+                                                            />
+                                                        </div>
+                                                        <div className={styles.home_navigation_content}>
+                                                            <div className={styles.home_navigation_name}>{name}</div>
+                                                            <div className={styles.home_navigation_desc}>{desc}</div>
+                                                        </div>
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <p className={profileStyles.profile_background}>{`<SEARCH/>`}</p>
                         </div>

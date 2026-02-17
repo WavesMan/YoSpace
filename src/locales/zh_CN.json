@@ -14,7 +14,7 @@
         "Pages": {
             "Label": "首页分区",
             "Profile": "简介",
-            "Search": "搜索"
+            "Search": "导航"
         }
     },
     "Blog": {
@@ -119,7 +119,7 @@
         "PostsSuffix": "篇文章"
     },
     "Search": {
-        "Title": "站内搜索",
+        "Title": "导航",
         "Engine": {
             "Label": "选择搜索引擎",
             "Site": "站内"

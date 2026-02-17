@@ -14,7 +14,7 @@
         "Pages": {
             "Label": "Home sections",
             "Profile": "Profile",
-            "Search": "Search"
+            "Search": "Navigation"
         }
     },
     "Blog": {
@@ -73,7 +73,7 @@
         "PostsSuffix": " posts"
     },
     "Search": {
-        "Title": "Search",
+        "Title": "Navigation",
         "Engine": {
             "Label": "Search engine",
             "Site": "Site"

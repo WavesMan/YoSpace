@@ -1,0 +1,247 @@
+[
+    {
+        "id": "bilibili",
+        "name": {
+            "zh": "哔哩哔哩",
+            "en": "Bilibili"
+        },
+        "desc": {
+            "zh": "视频社区平台",
+            "en": "Video community platform"
+        },
+        "url": "https://www.bilibili.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "douyin",
+        "name": {
+            "zh": "抖音",
+            "en": "Douyin"
+        },
+        "desc": {
+            "zh": "短视频平台",
+            "en": "Short video platform"
+        },
+        "url": "https://www.douyin.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "yospace",
+        "name": {
+            "zh": "YoSpace",
+            "en": "YoSpace"
+        },
+        "desc": {
+            "zh": "主页与博客聚合",
+            "en": "Homepage and blog hub"
+        },
+        "url": "https://yospace.waveyo.cn",
+        "favicon": {
+            "type": "url",
+            "value": "https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico"
+        }
+    },
+    {
+        "id": "docs",
+        "name": {
+            "zh": "站内文档",
+            "en": "Site Docs"
+        },
+        "desc": {
+            "zh": "项目说明与使用指南",
+            "en": "Project usage guide"
+        },
+        "url": "/blog",
+        "favicon": {
+            "type": "local",
+            "value": "https://cloud.waveyo.cn//Services/websites/home/images/icon/favicon.ico"
+        }
+    },
+    {
+        "id": "github",
+        "name": {
+            "zh": "GitHub",
+            "en": "GitHub"
+        },
+        "desc": {
+            "zh": "代码托管平台",
+            "en": "Code hosting platform"
+        },
+        "url": "https://github.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "cloudflare",
+        "name": {
+            "zh": "Cloudflare",
+            "en": "Cloudflare"
+        },
+        "desc": {
+            "zh": "全球内容分发网络",
+            "en": "Global content distribution network"
+        },
+        "url": "https://cloudflare.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "aliyun-dev",
+        "name": {
+            "zh": "阿里云开发者社区",
+            "en": "Alibaba Cloud Developer"
+        },
+        "desc": {
+            "zh": "开发者社区",
+            "en": "Developer community"
+        },
+        "url": "https://developer.aliyun.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "npmmirror",
+        "name": {
+            "zh": "淘宝 NPM 镜像",
+            "en": "NPM Mirror"
+        },
+        "desc": {
+            "zh": "NPM 国内镜像源",
+            "en": "NPM mirror in China"
+        },
+        "url": "https://npmmirror.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "huawei-mirror",
+        "name": {
+            "zh": "华为开源镜像站",
+            "en": "Huawei Open Source Mirror"
+        },
+        "desc": {
+            "zh": "开源镜像与下载",
+            "en": "Open source mirror site"
+        },
+        "url": "https://mirrors.huaweicloud.com",
+        "favicon": {
+            "type": "url",
+            "value": "https://favicon.pub/huaweicloud.com"
+        }
+    },
+    {
+        "id": "vercel",
+        "name": {
+            "zh": "Vercel",
+            "en": "Vercel"
+        },
+        "desc": {
+            "zh": "前端部署平台",
+            "en": "Frontend deployment platform"
+        },
+        "url": "https://vercel.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "itdog",
+        "name": {
+            "zh": "ITDog",
+            "en": "ITDog"
+        },
+        "desc": {
+            "zh": "网络检测工具",
+            "en": "Network diagnostic tools"
+        },
+        "url": "https://www.itdog.cn",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "deepseek",
+        "name": {
+            "zh": "DeepSeek",
+            "en": "DeepSeek"
+        },
+        "desc": {
+            "zh": "AI 对话",
+            "en": "AI chat assistant"
+        },
+        "url": "https://chat.deepseek.com",
+        "favicon": {
+            "type": "url",
+            "value": "https://favicon.pub/deepseek.com"
+        }
+    },
+    {
+        "id": "doubao",
+        "name": {
+            "zh": "豆包",
+            "en": "Doubao"
+        },
+        "desc": {
+            "zh": "AI 助手",
+            "en": "AI assistant"
+        },
+        "url": "https://www.doubao.com",
+        "favicon": {
+            "type": "url",
+            "value": "https://lf-flow-web-cdn.doubao.com/obj/flow-doubao/samantha/logo-icon-white-bg.png"
+        }
+    },
+    {
+        "id": "qianwen",
+        "name": {
+            "zh": "千问",
+            "en": "Qianwen"
+        },
+        "desc": {
+            "zh": "通义千问",
+            "en": "Tongyi Qianwen"
+        },
+        "url": "https://tongyi.aliyun.com/qianwen/",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "chatgpt",
+        "name": {
+            "zh": "ChatGPT",
+            "en": "ChatGPT"
+        },
+        "desc": {
+            "zh": "OpenAI 对话",
+            "en": "OpenAI chat"
+        },
+        "url": "https://chat.openai.com",
+        "favicon": {
+            "type": "auto"
+        }
+    },
+    {
+        "id": "google-ai-studio",
+        "name": {
+            "zh": "AI Studio",
+            "en": "AI Studio"
+        },
+        "desc": {
+            "zh": "Google AI 开发平台",
+            "en": "Google AI developer studio"
+        },
+        "url": "https://aistudio.google.com",
+        "favicon": {
+            "type": "auto"
+        }
+    }
+]
