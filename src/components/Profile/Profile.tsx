@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import DynamicIcon from "../Common/Icon/DynamicIcon";
 import style from './Profile.module.css'
 import { profile } from '../../profile'
@@ -16,7 +16,7 @@ const Profile = () => {
     const { t, locale } = useI18n();
 
     const [nameClicked, setNameClicked] = useState(0)
-    const [isLoaded, setIsLoaded] = useState(false)
+    const [isLoaded] = useState(true)
     const profileName = useRef<HTMLHeadingElement | null>(null)
 
     const isEn = locale === 'en-US';
@@ -28,10 +28,6 @@ const Profile = () => {
     const description = isEn
         ? (process.env.NEXT_PUBLIC_SITE_DESCRIPTION_EN || profile.description)
         : profile.description;
-
-    useEffect(() => {
-        setIsLoaded(true)
-    }, [])
 
     const handleNameClick = () => {
         const nextIndex = (nameClicked + 1) % profileNames.length;

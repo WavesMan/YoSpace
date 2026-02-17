@@ -10,6 +10,13 @@
     "Profile": {
         "ClickToSwitch": "Try click it!"
     },
+    "Home": {
+        "Pages": {
+            "Label": "Home sections",
+            "Profile": "Profile",
+            "Search": "Search"
+        }
+    },
     "Blog": {
         "PublishedOn": "Published on",
         "Pinned": "Pinned posts",
@@ -67,6 +74,10 @@
     },
     "Search": {
         "Title": "Search",
+        "Engine": {
+            "Label": "Search engine",
+            "Site": "Site"
+        },
         "Placeholder": "Search by title or description...",
         "NoResult": "No matching posts found",
         "InputLabel": "Search"

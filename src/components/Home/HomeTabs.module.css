@@ -1,0 +1,102 @@
+.home_tabs_container {
+    position: fixed;
+    top: 50%;
+    left: 24px;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.home_tabs_toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    outline: none;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-main);
+    font-size: 0.9rem;
+    border-radius: 0 12px 12px 0;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.home_tabs_toggle:hover {
+    background-color: var(--color-bg-card);
+}
+
+.home_tabs {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 999px;
+    background-color: var(--color-bg-secondary);
+    position: relative;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.home_tabs::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -24px;
+    bottom: -24px;
+    width: 1px;
+    background: rgba(148, 163, 184, 0.35);
+    transform: translateX(-50%);
+    z-index: -1;
+}
+
+.home_tab_button {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-small);
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.home_tab_button:hover {
+    background-color: var(--color-bg-card);
+}
+
+.home_tab_button_active {
+    border: none;
+    outline: none;
+    background-color: var(--color-theme-main-600);
+    color: var(--color-bg-main);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-small);
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    .home_tabs_container {
+        left: 0;
+        gap: 0.5rem;
+    }
+
+    .home_tabs_toggle {
+        display: inline-flex;
+    }
+
+    .home_tabs_container[data-expanded="false"] .home_tabs {
+        opacity: 0;
+        transform: translateX(-12px);
+        pointer-events: none;
+    }
+}

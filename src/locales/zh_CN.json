@@ -10,6 +10,13 @@
     "Profile": {
         "ClickToSwitch": "试试点击我！"
     },
+    "Home": {
+        "Pages": {
+            "Label": "首页分区",
+            "Profile": "简介",
+            "Search": "搜索"
+        }
+    },
     "Blog": {
         "PublishedOn": "发布于",
         "Pinned": "置顶文章",
@@ -113,6 +120,10 @@
     },
     "Search": {
         "Title": "站内搜索",
+        "Engine": {
+            "Label": "选择搜索引擎",
+            "Site": "站内"
+        },
         "Placeholder": "搜索标题或描述...",
         "NoResult": "没有找到匹配的文章",
         "InputLabel": "搜索"
