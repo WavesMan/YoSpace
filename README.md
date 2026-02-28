@@ -150,6 +150,19 @@ pnpm lint
 - `NEXT_PUBLIC_PROFILE_IMAGE`
 - `NEXT_PUBLIC_FAVICON_URL`
 
+### SEO 配置
+
+站点 SEO 统一使用配置文件管理：
+
+- [`src/data/seo.json`](/src/data/seo.json)：SEO 配置入口（站点域名、默认标题/描述、分享图、sitemap 策略）
+- [`src/data/seo.md`](/src/data/seo.md)：SEO 配置说明与示例
+
+SEO 功能包含：
+
+- 文章详情页基于 frontmatter 动态生成 metadata
+- 标签/分类页首屏注入服务端数据，避免 CSR 空页面
+- `/sitemap.xml` 与 `/robots.txt` 自动生成
+
 ### 备案信息（可选）
 
 - `NEXT_PUBLIC_ICP_CODE`

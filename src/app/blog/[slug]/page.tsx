@@ -3,11 +3,6 @@ import { Metadata } from 'next';
 import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
 import { buildUrl, seoConfig } from '@/utils/seo';
 
-// 博客文章页面
-export const metadata: Metadata = {
-  title: `Blog Post - ${process.env.NEXT_PUBLIC_SITE_TITLE || 'YoSpace'}`,
-};
-
 // ISR: 每小时重新验证一次
 export const revalidate = 3600;
 
