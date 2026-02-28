@@ -27,11 +27,6 @@
   -webkit-user-select: none;
 }
 
-.iconBtn:hover {
-  background-color: var(--color-accent-stroke);
-  color: var(--color-theme-main);
-}
-
 .iconBtn.active {
   color: var(--color-theme-main);
   background-color: var(--color-accent-stroke);
@@ -55,11 +50,18 @@
   -webkit-user-select: none;
 }
 
-.playBtn:hover {
-  background-color: var(--color-theme-main-600);
-  transform: scale(1.05);
-}
-
 .playBtn:active {
   transform: scale(0.95);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .iconBtn:hover {
+    background-color: var(--color-accent-stroke);
+    color: var(--color-theme-main);
+  }
+
+  .playBtn:hover {
+    background-color: var(--color-theme-main-600);
+    transform: scale(1.05);
+  }
 }

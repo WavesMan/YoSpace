@@ -24,9 +24,18 @@ const PlayerVolume: React.FC<PlayerVolumeProps> = ({
   onVolumeChange,
   onToggleMute
 }) => {
+  const blurOnPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.currentTarget.blur();
+  };
+
   return (
     <div className={styles.volumeControl}>
-      <button onClick={onToggleMute} className={styles.iconBtn} aria-label="Toggle mute">
+      <button 
+        onClick={onToggleMute}
+        onPointerUp={blurOnPointerUp}
+        className={styles.iconBtn}
+        aria-label="Toggle mute"
+      >
         {volume === 0 ? <FiVolumeX size={16} /> : <FiVolume2 size={16} />}
       </button>
       <DraggableProgressBar

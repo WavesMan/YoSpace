@@ -20,10 +20,15 @@ interface PlayerHeaderProps {
  * 2. 提供关闭播放器面板的按钮
  */
 const PlayerHeader: React.FC<PlayerHeaderProps> = ({ currentTrack, onClose }) => {
+  const blurOnPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.currentTarget.blur();
+  };
+
   return (
     <div className={styles.header}>
       <button 
         onClick={onClose}
+        onPointerUp={blurOnPointerUp}
         className={styles.closeBtn}
         aria-label="Close player"
       >

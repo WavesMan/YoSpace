@@ -24,10 +24,15 @@ const PlayerToggleButton: React.FC<PlayerToggleButtonProps> = ({
   isPlaying,
   onToggle
 }) => {
+  const blurOnPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.currentTarget.blur();
+  };
+
   return (
     <motion.button
       layout
       onClick={onToggle}
+      onPointerUp={blurOnPointerUp}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       className={`${styles.toggleBtn} ${isOpen ? styles.open : ''} ${isPlaying && !isOpen ? styles.spinning : ''}`}

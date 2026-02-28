@@ -21,9 +21,15 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.iconBtn:hover {
-  background-color: var(--color-accent-stroke);
-  color: var(--color-theme-main);
+@media (hover: hover) and (pointer: fine) {
+  .iconBtn:hover {
+    background-color: var(--color-accent-stroke);
+    color: var(--color-theme-main);
+  }
 }

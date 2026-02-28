@@ -12,18 +12,14 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   transition: background-color 0.2s;
   z-index: 51;
-}
-
-.toggleBtn:hover {
-  background-color: var(--color-theme-main-600);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .toggleBtn.open {
   background-color: var(--color-text-secondary);
-}
-
-.toggleBtn.open:hover {
-  background-color: var(--color-text-primary);
 }
 
 @keyframes spin {
@@ -39,6 +35,16 @@
 @media (prefers-color-scheme: dark) {
   .toggleBtn.open {
     color: #000000;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .toggleBtn:hover {
+    background-color: var(--color-theme-main-600);
+  }
+
+  .toggleBtn.open:hover {
+    background-color: var(--color-text-primary);
   }
 }
 

@@ -2,6 +2,9 @@
   border-top: 1px solid var(--color-accent-stroke);
   background-color: var(--color-bg);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   
   /* Custom Scrollbar */
   scrollbar-width: thin;
@@ -21,14 +24,11 @@
   border-radius: 3px;
 }
 
-.playlist::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-theme-main-600);
-}
-
 .playlistList {
   list-style: none;
   margin: 0;
   padding: 0;
+  touch-action: pan-y;
 }
 
 .playlistItem {
@@ -39,10 +39,7 @@
   border-bottom: 1px solid var(--color-accent-stroke);
   transition: background-color 0.2s;
   color: var(--color-text-primary);
-}
-
-.playlistItem:hover {
-  background-color: var(--color-accent-stroke);
+  touch-action: pan-y;
 }
 
 .playlistItem.active {
@@ -88,5 +85,15 @@
   
   .playlistItem {
     border-color: rgba(55, 65, 81, 0.5);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .playlist::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-theme-main-600);
+  }
+
+  .playlistItem:hover {
+    background-color: var(--color-accent-stroke);
   }
 }

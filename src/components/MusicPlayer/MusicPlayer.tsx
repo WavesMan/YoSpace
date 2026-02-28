@@ -33,6 +33,9 @@ export default function MusicPlayer() {
   const [showPlaylist, setShowPlaylist] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const playRequestIdRef = useRef(0);
+  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadRequestIdRef = useRef(0);
+  const preloadedUrlRef = useRef<string | null>(null);
 
   // --- Logic Hooks ---
   const {
@@ -148,6 +151,52 @@ export default function MusicPlayer() {
     }
   }, [currentTrack, setDuration]);
 
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = 'auto';
+    preloadAudioRef.current = audio;
+    return () => {
+      audio.src = '';
+      preloadAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (playlist.length === 0) return;
+    const requestId = (preloadRequestIdRef.current += 1);
+    const currentIndex = currentTrackIndex >= 0 ? currentTrackIndex : -1;
+    const nextIndex = getNextIndex(false);
+    const targets = [currentIndex, nextIndex].filter((value, index, array) => (
+      value >= 0 && array.indexOf(value) === index
+    ));
+
+    const run = async () => {
+      let nextUrl: string | null = null;
+      for (const target of targets) {
+        const { url } = await prepareTrack(target);
+        if (requestId !== preloadRequestIdRef.current) {
+          return;
+        }
+        if (target === nextIndex) {
+          nextUrl = url;
+        }
+      }
+      if (!nextUrl || requestId !== preloadRequestIdRef.current) {
+        return;
+      }
+      if (preloadedUrlRef.current === nextUrl) {
+        return;
+      }
+      preloadedUrlRef.current = nextUrl;
+      if (preloadAudioRef.current) {
+        preloadAudioRef.current.src = nextUrl;
+        preloadAudioRef.current.load();
+      }
+    };
+
+    run();
+  }, [playlist.length, currentTrackIndex, getNextIndex, prepareTrack]);
+
   // 监听播放结束，自动下一曲
   useEffect(() => {
     const audio = audioRef.current;
@@ -178,6 +227,7 @@ export default function MusicPlayer() {
     <motion.div 
       ref={containerRef}
       className={styles.container}
+      data-player-root="true"
     >
       <AnimatePresence>
         {isOpen && (

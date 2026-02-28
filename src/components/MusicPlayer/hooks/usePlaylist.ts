@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Track, PlayMode } from '../types';
 import { fetchPlaylistData, checkSongAvailability, getSongUrl } from '../services';
 
@@ -37,6 +37,8 @@ export const usePlaylist = (): UsePlaylistReturn => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
   const [mode, setMode] = useState<PlayMode>('sequence');
   const [isLoading, setIsLoading] = useState(false);
+  const urlCacheRef = useRef<Map<number, string>>(new Map());
+  const availabilityCacheRef = useRef<Map<number, boolean>>(new Map());
 
   const currentTrack = currentTrackIndex >= 0 && currentTrackIndex < playlist.length 
     ? playlist[currentTrackIndex] 
@@ -47,6 +49,8 @@ export const usePlaylist = (): UsePlaylistReturn => {
       setIsLoading(true);
       const data = await fetchPlaylistData();
       if (data.code === 200 && data.songs) {
+        urlCacheRef.current.clear();
+        availabilityCacheRef.current.clear();
         setPlaylist(data.songs);
         
         // 恢复上次播放索引
@@ -125,18 +129,25 @@ export const usePlaylist = (): UsePlaylistReturn => {
     }
 
     const track = playlist[index];
-    
+
     // 1. 检查可用性
-    const isAvailable = await checkSongAvailability(track.id);
+    const cachedAvailability = availabilityCacheRef.current.get(track.id);
+    const isAvailable = cachedAvailability ?? await checkSongAvailability(track.id);
+    availabilityCacheRef.current.set(track.id, isAvailable);
     if (!isAvailable) {
       return { url: null, error: `歌曲 "${track.name}" 暂不可用` };
     }
 
     // 2. 获取 URL
+    const cachedUrl = urlCacheRef.current.get(track.id);
+    if (cachedUrl) {
+      return { url: cachedUrl, error: null };
+    }
     const url = await getSongUrl(track.id);
     if (!url) {
       return { url: null, error: `无法获取 "${track.name}" 的播放链接` };
     }
+    urlCacheRef.current.set(track.id, url);
 
     return { url, error: null };
   }, [playlist]);

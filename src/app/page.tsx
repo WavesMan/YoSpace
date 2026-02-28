@@ -103,6 +103,9 @@ export default function Home() {
     const [isTabsExpanded, setIsTabsExpanded] = useState(true);
     const transitionLockRef = useRef(false);
     const transitionTimerRef = useRef<number | null>(null);
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const touchLastRef = useRef<{ x: number; y: number } | null>(null);
+    const touchIgnoreRef = useRef(false);
     const pageOrder = useMemo<HomePageId[]>(() => ["profile", "search"], []);
 
     const isSearchPage = activePageId === "search";
@@ -216,12 +219,64 @@ export default function Home() {
             if (target?.closest(`.${styles.home_navigation_panel}`)) {
                 return;
             }
+            if (target?.closest('[data-player-root="true"]')) {
+                return;
+            }
             if (transitionLockRef.current) return;
             const delta = event.deltaY;
             if (Math.abs(delta) < 8) return;
             event.preventDefault();
             const currentIndex = pageOrder.indexOf(activePageId);
             if (delta > 0) {
+                const nextIndex = Math.min(pageOrder.length - 1, currentIndex + 1);
+                triggerPageChange(pageOrder[nextIndex]);
+            } else {
+                const prevIndex = Math.max(0, currentIndex - 1);
+                triggerPageChange(pageOrder[prevIndex]);
+            }
+        };
+
+        const handleTouchStart = (event: TouchEvent) => {
+            const target = event.target as HTMLElement | null;
+            touchIgnoreRef.current = Boolean(
+                target?.closest(`.${styles.home_navigation_panel}`)
+                || target?.closest('[data-player-root="true"]')
+                || (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable))
+            );
+            const touch = event.touches[0];
+            touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+            touchLastRef.current = { x: touch.clientX, y: touch.clientY };
+        };
+
+        const handleTouchMove = (event: TouchEvent) => {
+            if (touchIgnoreRef.current || !touchStartRef.current) return;
+            const touch = event.touches[0];
+            touchLastRef.current = { x: touch.clientX, y: touch.clientY };
+            const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+            const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+            if (deltaY > deltaX) {
+                event.preventDefault();
+            }
+        };
+
+        const handleTouchEnd = () => {
+            if (touchIgnoreRef.current) {
+                touchStartRef.current = null;
+                touchLastRef.current = null;
+                touchIgnoreRef.current = false;
+                return;
+            }
+            if (!touchStartRef.current || !touchLastRef.current) return;
+            if (transitionLockRef.current) return;
+            const deltaX = touchLastRef.current.x - touchStartRef.current.x;
+            const deltaY = touchLastRef.current.y - touchStartRef.current.y;
+            touchStartRef.current = null;
+            touchLastRef.current = null;
+            const absX = Math.abs(deltaX);
+            const absY = Math.abs(deltaY);
+            if (absY < 40 || absY <= absX) return;
+            const currentIndex = pageOrder.indexOf(activePageId);
+            if (deltaY < 0) {
                 const nextIndex = Math.min(pageOrder.length - 1, currentIndex + 1);
                 triggerPageChange(pageOrder[nextIndex]);
             } else {
@@ -251,9 +306,15 @@ export default function Home() {
 
         window.addEventListener("wheel", handleWheel, { passive: false });
         window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("touchstart", handleTouchStart, { passive: true });
+        window.addEventListener("touchmove", handleTouchMove, { passive: false });
+        window.addEventListener("touchend", handleTouchEnd);
         return () => {
             window.removeEventListener("wheel", handleWheel);
             window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchmove", handleTouchMove);
+            window.removeEventListener("touchend", handleTouchEnd);
         };
     }, [activePageId, pageOrder, triggerPageChange]);
 
