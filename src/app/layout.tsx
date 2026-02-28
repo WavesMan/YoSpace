@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Common/Header/Header";
-import Footer from "@/components/Common/Footer/Footer";
-import MusicPlayer from "@/components/MusicPlayer/MusicPlayer";
+import ClientShell from "@/components/Common/ClientShell";
 import { I18nProvider } from "@/context/I18nContext";
 
 const themeInitScript = `
@@ -83,8 +82,7 @@ export default function RootLayout({
           <main style={{ minHeight: '100vh' }}>
             {children}
           </main>
-          <Footer />
-          <MusicPlayer />
+          <ClientShell />
         </I18nProvider>
       </body>
     </html>

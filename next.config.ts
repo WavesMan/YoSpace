@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: serverActionsAllowedOrigins.length > 0 ? serverActionsAllowedOrigins : undefined,
     },
+    cssChunking: "strict",
   } as NonNullable<NextConfig['experimental']>,
   async rewrites() {
     return [

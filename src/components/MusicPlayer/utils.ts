@@ -21,11 +21,19 @@ export const getArtists = (track: Track): string => {
   return artists.map(a => a.name).join(', ') || 'Unknown Artist';
 };
 
+const normalizeHttps = (url: string | null | undefined) => {
+  if (!url) return '';
+  if (url.startsWith('http://')) {
+    return `https://${url.slice(7)}`;
+  }
+  return url;
+};
+
 /**
  * 获取音轨的封面图片URL
  * @param track 音轨对象
  * @returns 封面图片URL
  */
 export const getCover = (track: Track): string => {
-  return track.al?.picUrl || track.album?.picUrl || '';
+  return normalizeHttps(track.al?.picUrl || track.album?.picUrl || '');
 };

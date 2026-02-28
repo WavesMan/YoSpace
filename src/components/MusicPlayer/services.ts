@@ -9,6 +9,14 @@ const BASE_URL = CLEAN_ENV_BASE === 'https://netmusic.waveyo.cn'
   ? '/api/music-proxy'
   : CLEAN_ENV_BASE;
 
+const normalizeHttps = (url: string | null | undefined) => {
+  if (!url) return null;
+  if (url.startsWith('http://')) {
+    return `https://${url.slice(7)}`;
+  }
+  return url;
+};
+
 export const fetchPlaylistData = async (): Promise<{ code: number; songs: Track[] }> => {
   try {
     const res = await fetch(`${BASE_URL}/playlist/track/all?id=${PLAYLIST_ID}`);
@@ -77,7 +85,7 @@ export const getSongUrl = async (id: number): Promise<string | null> => {
 
     const data = await res.json();
     if (data.code === 200 && data.data?.[0]?.url) {
-      return data.data[0].url;
+      return normalizeHttps(data.data[0].url);
     }
     return null;
   } catch (error) {
