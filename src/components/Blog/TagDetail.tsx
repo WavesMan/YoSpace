@@ -1,40 +1,29 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import style from "./Blog.module.css";
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
-import type { PostCategory, PostSeries } from "@/utils/content/local";
-
-interface TagPostItem {
-    title: string;
-    description: string;
-    slug: string;
-    publishedTime: string;
-    isPinned?: boolean;
-    isRecommended?: boolean;
-    recommendRank?: number;
-    pinnedRank?: number;
-    category?: PostCategory;
-    tags?: string[];
-    series?: PostSeries;
-}
+import type { PostItem } from "@/utils/content/local";
 
 type TagDetailStatus = "Loading" | "Error" | "Done";
 
 interface TagDetailProps {
     slug: string;
+    initialPosts?: PostItem[];
+    initialLocale?: string;
 }
 
-const TagDetail: React.FC<TagDetailProps> = ({ slug }) => {
+const TagDetail: React.FC<TagDetailProps> = ({ slug, initialPosts, initialLocale }) => {
     const { t, locale } = useI18n();
-    const [status, setStatus] = useState<TagDetailStatus>("Loading");
-    const [posts, setPosts] = useState<TagPostItem[]>([]);
+    const [status, setStatus] = useState<TagDetailStatus>(initialPosts ? "Done" : "Loading");
+    const [posts, setPosts] = useState<PostItem[]>(initialPosts || []);
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
+        const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
         const fetchAll = async () => {
-            const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
             try {
                 setStatus("Loading");
                 const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
@@ -50,8 +39,15 @@ const TagDetail: React.FC<TagDetailProps> = ({ slug }) => {
             }
         };
 
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            if (initialPosts && initialLocale && (initialLocale === queryLocale || (initialLocale === "en" && queryLocale === "en"))) {
+                return;
+            }
+        }
+
         fetchAll();
-    }, [locale]);
+    }, [initialLocale, initialPosts, locale]);
 
     const decodedTag = useMemo(() => {
         try {
@@ -65,7 +61,7 @@ const TagDetail: React.FC<TagDetailProps> = ({ slug }) => {
         return posts.filter(item => Array.isArray(item.tags) && item.tags.includes(decodedTag));
     }, [posts, decodedTag]);
 
-    const renderPostCard = (post: TagPostItem, index: number) => (
+    const renderPostCard = (post: PostItem, index: number) => (
         <BlogCard
             key={post.slug}
             articleId={post.slug}

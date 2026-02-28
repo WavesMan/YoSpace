@@ -1,0 +1,13 @@
+{
+  "siteUrl": "https://yospace.waveyo.cn",
+  "siteName": "YoSpace",
+  "defaultTitle": "YoSpace",
+  "defaultDescription": "从群众出发，扎根群众。向前，无限进步",
+  "defaultOgImage": "",
+  "twitterHandle": "",
+  "twitterSite": "",
+  "sitemap": {
+    "changeFrequency": "weekly",
+    "priority": 0.7
+  }
+}

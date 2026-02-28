@@ -1,30 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import style from "./Blog.module.css";
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
-import type { PostCategory, PostSeries } from "@/utils/content/local";
-
-interface CategoryPostItem {
-    title: string;
-    description: string;
-    slug: string;
-    publishedTime: string;
-    isPinned?: boolean;
-    isRecommended?: boolean;
-    recommendRank?: number;
-    pinnedRank?: number;
-    category?: PostCategory;
-    tags?: string[];
-    series?: PostSeries;
-}
+import type { PostCategory, PostItem } from "@/utils/content/local";
 
 type CategoryDetailStatus = "Loading" | "Error" | "Done";
 
 interface CategoryDetailProps {
     slug: string;
+    initialPosts?: PostItem[];
+    initialLocale?: string;
 }
 
 const resolveCategoryLabel = (category: PostCategory | undefined, locale: string) => {
@@ -38,14 +26,15 @@ const resolveCategoryLabel = (category: PostCategory | undefined, locale: string
     return category.id;
 };
 
-const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug }) => {
+const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug, initialPosts, initialLocale }) => {
     const { t, locale } = useI18n();
-    const [status, setStatus] = useState<CategoryDetailStatus>("Loading");
-    const [posts, setPosts] = useState<CategoryPostItem[]>([]);
+    const [status, setStatus] = useState<CategoryDetailStatus>(initialPosts ? "Done" : "Loading");
+    const [posts, setPosts] = useState<PostItem[]>(initialPosts || []);
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
+        const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
         const fetchAll = async () => {
-            const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
             try {
                 setStatus("Loading");
                 const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
@@ -61,8 +50,15 @@ const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug }) => {
             }
         };
 
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            if (initialPosts && initialLocale && (initialLocale === queryLocale || (initialLocale === "en" && queryLocale === "en"))) {
+                return;
+            }
+        }
+
         fetchAll();
-    }, [locale]);
+    }, [initialLocale, initialPosts, locale]);
 
     const decodedId = useMemo(() => {
         try {
@@ -87,7 +83,7 @@ const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug }) => {
         return resolveCategoryLabel(anyCategory, locale);
     }, [filtered, locale, decodedId]);
 
-    const renderPostCard = (post: CategoryPostItem, index: number) => (
+    const renderPostCard = (post: PostItem, index: number) => (
         <BlogCard
             key={post.slug}
             articleId={post.slug}

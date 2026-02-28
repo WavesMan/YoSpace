@@ -1,6 +1,7 @@
 import BlogPost from '@/components/Blog/BlogPost';
 import { Metadata } from 'next';
 import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
+import { buildUrl, seoConfig } from '@/utils/seo';
 
 // 博客文章页面
 export const metadata: Metadata = {
@@ -20,6 +21,70 @@ export async function generateStaticParams() {
     } catch (error) {
         console.error("Failed to generate static params for blog posts:", error);
         return [];
+    }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const locale = 'en';
+    const canonical = buildUrl(`/blog/${encodeURIComponent(slug)}`);
+    const ogImages = seoConfig.defaultOgImage ? [buildUrl(seoConfig.defaultOgImage)] : undefined;
+
+    try {
+        const post = await getLocalPostContent(slug, locale);
+        const title = `${post.title} - ${seoConfig.siteName}`;
+        const description = post.description || seoConfig.defaultDescription;
+        const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
+        return {
+            title,
+            description,
+            alternates: {
+                canonical,
+            },
+            openGraph: {
+                title,
+                description,
+                url: canonical,
+                siteName: seoConfig.siteName,
+                type: "article",
+                images: ogImages,
+            },
+            twitter: {
+                card: cardType,
+                title,
+                description,
+                images: ogImages,
+                site: seoConfig.twitterSite || undefined,
+                creator: seoConfig.twitterHandle || undefined,
+            },
+        };
+    } catch {
+        const title = `${seoConfig.defaultTitle} - ${seoConfig.siteName}`;
+        const description = seoConfig.defaultDescription;
+        const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
+        return {
+            title,
+            description,
+            alternates: {
+                canonical,
+            },
+            openGraph: {
+                title,
+                description,
+                url: canonical,
+                siteName: seoConfig.siteName,
+                type: "article",
+                images: ogImages,
+            },
+            twitter: {
+                card: cardType,
+                title,
+                description,
+                images: ogImages,
+                site: seoConfig.twitterSite || undefined,
+                creator: seoConfig.twitterHandle || undefined,
+            },
+        };
     }
 }
 
