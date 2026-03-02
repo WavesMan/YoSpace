@@ -28,7 +28,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     try {
         const post = await getLocalPostContent(slug, locale);
         const title = `${post.title} - ${seoConfig.siteName}`;
-        const description = post.description || seoConfig.defaultDescription;
+        const descRaw = post.description || seoConfig.defaultDescription;
+        const description = descRaw.replace(/\s+/g, ' ').trim().slice(0, 180);
         const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
         return {
             title,
@@ -55,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         };
     } catch {
         const title = `${seoConfig.defaultTitle} - ${seoConfig.siteName}`;
-        const description = seoConfig.defaultDescription;
+        const description = seoConfig.defaultDescription.replace(/\s+/g, ' ').trim().slice(0, 180);
         const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
         return {
             title,
