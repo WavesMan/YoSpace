@@ -117,19 +117,45 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
             }
         }
 
+        const fm = data as Record<string, unknown>;
+        const rc = (fm.category ?? fm.categories) as unknown;
+        let category: PostCategory | undefined;
+        if (rc && typeof rc === 'object') {
+            const c = rc as {
+                id?: unknown;
+                labelZh?: unknown;
+                labelEn?: unknown;
+                i18nKey?: unknown;
+                colorToken?: unknown;
+                order?: unknown;
+            };
+            if (typeof c.id === 'string') {
+                category = {
+                    id: c.id,
+                    ...(typeof c.labelZh === 'string' ? { labelZh: c.labelZh } : {}),
+                    ...(typeof c.labelEn === 'string' ? { labelEn: c.labelEn } : {}),
+                    ...(typeof c.i18nKey === 'string' ? { i18nKey: c.i18nKey } : {}),
+                    ...(typeof c.colorToken === 'string' ? { colorToken: c.colorToken } : {}),
+                    ...(typeof c.order === 'number' ? { order: c.order } : {}),
+                };
+            }
+        }
+
+        const tags = Array.isArray(fm.tags) ? (fm.tags.filter(t => typeof t === 'string') as string[]) : undefined;
+
         return {
             slug,
-            title: data.title || slug,
-            description: data.description || '',
-            publishedTime: data.date || '',
-            isPinned: data.isPinned || false,
-            isRecommended: data.isRecommended || false,
+            title: (fm.title as string) || slug,
+            description: (fm.description as string) || '',
+            publishedTime: (fm.date as string) || '',
+            isPinned: (fm.isPinned as boolean) || false,
+            isRecommended: (fm.isRecommended as boolean) || false,
             recommendRank,
             pinnedRank,
-            category: data.category,
-            tags: Array.isArray(data.tags) ? data.tags : undefined,
-            series: data.series,
-            dateObj: new Date(data.date || 0)
+            category,
+            tags,
+            series: fm.series as PostSeries | undefined,
+            dateObj: new Date((fm.date as string) || 0)
         };
     });
 
@@ -210,19 +236,44 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
         }
     }
 
+    const fm = data as Record<string, unknown>;
+    const rc = (fm.category ?? fm.categories) as unknown;
+    let category: PostCategory | undefined;
+    if (rc && typeof rc === 'object') {
+        const c = rc as {
+            id?: unknown;
+            labelZh?: unknown;
+            labelEn?: unknown;
+            i18nKey?: unknown;
+            colorToken?: unknown;
+            order?: unknown;
+        };
+        if (typeof c.id === 'string') {
+            category = {
+                id: c.id,
+                ...(typeof c.labelZh === 'string' ? { labelZh: c.labelZh } : {}),
+                ...(typeof c.labelEn === 'string' ? { labelEn: c.labelEn } : {}),
+                ...(typeof c.i18nKey === 'string' ? { i18nKey: c.i18nKey } : {}),
+                ...(typeof c.colorToken === 'string' ? { colorToken: c.colorToken } : {}),
+                ...(typeof c.order === 'number' ? { order: c.order } : {}),
+            };
+        }
+    }
+    const tags = Array.isArray(fm.tags) ? (fm.tags.filter(t => typeof t === 'string') as string[]) : undefined;
+
     return {
-        title: data.title || slug,
+        title: (fm.title as string) || slug,
         content: content,
-        publishedTime: data.date || '',
-        isPinned: data.isPinned || false,
-        isRecommended: data.isRecommended || false,
+        publishedTime: (fm.date as string) || '',
+        isPinned: (fm.isPinned as boolean) || false,
+        isRecommended: (fm.isRecommended as boolean) || false,
         recommendRank,
         pinnedRank,
         locale: selectedLocale,
-        description: data.description || '',
-        category: data.category,
-        tags: Array.isArray(data.tags) ? data.tags : undefined,
-        series: data.series
+        description: (fm.description as string) || '',
+        category,
+        tags,
+        series: fm.series as PostSeries | undefined
     };
 };
 
