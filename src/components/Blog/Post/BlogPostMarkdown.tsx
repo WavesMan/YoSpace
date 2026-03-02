@@ -87,7 +87,7 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     offsetRef.current = offset;
 
     const clampScale = (value: number) => {
-        return Math.min(2.5, Math.max(0.5, value));
+        return Math.max(0.1, value);
     };
 
     const resetView = () => {
@@ -174,10 +174,14 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
         if (dragStateRef.current.pointerId !== event.pointerId) return;
         const deltaX = event.clientX - dragStateRef.current.startX;
         const deltaY = event.clientY - dragStateRef.current.startY;
-        const maxX = isFullscreen ? 80 : 480;
-        const maxY = isFullscreen ? 60 : 320;
         const nextX = dragStateRef.current.originX + deltaX;
         const nextY = dragStateRef.current.originY + deltaY;
+        if (isFullscreen) {
+            setOffset({ x: nextX, y: nextY });
+            return;
+        }
+        const maxX = 480;
+        const maxY = 320;
         setOffset({
             x: Math.max(-maxX, Math.min(maxX, nextX)),
             y: Math.max(-maxY, Math.min(maxY, nextY)),

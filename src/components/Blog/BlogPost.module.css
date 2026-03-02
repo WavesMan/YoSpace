@@ -361,6 +361,9 @@
     z-index: 2000;
     background: var(--color-bg);
     padding: 3.5rem 1rem 1rem;
+    box-sizing: border-box;
+    max-width: 100dvw;
+    max-height: 100dvh;
 }
 
 .md_mermaid_toolbar {
@@ -397,6 +400,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .md_mermaid_canvas_fullscreen {
@@ -405,6 +410,7 @@
     width: 100%;
     max-width: 100%;
     overflow: hidden;
+    max-height: 100%;
 }
 
 .md_mermaid_canvas_pannable {
@@ -427,6 +433,8 @@
     display: block;
     max-width: 100%;
     height: auto;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .md_mermaid_close {
