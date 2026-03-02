@@ -1,20 +1,26 @@
 [
   {
+    "name": "github",
+    "url": "https://github.com/WavesMan",
+    "iconPackage": "fa6",
+    "iconName": "FaGithub"
+  },
+  {
     "name": "bilibili",
     "url": "https://space.bilibili.com/204818057",
     "iconPackage": "fa6",
     "iconName": "FaBilibili"
   },
   {
+    "name": "X",
+    "url": "https://x.com/Waves__Man",
+    "iconPackage": "bs",
+    "iconName": "BsTwitterX"
+  },
+  {
     "name": "email",
     "url": "mailto:waveyo@waveyo.cn",
     "iconPackage": "md",
     "iconName": "MdEmail"
-  },
-  {
-    "name": "github",
-    "url": "https://github.com/WavesMan",
-    "iconPackage": "fa6",
-    "iconName": "FaGithub"
   }
 ]
