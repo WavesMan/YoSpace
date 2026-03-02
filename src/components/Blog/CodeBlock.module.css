@@ -7,6 +7,29 @@
     background-color: #1e1e1e; /* VS Code dark bg */
 }
 
+.code_wrapper :global(pre) {
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-accent-solid) transparent;
+}
+
+.code_wrapper :global(pre::-webkit-scrollbar) {
+    height: 8px;
+}
+
+.code_wrapper :global(pre::-webkit-scrollbar-track) {
+    background: transparent;
+}
+
+.code_wrapper :global(pre::-webkit-scrollbar-thumb) {
+    background-color: var(--color-accent-solid);
+    border-radius: 9999px;
+}
+
+.code_wrapper :global(pre::-webkit-scrollbar-thumb:hover) {
+    background-color: var(--color-accent-hover);
+}
+
 .code_header {
     display: flex;
     justify-content: space-between;

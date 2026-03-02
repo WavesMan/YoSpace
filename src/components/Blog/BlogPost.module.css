@@ -371,6 +371,8 @@
     gap: 0.5rem;
     flex-wrap: wrap;
     margin-bottom: 0.75rem;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .md_mermaid_btn {
@@ -383,6 +385,8 @@
     min-height: 36px;
     min-width: 44px;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .md_mermaid_btn_active {
@@ -435,6 +439,42 @@
     height: auto;
     user-select: none;
     -webkit-user-select: none;
+    color: #000000;
+}
+
+.md_mermaid_content svg .edgePath path,
+.md_mermaid_content svg .arrowheadPath,
+.md_mermaid_content svg .flowchart-link {
+    stroke: #000000;
+}
+
+[data-theme='dark'] .md_mermaid_content svg {
+    color: #ffffff;
+}
+
+[data-theme='dark'] .md_mermaid_content svg .edgePath path,
+[data-theme='dark'] .md_mermaid_content svg .arrowheadPath,
+[data-theme='dark'] .md_mermaid_content svg .flowchart-link {
+    stroke: #ffffff;
+}
+
+[data-theme='dark'] .md_mermaid_content svg .edgeLabel,
+[data-theme='dark'] .md_mermaid_content svg .edgeLabel text,
+[data-theme='dark'] .md_mermaid_content svg .label,
+[data-theme='dark'] .md_mermaid_content svg .label text,
+[data-theme='dark'] .md_mermaid_content svg text {
+    fill: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='dark'] .md_mermaid_content svg .node rect,
+[data-theme='dark'] .md_mermaid_content svg .node circle,
+[data-theme='dark'] .md_mermaid_content svg .node ellipse,
+[data-theme='dark'] .md_mermaid_content svg .node polygon,
+[data-theme='dark'] .md_mermaid_content svg .node path,
+[data-theme='dark'] .md_mermaid_content svg .cluster rect,
+[data-theme='dark'] .md_mermaid_content svg .cluster polygon {
+    stroke: rgba(255, 255, 255, 0.5);
 }
 
 .md_mermaid_close {
