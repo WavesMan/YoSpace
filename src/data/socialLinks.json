@@ -18,6 +18,12 @@
     "iconName": "BsTwitterX"
   },
   {
+    "name": "BlueSky",
+    "url": "https://bsky.app/profile/waveyo.cn",
+    "iconPackage": "fa6",
+    "iconName": "FaBluesky"
+  },
+  {
     "name": "email",
     "url": "mailto:waveyo@waveyo.cn",
     "iconPackage": "md",
