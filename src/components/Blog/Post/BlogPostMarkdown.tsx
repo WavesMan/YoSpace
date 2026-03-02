@@ -270,6 +270,12 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     );
 };
 
+const looksLikeMermaid = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    return /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|stateDiagram-v2|erDiagram|journey|gantt|pie|mindmap|timeline|quadrantChart|xychart|requirementDiagram|gitGraph|sankey|block-beta)\b/i.test(trimmed);
+};
+
 const renderHeading = (
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
     props: React.HTMLAttributes<HTMLHeadingElement> & { children?: React.ReactNode }
@@ -390,20 +396,23 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
 
             return <Image {...imageProps} alt={imageAlt} />;
         },
-        code({ className, children, ...props }: { node?: unknown; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
-            const match = /language-(\w+)/.exec(className || '');
-            const value = String(children).replace(/\n$/, '');
-            if (!match) {
+        code({ inline, className, children, ...props }: { inline?: boolean; node?: unknown; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
+            const match = /language-([^\s]+)/i.exec(className || '');
+            const value = String(children ?? '').replace(/\n$/, '');
+            const trimmedValue = value.trim();
+            const language = (match?.[1] || '').trim().toLowerCase();
+            const isMermaid = !inline && (language === 'mermaid' || (!language && looksLikeMermaid(trimmedValue)));
+            if (!match && !isMermaid) {
                 return (
                     <code className={className} {...props}>
                         {children}
                     </code>
                 );
             }
-            if (match[1].toLowerCase() === 'mermaid') {
-                return <MermaidBlock code={value} />;
+            if (isMermaid) {
+                return <MermaidBlock code={trimmedValue} />;
             }
-            return <CodeBlock language={match[1]} value={value} />;
+            return <CodeBlock language={language || 'text'} value={value} />;
         },
         h1(props: React.HTMLAttributes<HTMLHeadingElement> & { children?: React.ReactNode }) {
             return renderHeading('h1', props);
