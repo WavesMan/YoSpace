@@ -171,6 +171,7 @@
 .post_content {
     max-width: 840px;
     width: 100%;
+    margin: 0 auto;
     letter-spacing: 0.02em;
     font-size: 1rem;
     line-height: 1.6;
@@ -656,7 +657,8 @@
     margin: 0 auto;
     gap: 2rem;
     align-items: flex-start;
-    padding-left: 320px;
+    justify-content: center;
+    padding: 0 1.5rem;
 }
 
 .post_toc {
