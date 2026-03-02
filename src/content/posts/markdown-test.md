@@ -95,6 +95,17 @@ body {
 }
 ```
 
+## Mermaid Diagram
+
+```mermaid
+flowchart LR
+    A[Start] --> B{Decision}
+    B -- Yes --> C[Approve]
+    B -- No --> D[Reject]
+    C --> E[End]
+    D --> E[End]
+```
+
 ## Tables
 
 | Header 1 | Header 2 | Header 3 |

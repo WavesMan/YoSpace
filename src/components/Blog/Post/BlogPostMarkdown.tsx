@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -23,6 +23,10 @@ interface MarkdownTabsProps {
 interface BlogPostMarkdownProps {
     content: string;
     locale: string;
+}
+
+interface MermaidBlockProps {
+    code: string;
 }
 
 const MarkdownTabs: React.FC<MarkdownTabsProps> = ({ children }) => {
@@ -58,6 +62,210 @@ const MarkdownTabs: React.FC<MarkdownTabsProps> = ({ children }) => {
             <div className={style.md_tabs_panel}>
                 {activeTab.props.children}
             </div>
+        </div>
+    );
+};
+
+const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
+    const [svg, setSvg] = useState('');
+    const [hasError, setHasError] = useState(false);
+    const [scale, setScale] = useState(1);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [panEnabled, setPanEnabled] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const reactId = useId().replace(/:/g, '');
+    const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+    const dragStateRef = React.useRef({
+        startX: 0,
+        startY: 0,
+        originX: 0,
+        originY: 0,
+        pointerId: -1,
+    });
+    const offsetRef = React.useRef(offset);
+    offsetRef.current = offset;
+
+    const clampScale = (value: number) => {
+        return Math.min(2.5, Math.max(0.5, value));
+    };
+
+    const resetView = () => {
+        setScale(1);
+        setOffset({ x: 0, y: 0 });
+    };
+
+    const toggleFullscreen = async () => {
+        const target = wrapperRef.current;
+        if (!target) return;
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+            return;
+        }
+        if (target.requestFullscreen) {
+            await target.requestFullscreen();
+        }
+    };
+
+    useEffect(() => {
+        let isActive = true;
+        const render = async () => {
+            try {
+                const mermaidModule = await import('mermaid');
+                const mermaid = mermaidModule.default ?? mermaidModule;
+                mermaid.initialize({
+                    startOnLoad: false,
+                    securityLevel: 'strict',
+                });
+                const { svg } = await mermaid.render(`mermaid-${reactId}`, code);
+                if (!isActive) return;
+                setSvg(svg);
+                setHasError(false);
+            } catch {
+                if (!isActive) return;
+                setHasError(true);
+            }
+        };
+
+        setSvg('');
+        setHasError(false);
+        render();
+
+        return () => {
+            isActive = false;
+        };
+    }, [code, reactId]);
+
+    useEffect(() => {
+        const handleChange = () => {
+            const isActive = document.fullscreenElement === wrapperRef.current;
+            setIsFullscreen(isActive);
+            if (isActive) {
+                setPanEnabled(true);
+            }
+        };
+        document.addEventListener('fullscreenchange', handleChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleChange);
+        };
+    }, []);
+
+    if (hasError || !svg) {
+        return <CodeBlock language="mermaid" value={code} />;
+    }
+
+    const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (!panEnabled && !isFullscreen) return;
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        const target = event.currentTarget;
+        target.setPointerCapture(event.pointerId);
+        dragStateRef.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            originX: offsetRef.current.x,
+            originY: offsetRef.current.y,
+            pointerId: event.pointerId,
+        };
+        setIsDragging(true);
+    };
+
+    const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (!isDragging) return;
+        if (dragStateRef.current.pointerId !== event.pointerId) return;
+        const deltaX = event.clientX - dragStateRef.current.startX;
+        const deltaY = event.clientY - dragStateRef.current.startY;
+        const maxX = isFullscreen ? 80 : 480;
+        const maxY = isFullscreen ? 60 : 320;
+        const nextX = dragStateRef.current.originX + deltaX;
+        const nextY = dragStateRef.current.originY + deltaY;
+        setOffset({
+            x: Math.max(-maxX, Math.min(maxX, nextX)),
+            y: Math.max(-maxY, Math.min(maxY, nextY)),
+        });
+    };
+
+    const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (dragStateRef.current.pointerId !== event.pointerId) return;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        setIsDragging(false);
+    };
+
+    const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        const step = event.deltaY > 0 ? -0.1 : 0.1;
+        setScale(prev => clampScale(prev + step));
+    };
+
+    return (
+        <div className={`${style.md_mermaid} ${isFullscreen ? style.md_mermaid_fullscreen : ''}`} ref={wrapperRef}>
+            <div className={style.md_mermaid_toolbar}>
+                <button
+                    type="button"
+                    className={style.md_mermaid_btn}
+                    onClick={() => setScale(prev => clampScale(prev + 0.2))}
+                    aria-label="放大"
+                >
+                    ＋
+                </button>
+                <button
+                    type="button"
+                    className={style.md_mermaid_btn}
+                    onClick={() => setScale(prev => clampScale(prev - 0.2))}
+                    aria-label="缩小"
+                >
+                    －
+                </button>
+                <button
+                    type="button"
+                    className={style.md_mermaid_btn}
+                    onClick={resetView}
+                    aria-label="重置视图"
+                >
+                    重置
+                </button>
+                <button
+                    type="button"
+                    className={`${style.md_mermaid_btn} ${panEnabled ? style.md_mermaid_btn_active : ''}`}
+                    onClick={() => setPanEnabled(prev => !prev)}
+                    aria-label="位移"
+                >
+                    位移
+                </button>
+                <button
+                    type="button"
+                    className={style.md_mermaid_btn}
+                    onClick={toggleFullscreen}
+                    aria-label="全屏"
+                >
+                    全屏
+                </button>
+            </div>
+            <div
+                className={`${style.md_mermaid_canvas} ${panEnabled || isFullscreen ? style.md_mermaid_canvas_pannable : ''} ${isDragging ? style.md_mermaid_canvas_dragging : ''} ${isFullscreen ? style.md_mermaid_canvas_fullscreen : ''}`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerEnd}
+                onPointerCancel={handlePointerEnd}
+                onWheel={handleWheel}
+                role="img"
+                aria-label="Mermaid diagram"
+            >
+                <div
+                    className={style.md_mermaid_content}
+                    style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
+                    dangerouslySetInnerHTML={{ __html: svg }}
+                />
+            </div>
+            {isFullscreen ? (
+                <button
+                    type="button"
+                    className={style.md_mermaid_close}
+                    onClick={toggleFullscreen}
+                    aria-label="退出全屏"
+                >
+                    关闭
+                </button>
+            ) : null}
         </div>
     );
 };
@@ -184,13 +392,18 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
         },
         code({ className, children, ...props }: { node?: unknown; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
             const match = /language-(\w+)/.exec(className || '');
-            return match ? (
-                <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} />
-            ) : (
-                <code className={className} {...props}>
-                    {children}
-                </code>
-            );
+            const value = String(children).replace(/\n$/, '');
+            if (!match) {
+                return (
+                    <code className={className} {...props}>
+                        {children}
+                    </code>
+                );
+            }
+            if (match[1].toLowerCase() === 'mermaid') {
+                return <MermaidBlock code={value} />;
+            }
+            return <CodeBlock language={match[1]} value={value} />;
         },
         h1(props: React.HTMLAttributes<HTMLHeadingElement> & { children?: React.ReactNode }) {
             return renderHeading('h1', props);

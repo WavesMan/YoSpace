@@ -343,6 +343,122 @@
     padding: 0.9rem 1rem 1rem;
 }
 
+.md_mermaid {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-accent-stroke);
+    background: var(--color-bg-secondary);
+    position: relative;
+}
+
+.md_mermaid_fullscreen {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    border-radius: 0;
+    z-index: 2000;
+    background: var(--color-bg);
+    padding: 3.5rem 1rem 1rem;
+}
+
+.md_mermaid_toolbar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.md_mermaid_btn {
+    border: 1px solid var(--color-accent-stroke);
+    background: var(--color-bg-card);
+    color: var(--color-text-primary);
+    padding: 0.4rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    min-height: 36px;
+    min-width: 44px;
+    cursor: pointer;
+}
+
+.md_mermaid_btn_active {
+    background: var(--color-accent-solid);
+    color: var(--color-bg-primary);
+    border-color: transparent;
+}
+
+.md_mermaid_canvas {
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-accent-stroke);
+    background: var(--color-bg-card);
+    overflow: hidden;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.md_mermaid_canvas_fullscreen {
+    height: calc(100dvh - 5.5rem);
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.md_mermaid_canvas_pannable {
+    cursor: grab;
+    touch-action: none;
+}
+
+.md_mermaid_canvas_dragging {
+    cursor: grabbing;
+}
+
+.md_mermaid_content {
+    transform-origin: center;
+    transition: transform 0.06s ease-out;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.md_mermaid_content svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.md_mermaid_close {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: var(--color-accent-solid);
+    color: var(--color-bg-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.9rem;
+    min-height: 44px;
+    cursor: pointer;
+    z-index: 2100;
+}
+
+@media (max-width: 768px) {
+    .md_mermaid_toolbar {
+        gap: 0.4rem;
+    }
+
+    .md_mermaid_btn {
+        flex: 1 0 auto;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .md_mermaid_canvas {
+        min-height: 200px;
+    }
+}
+
 .post_content code {
     font-family: var(--font-family-mono);
     font-size: 0.85em;
