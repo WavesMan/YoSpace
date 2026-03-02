@@ -76,6 +76,7 @@ const Header: React.FC = () => {
   // 博客外部链接配置
   const blogMode = process.env.NEXT_PUBLIC_BLOG_MODE;
   const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL;
+  const isI18nEnabled = process.env.NEXT_PUBLIC_I18N !== 'false';
 
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
   const [isMenuOpenState, setIsMenuOpenState] = useState<{ isOpen: boolean; path: string }>(() => {
@@ -193,15 +194,17 @@ const Header: React.FC = () => {
           <Link className={`${style.nav_item} ${currentPath === '/links' ? style.active : ''}`} href='/links'>
             <FaLink /> {t('Pages.Links')}
           </Link>
-          <button 
-            className={`${style.nav_item} ${style.nav_toggle}`}  
-            onClick={handleLanguageToggle}
-            type="button"
-            aria-label={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
-            title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
-          >
-            <MdTranslate />
-          </button>
+          {isI18nEnabled && (
+            <button 
+              className={`${style.nav_item} ${style.nav_toggle}`}  
+              onClick={handleLanguageToggle}
+              type="button"
+              aria-label={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+              title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+            >
+              <MdTranslate />
+            </button>
+          )}
           <button 
             className={`${style.nav_item} ${style.nav_toggle}`} 
             ref={themeToggle} 
@@ -286,13 +289,15 @@ const Header: React.FC = () => {
                 </Link>
                 
                 <div className={style.mobile_controls}>
-                    <button 
-                        className={style.mobile_control_btn}  
-                        onClick={handleMobileLanguageToggle}
-                        type="button"
-                    >
-                        <MdTranslate /> {locale === 'zh-CN' ? 'English' : '中文'}
-                    </button>
+                    {isI18nEnabled && (
+                        <button 
+                            className={style.mobile_control_btn}  
+                            onClick={handleMobileLanguageToggle}
+                            type="button"
+                        >
+                            <MdTranslate /> {locale === 'zh-CN' ? 'English' : '中文'}
+                        </button>
+                    )}
                     <button 
                         className={style.mobile_control_btn} 
                         onClick={handleMobileThemeToggle}

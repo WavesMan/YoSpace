@@ -33,6 +33,7 @@ nav.scrolled {
     margin: auto;
     transition: all 0.3s ease;
     align-items: center; /* 确保所有元素垂直居中 */
+    gap: 24px;
 }
 
 .nav_logo {
@@ -47,10 +48,12 @@ nav.scrolled {
 
 .nav_itemsList {
     display: flex;
-    gap: 60px;
+    gap: clamp(20px, 3vw, 60px);
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     transition: all 0.3s ease;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .nav_item {
@@ -226,6 +229,23 @@ nav.scrolled {
 }
 
 /* Responsive Breakpoints */
+@media (max-width: 1200px) {
+    .nav_wrapper {
+        width: calc(100vw - 40px);
+        max-width: none;
+    }
+
+    .nav_itemsList {
+        display: none;
+    }
+
+    .hamburger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
 @media (max-width: 1024px) {
     .nav_wrapper {
         width: calc(100vw - 40px);

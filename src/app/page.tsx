@@ -432,7 +432,7 @@ export default function Home() {
                                     </div>
                                 )}
                             </div>
-                            <p className={profileStyles.profile_background}>{`<SEARCH/>`}</p>
+                            <p className={profileStyles.profile_background}>{`<NAVIGATION/>`}</p>
                         </div>
                     )}
                 </div>
