@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import style from "./Blog.module.css";
 import Background from "../Common/Background/Background";
 import Pagination from "../Common/Pagination/Pagination";
@@ -41,6 +42,7 @@ interface BlogProps {
  */
 const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }) => {
     const { t, locale } = useI18n();
+    const pathname = usePathname();
     const itemsLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10') || 10;
 
     const [totalItems, setTotalItems] = useState<number>(initialTotal || 0);
@@ -54,8 +56,43 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     );
     const [errorMsg, setErrorMsg] = useState<string>("");
 
-    // NOTE: 通过标记首渲染，在有服务端初始数据时避免重复请求
     const isFirstRender = useRef(true);
+    const hasRestoredRef = useRef(false);
+    const restoredScrollRef = useRef(false);
+    const restoreStateRef = useRef<{ scrollY: number; page: number; sortMode: "recommend" | "date-desc" | "date-asc" } | null>(null);
+    const skipScrollToTopRef = useRef(false);
+
+    const storageKey = useMemo(() => {
+        if (!pathname) return "blog:list:unknown";
+        return `blog:list:${pathname}:${locale}`;
+    }, [pathname, locale]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        if (hasRestoredRef.current) return;
+        const raw = window.sessionStorage.getItem(storageKey);
+        if (!raw) return;
+        try {
+            const parsed = JSON.parse(raw) as { scrollY?: number; page?: number; sortMode?: "recommend" | "date-desc" | "date-asc" };
+            const nextPage = Number(parsed.page);
+            const nextSortMode = parsed.sortMode;
+            const nextScrollY = Number(parsed.scrollY);
+            restoreStateRef.current = {
+                page: Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1,
+                sortMode: nextSortMode === "date-desc" || nextSortMode === "date-asc" ? nextSortMode : "recommend",
+                scrollY: Number.isFinite(nextScrollY) && nextScrollY >= 0 ? nextScrollY : 0,
+            };
+            if (restoreStateRef.current.page !== currentPage) {
+                skipScrollToTopRef.current = true;
+                setCurrentPage(restoreStateRef.current.page);
+            }
+            if (restoreStateRef.current.sortMode !== sortMode) {
+                setSortMode(restoreStateRef.current.sortMode);
+            }
+            hasRestoredRef.current = true;
+        } catch {
+        }
+    }, [storageKey, currentPage, sortMode]);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -94,6 +131,48 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         fetchPosts();
     }, [currentPage, locale, initialPosts, initialLocale, itemsLimit, t]); // 依赖项包含 locale，切换语言时会自动重新获取
 
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const saveState = (nextScrollY?: number) => {
+            const payload = {
+                page: currentPage,
+                sortMode,
+                scrollY: typeof nextScrollY === "number" ? nextScrollY : window.scrollY,
+            };
+            window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+        };
+        saveState();
+    }, [currentPage, sortMode, storageKey]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        let ticking = false;
+        const handleScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                ticking = false;
+                const payload = {
+                    page: currentPage,
+                    sortMode,
+                    scrollY: window.scrollY,
+                };
+                window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+            });
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [currentPage, sortMode, storageKey]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        if (status !== "Done") return;
+        if (restoredScrollRef.current) return;
+        if (!restoreStateRef.current) return;
+        restoredScrollRef.current = true;
+        window.scrollTo({ top: restoreStateRef.current.scrollY, behavior: "auto" });
+    }, [status]);
+
     /**
      * 处理分页切换
      *
@@ -101,7 +180,10 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
      */
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
-        // NOTE: 滚动到顶部，改善长列表场景下的翻页体验
+        if (skipScrollToTopRef.current) {
+            skipScrollToTopRef.current = false;
+            return;
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 

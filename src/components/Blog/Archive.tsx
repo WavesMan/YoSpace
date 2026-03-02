@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { usePathname } from "next/navigation";
 import style from "./Blog.module.css";
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
@@ -92,8 +93,28 @@ const groupByYearMonth = (posts: ArchivePostItem[]): YearMonthGroup[] => {
 
 const Archive: React.FC = () => {
     const { t, locale } = useI18n();
+    const pathname = usePathname();
     const [status, setStatus] = useState<ArchiveStatus>("Loading");
     const [posts, setPosts] = useState<ArchivePostItem[]>([]);
+    const restoredScrollRef = useRef(false);
+    const restoreScrollYRef = useRef<number | null>(null);
+
+    const storageKey = useMemo(() => {
+        if (!pathname) return "archive:list:unknown";
+        return `archive:list:${pathname}:${locale}`;
+    }, [pathname, locale]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const raw = window.sessionStorage.getItem(storageKey);
+        if (!raw) return;
+        try {
+            const parsed = JSON.parse(raw) as { scrollY?: number };
+            const nextScrollY = Number(parsed.scrollY);
+            restoreScrollYRef.current = Number.isFinite(nextScrollY) && nextScrollY >= 0 ? nextScrollY : 0;
+        } catch {
+        }
+    }, [storageKey]);
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -115,6 +136,31 @@ const Archive: React.FC = () => {
 
         fetchAll();
     }, [locale]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        let ticking = false;
+        const handleScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                ticking = false;
+                const payload = { scrollY: window.scrollY };
+                window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+            });
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [storageKey]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        if (status !== "Done") return;
+        if (restoredScrollRef.current) return;
+        if (restoreScrollYRef.current === null) return;
+        restoredScrollRef.current = true;
+        window.scrollTo({ top: restoreScrollYRef.current, behavior: "auto" });
+    }, [status]);
 
     const grouped = groupByYearMonth(posts);
 
@@ -185,4 +231,3 @@ const Archive: React.FC = () => {
 };
 
 export default Archive;
-

@@ -227,6 +227,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     return (
         <div className={style.post_wrapper}>
             <div className={style.post_container}>
+                <Link href="/blog" className={style.post_backlink}>
+                    &lt; Back to blog list
+                </Link>
                 {showCategory && categoryLabel && articleContent?.category?.id && (
                     <Link href={`/category/${encodeURIComponent(articleContent.category.id)}`} className={style.post_category}>
                         {categoryLabel}

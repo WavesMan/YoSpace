@@ -196,6 +196,7 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
 
     const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
         event.preventDefault();
+        event.stopPropagation();
         const step = event.deltaY > 0 ? -0.1 : 0.1;
         setScale(prev => clampScale(prev + step));
     };
