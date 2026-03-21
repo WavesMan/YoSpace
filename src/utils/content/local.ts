@@ -53,6 +53,9 @@ export interface PostContentResponse {
 }
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
+const CACHE_TTL_MS = 30000;
+const listCache = new Map<string, { data: PostListResponse; expiresAt: number }>();
+const postCache = new Map<string, { data: PostContentResponse; expiresAt: number }>();
 
 // NOTE: 从文件名中解析 slug 与语言，默认语言为 en
 // 命名约定：slug.md（默认英文）或 slug.locale.md（例如 slug.zh-CN.md）
@@ -67,6 +70,16 @@ const parseFileMetadata = (fileName: string) => {
 export const getLocalPostsList = async (offset: number, limit: number, locale: string = 'en'): Promise<PostListResponse> => {
     if (!fs.existsSync(postsDirectory)) {
         return { items: [], total: 0, locale };
+    }
+
+    const safeOffset = Math.max(0, Math.floor(offset));
+    const safeLimit = Math.max(1, Math.floor(limit));
+    const dirMtimeMs = fs.statSync(postsDirectory).mtimeMs;
+    const cacheKey = `${locale}|${safeOffset}|${safeLimit}|${dirMtimeMs}`;
+    const now = Date.now();
+    const cached = listCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+        return cached.data;
     }
 
     const fileNames = fs.readdirSync(postsDirectory);
@@ -164,9 +177,10 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
         return b.dateObj.getTime() - a.dateObj.getTime();
     });
 
-    const paginatedPosts = sortedPosts.slice(offset * limit, (offset + 1) * limit);
+    // NOTE: offset 使用条目偏移量，避免将 offset 误当页码导致分页错位
+    const paginatedPosts = sortedPosts.slice(safeOffset, safeOffset + safeLimit);
 
-    return {
+    const response = {
         items: paginatedPosts.map(({ dateObj, ...rest }) => {
             void dateObj;
             return rest;
@@ -174,9 +188,18 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
         total: sortedPosts.length,
         locale
     };
+    listCache.set(cacheKey, { data: response, expiresAt: now + CACHE_TTL_MS });
+    return response;
 };
 
 export const getLocalPostContent = async (slug: string, locale: string = 'en'): Promise<PostContentResponse> => {
+    const dirMtimeMs = fs.existsSync(postsDirectory) ? fs.statSync(postsDirectory).mtimeMs : 0;
+    const cacheKey = `${slug}|${locale}|${dirMtimeMs}`;
+    const now = Date.now();
+    const cached = postCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+        return cached.data;
+    }
     const candidates: { fileName: string; locale: string }[] = [];
 
     if (locale === 'en') {
@@ -261,7 +284,7 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
     }
     const tags = Array.isArray(fm.tags) ? (fm.tags.filter(t => typeof t === 'string') as string[]) : undefined;
 
-    return {
+    const response = {
         title: (fm.title as string) || slug,
         content: content,
         publishedTime: (fm.date as string) || '',
@@ -275,6 +298,8 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
         tags,
         series: fm.series as PostSeries | undefined
     };
+    postCache.set(cacheKey, { data: response, expiresAt: now + CACHE_TTL_MS });
+    return response;
 };
 
 // NOTE: 返回去重后的本地文章 slug 列表，可用于生成静态路由

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 import Header from "@/components/Common/Header/Header";
 import ClientShell from "@/components/Common/ClientShell";
@@ -47,6 +48,8 @@ const localeInitScript = `
       if (saved !== locale) {
         window.localStorage.setItem('locale', locale);
       }
+      document.cookie = 'locale=' + locale + '; path=/; max-age=31536000; samesite=lax';
+      document.documentElement.lang = locale;
 
       const titleZh = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
       const titleEn = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE_EN || process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
@@ -67,13 +70,34 @@ export const metadata: Metadata = {
   // icons 由 src/app/icon.tsx 自动生成，支持圆形裁剪
 };
 
-export default function RootLayout({
+/**
+ *
+ * RootLayout 组件
+ *
+ * 根据 cookie 与请求头推断首屏语言，避免首屏语言闪烁。
+ *
+ * @param children 页面内容节点
+ * @returns 应用根布局结构
+ *
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const savedLocale = cookieStore.get('locale')?.value;
+  const requestHeaders = await headers();
+  const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
+  const htmlLang = savedLocale === 'en-US'
+    ? 'en-US'
+    : savedLocale === 'zh-CN'
+      ? 'zh-CN'
+      : acceptLang.startsWith('en')
+        ? 'en-US'
+        : 'zh-CN';
   return (
-    <html lang="zh-CN">
+    <html lang={htmlLang}>
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Profile from "@/components/Profile/Profile";
 import BlogCard from "@/components/Blog/BlogCard";
 import profileStyles from "@/components/Profile/Profile.module.css";
@@ -404,28 +405,51 @@ export default function Home() {
                                                 const desc = resolveNavigationText(item.desc);
                                                 const faviconUrl = resolveNavigationFavicon(item);
                                                 const isLocalFavicon = faviconUrl.startsWith("/");
+                                                const isInternal = item.url.startsWith("/");
                                                 return (
-                                                    <a
-                                                        key={item.id}
-                                                        className={styles.home_navigation_card}
-                                                        href={item.url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                    >
-                                                        <div className={styles.home_navigation_favicon}>
-                                                            <Image
-                                                                src={faviconUrl}
-                                                                alt={name}
-                                                                width={32}
-                                                                height={32}
-                                                                unoptimized={!isLocalFavicon}
-                                                            />
-                                                        </div>
-                                                        <div className={styles.home_navigation_content}>
-                                                            <div className={styles.home_navigation_name}>{name}</div>
-                                                            <div className={styles.home_navigation_desc}>{desc}</div>
-                                                        </div>
-                                                    </a>
+                                                    isInternal ? (
+                                                        <Link
+                                                            key={item.id}
+                                                            className={styles.home_navigation_card}
+                                                            href={item.url}
+                                                        >
+                                                            <div className={styles.home_navigation_favicon}>
+                                                                <Image
+                                                                    src={faviconUrl}
+                                                                    alt={name}
+                                                                    width={32}
+                                                                    height={32}
+                                                                    unoptimized={!isLocalFavicon}
+                                                                />
+                                                            </div>
+                                                            <div className={styles.home_navigation_content}>
+                                                                <div className={styles.home_navigation_name}>{name}</div>
+                                                                <div className={styles.home_navigation_desc}>{desc}</div>
+                                                            </div>
+                                                        </Link>
+                                                    ) : (
+                                                        <a
+                                                            key={item.id}
+                                                            className={styles.home_navigation_card}
+                                                            href={item.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <div className={styles.home_navigation_favicon}>
+                                                                <Image
+                                                                    src={faviconUrl}
+                                                                    alt={name}
+                                                                    width={32}
+                                                                    height={32}
+                                                                    unoptimized={!isLocalFavicon}
+                                                                />
+                                                            </div>
+                                                            <div className={styles.home_navigation_content}>
+                                                                <div className={styles.home_navigation_name}>{name}</div>
+                                                                <div className={styles.home_navigation_desc}>{desc}</div>
+                                                            </div>
+                                                        </a>
+                                                    )
                                                 );
                                             })}
                                         </div>

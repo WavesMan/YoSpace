@@ -38,6 +38,10 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     const [recommendPosts, setRecommendPosts] = useState<PostItem[]>([]);
     const [tocItems, setTocItems] = useState<TocItem[]>([]);
     const [isTocOpen, setIsTocOpen] = useState(false);
+    const [isDeferredReady, setIsDeferredReady] = useState(false);
+    const [isCompactToc, setIsCompactToc] = useState(false);
+    const postMainRef = useRef<HTMLDivElement | null>(null);
+    const tocRef = useRef<HTMLElement | null>(null);
 
     // NOTE: 通过标记首渲染，在有服务端初始内容时避免重复请求
     const isFirstRender = useRef(true);
@@ -146,7 +150,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     };
 
     useEffect(() => {
-        const shouldLoadRelated = status === 'Done' && articleContent;
+        const shouldLoadRelated = status === 'Done' && articleContent && isDeferredReady;
         if (!shouldLoadRelated) {
             return;
         }
@@ -197,15 +201,67 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         };
 
         loadRelated();
-    }, [status, articleContent, locale, slug, showSeries]);
+    }, [status, articleContent, locale, slug, showSeries, isDeferredReady]);
 
     useEffect(() => {
+        if (!isDeferredReady) {
+            setTocItems([]);
+            return;
+        }
         if (articleContent?.content) {
             setTocItems(extractTocFromMarkdown(articleContent.content));
         } else {
             setTocItems([]);
         }
-    }, [articleContent]);
+    }, [articleContent, isDeferredReady]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const schedule = (callback: () => void) => {
+            if (typeof window.requestIdleCallback === 'function') {
+                const idleId = window.requestIdleCallback(() => callback(), { timeout: 1200 });
+                return () => window.cancelIdleCallback(idleId);
+            }
+            const timer = window.setTimeout(callback, 200);
+            return () => window.clearTimeout(timer);
+        };
+        return schedule(() => setIsDeferredReady(true));
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const element = postMainRef.current;
+        if (!element) return;
+        let rafId = 0;
+        const updateCompact = () => {
+            if (!postMainRef.current) return;
+            const rect = postMainRef.current.getBoundingClientRect();
+            const styles = window.getComputedStyle(postMainRef.current);
+            const gapValue = styles.columnGap || styles.gap || '0px';
+            const gap = Number.parseFloat(gapValue) || 0;
+            const tocWidth = tocRef.current?.getBoundingClientRect().width || 280;
+            const minContentWidth = 760;
+            const available = rect.width - tocWidth - gap;
+            setIsCompactToc(available < minContentWidth);
+        };
+        const scheduleUpdate = () => {
+            if (rafId) {
+                window.cancelAnimationFrame(rafId);
+            }
+            rafId = window.requestAnimationFrame(updateCompact);
+        };
+        const observer = new ResizeObserver(scheduleUpdate);
+        observer.observe(element);
+        window.addEventListener('resize', scheduleUpdate);
+        scheduleUpdate();
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', scheduleUpdate);
+            if (rafId) {
+                window.cancelAnimationFrame(rafId);
+            }
+        };
+    }, []);
 
     const handleTocClick = (event: React.MouseEvent<HTMLAnchorElement>, id: string, shouldClose?: boolean) => {
         event.preventDefault();
@@ -270,9 +326,10 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         )}
                     </div>
                 )}
-                <div className={style.post_main}>
-                    {tocItems.length > 0 && (
+                <div className={style.post_main} ref={postMainRef}>
+                    {isDeferredReady && tocItems.length > 0 && !isCompactToc && (
                         <nav
+                            ref={tocRef}
                             className={style.post_toc}
                             aria-label={locale === 'zh-CN' ? '文章目录' : 'Table of contents'}
                         >
@@ -301,7 +358,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     )}
                     <div className={style.post_content}>
                         {status === "Done" && articleContent ? (
-                            <BlogPostMarkdown content={articleContent.content} locale={locale} />
+                            <BlogPostMarkdown content={articleContent.content} locale={locale} deferHeavy={!isDeferredReady} />
                         ) : status === "Error" ? (
                             <>
                                 <div className={style.tip_error}>{t('Status.Error')}</div>
@@ -320,7 +377,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         }
                     </div>
                 </div>
-                {showSeries && articleContent?.series && seriesPosts.length > 1 && (
+                {isDeferredReady && showSeries && articleContent?.series && seriesPosts.length > 1 && (
                     <section className={style.post_series_section}>
                         <h2 className={style.post_series_title}>{t('Blog.Series')}</h2>
                         <ul className={style.post_series_list}>
@@ -332,7 +389,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         </ul>
                     </section>
                 )}
-                {process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false' && recommendPosts.length > 0 && (
+                {isDeferredReady && process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false' && recommendPosts.length > 0 && (
                     <section className={style.post_recommend_section}>
                         <h2 className={style.post_recommend_title}>{t('Blog.Recommend')}</h2>
                         <ul className={style.post_recommend_list}>
@@ -345,7 +402,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     </section>
                 )}
             </div>
-            {tocItems.length > 0 && (
+            {isDeferredReady && tocItems.length > 0 && isCompactToc && (
                 <div className={style.post_toc_container}>
                     <button
                         type="button"

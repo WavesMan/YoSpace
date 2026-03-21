@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -6,7 +6,7 @@ import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import style from '../BlogPost.module.css';
-import CodeBlock from '../CodeBlock';
+const LazyCodeBlock = React.lazy(() => import('../CodeBlock'));
 import {
     slugifyHeading,
     transformTabsSyntax,
@@ -23,6 +23,7 @@ interface MarkdownTabsProps {
 interface BlogPostMarkdownProps {
     content: string;
     locale: string;
+    deferHeavy?: boolean;
 }
 
 interface MermaidBlockProps {
@@ -151,7 +152,17 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     }, []);
 
     if (hasError || !svg) {
-        return <CodeBlock language="mermaid" value={code} />;
+        return (
+            <Suspense fallback={(
+                <pre className={style.md_code_plain}>
+                    <code>
+                        {code}
+                    </code>
+                </pre>
+            )}>
+                <LazyCodeBlock language="mermaid" value={code} />
+            </Suspense>
+        );
     }
 
     const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -310,7 +321,29 @@ type MarkdownComponents = Components & {
     tabs?: React.ComponentType<{ children?: React.ReactNode }>;
 };
 
-export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, locale }) => {
+export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, locale, deferHeavy = false }) => {
+    const [isHeavyReady, setIsHeavyReady] = useState(!deferHeavy);
+
+    useEffect(() => {
+        if (!deferHeavy) {
+            const timer = window.setTimeout(() => setIsHeavyReady(true), 0);
+            return () => window.clearTimeout(timer);
+        }
+        let cleanup: (() => void) | undefined;
+        const schedule = () => {
+            if (typeof window.requestIdleCallback === 'function') {
+                const idleId = window.requestIdleCallback(() => setIsHeavyReady(true), { timeout: 1200 });
+                cleanup = () => window.cancelIdleCallback(idleId);
+                return;
+            }
+            const timer = window.setTimeout(() => setIsHeavyReady(true), 200);
+            cleanup = () => window.clearTimeout(timer);
+        };
+        schedule();
+        return () => {
+            if (cleanup) cleanup();
+        };
+    }, [deferHeavy]);
     const components: MarkdownComponents = {
         p({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
             if (hasVercelButtonChild(children)) {
@@ -407,6 +440,22 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
             const trimmedValue = value.trim();
             const language = (match?.[1] || '').trim().toLowerCase();
             const isMermaid = !inline && (language === 'mermaid' || (!language && looksLikeMermaid(trimmedValue)));
+            if (!isHeavyReady) {
+                if (inline) {
+                    return (
+                        <code className={className} {...props}>
+                            {children}
+                        </code>
+                    );
+                }
+                return (
+                    <pre className={style.md_code_plain}>
+                        <code className={className}>
+                            {value}
+                        </code>
+                    </pre>
+                );
+            }
             if (!match && !isMermaid) {
                 return (
                     <code className={className} {...props}>
@@ -417,7 +466,17 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
             if (isMermaid) {
                 return <MermaidBlock code={trimmedValue} />;
             }
-            return <CodeBlock language={language || 'text'} value={value} />;
+            return (
+                <Suspense fallback={(
+                    <pre className={style.md_code_plain}>
+                        <code className={className}>
+                            {value}
+                        </code>
+                    </pre>
+                )}>
+                    <LazyCodeBlock language={language || 'text'} value={value} />
+                </Suspense>
+            );
         },
         h1(props: React.HTMLAttributes<HTMLHeadingElement> & { children?: React.ReactNode }) {
             return renderHeading('h1', props);

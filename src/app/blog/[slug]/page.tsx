@@ -2,6 +2,7 @@ import BlogPost from '@/components/Blog/BlogPost';
 import { Metadata } from 'next';
 import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
 import { buildUrl, seoConfig } from '@/utils/seo';
+import { cookies, headers } from 'next/headers';
 
 // ISR: 每小时重新验证一次
 export const revalidate = 3600;
@@ -19,9 +20,28 @@ export async function generateStaticParams() {
     }
 }
 
+/**
+ *
+ * 生成文章详情页 SEO 元信息
+ *
+ * 根据 cookie 与请求头推断语言，优先返回对应语言的标题与摘要。
+ *
+ * @param params 动态路由参数
+ * @returns 页面元信息
+ *
+ */
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
-    const locale = 'en';
+    const cookieStore = await cookies();
+    const savedLocale = cookieStore.get('locale')?.value;
+    const requestHeaders = await headers();
+    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
+    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
+        ? savedLocale
+        : acceptLang.startsWith('en')
+            ? 'en-US'
+            : 'zh-CN';
+    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
     const canonical = buildUrl(`/blog/${encodeURIComponent(slug)}`);
     const ogImages = seoConfig.defaultOgImage ? [buildUrl(seoConfig.defaultOgImage)] : undefined;
 
@@ -85,10 +105,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 // 博客文章页面
+/**
+ *
+ * BlogPostPage 页面
+ *
+ * 首屏根据 cookie 与请求头推断语言，直出对应语言的文章内容。
+ *
+ * @param params 动态路由参数
+ * @returns 博客文章详情页
+ *
+ */
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    // 默认预渲染英文内容
-    const locale = 'en';
+    const cookieStore = await cookies();
+    const savedLocale = cookieStore.get('locale')?.value;
+    const requestHeaders = await headers();
+    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
+    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
+        ? savedLocale
+        : acceptLang.startsWith('en')
+            ? 'en-US'
+            : 'zh-CN';
+    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
     let initialContent;
     
     try {

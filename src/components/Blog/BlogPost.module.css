@@ -576,7 +576,7 @@
     top: 6rem;
     left: 1.5rem;
     z-index: 52;
-    display: none;
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
@@ -631,14 +631,17 @@
     flex-direction: column;
 }
 
-@media (max-width: 1024px) {
-    .post_toc {
-        display: none;
-    }
-
-    .post_toc_container {
-        display: flex;
-    }
+.md_code_plain {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-accent-stroke);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-article-title);
 }
 
 @media (max-width: 768px) {
@@ -878,10 +881,6 @@
         flex-direction: column;
         max-width: 100%;
         padding-left: 0;
-    }
-
-    .post_toc {
-        display: none;
     }
 
     .post_content {

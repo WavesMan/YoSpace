@@ -46,6 +46,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     const itemsLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10') || 10;
 
     const [totalItems, setTotalItems] = useState<number>(initialTotal || 0);
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsLimit));
     const [posts, setPosts] = useState<PostsListShape[]>(initialPosts || []);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [sortMode, setSortMode] = useState<"recommend" | "date-desc" | "date-asc">("recommend");
@@ -113,7 +114,8 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
             try {
                 setStatus("Loading");
                 // NOTE: 通过 API Route 访问本地 Markdown 列表，offset 从 0 开始，因此这里减 1
-                const response = await fetch(`/api/blog/list?offset=${currentPage - 1}&limit=${itemsLimit}&locale=${encodeURIComponent(queryLocale)}`);
+                const offset = (currentPage - 1) * itemsLimit;
+                const response = await fetch(`/api/blog/list?offset=${offset}&limit=${itemsLimit}&locale=${encodeURIComponent(queryLocale)}`);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch posts: ${response.status}`);
                 }
@@ -179,13 +181,20 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
      * 更新当前页并平滑滚动到页面顶部，保证用户在翻页后仍能从列表起始位置阅读。
      */
     const handlePageChange = (page: number) => {
-        setCurrentPage(page);
+        const nextPage = Math.min(totalPages, Math.max(1, page));
+        setCurrentPage(nextPage);
         if (skipScrollToTopRef.current) {
             skipScrollToTopRef.current = false;
             return;
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     const pinnedStyle = process.env.NEXT_PUBLIC_BLOG_PINNED_STYLE || 'separate-section';
 

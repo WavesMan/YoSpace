@@ -64,6 +64,7 @@ const setLocaleSnapshot = (nextLocale: Locale) => {
 
   if (typeof window !== 'undefined') {
     window.localStorage.setItem('locale', nextLocale);
+    document.cookie = `locale=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
   }
 
   emitLocaleChange();
