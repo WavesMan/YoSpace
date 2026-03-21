@@ -154,11 +154,9 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     if (hasError || !svg) {
         return (
             <Suspense fallback={(
-                <pre className={style.md_code_plain}>
-                    <code>
-                        {code}
-                    </code>
-                </pre>
+                <code className={style.md_code_plain}>
+                    {code}
+                </code>
             )}>
                 <LazyCodeBlock language="mermaid" value={code} />
             </Suspense>
@@ -449,11 +447,9 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
                     );
                 }
                 return (
-                    <pre className={style.md_code_plain}>
-                        <code className={className}>
-                            {value}
-                        </code>
-                    </pre>
+                    <code className={`${style.md_code_plain} ${className || ''}`}>
+                        {value}
+                    </code>
                 );
             }
             if (!match && !isMermaid) {
@@ -468,11 +464,9 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
             }
             return (
                 <Suspense fallback={(
-                    <pre className={style.md_code_plain}>
-                        <code className={className}>
-                            {value}
-                        </code>
-                    </pre>
+                    <code className={`${style.md_code_plain} ${className || ''}`}>
+                        {value}
+                    </code>
                 )}>
                     <LazyCodeBlock language={language || 'text'} value={value} />
                 </Suspense>
