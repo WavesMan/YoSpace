@@ -35,6 +35,18 @@ const BlogCard: React.FC<BlogCardProps> = ({
     tags,
     currentLocale,
 }) => {
+    /**
+     * 触发全局过渡页展示，避免点击跳转时的视觉断层。
+     *
+     * 使用示例：
+     * triggerTransition();
+     *
+     * @returns void
+     */
+    const triggerTransition = () => {
+        if (typeof window === "undefined") return;
+        window.dispatchEvent(new CustomEvent("app-transition-start"));
+    };
 
     // 格式化日期
     const formattedDate = articleDate
@@ -112,7 +124,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
                             <div className={getCategoryClassName(categoryLabel, false)}>{categoryLabel}</div>
                         )
                 )}
-                <Link className={style.blog_card_title} href={`/blog/${articleId}`}>
+                <Link className={style.blog_card_title} href={`/blog/${articleId}`} onClick={triggerTransition}>
                     {categoryPosition === "inline-title" && showCategory && category && categoryLabel && (
                         <span className={getCategoryClassName(categoryLabel, true)}>{categoryLabel}</span>
                     )}
@@ -139,7 +151,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
                         <AiFillCalendar aria-hidden="true" /> 
                         {formattedDate} 
                     </p>
-                    <Link className={style.blog_card_link} href={`/blog/${articleId}`} aria-label={`阅读更多关于 ${articleTitle}`}>
+                    <Link className={style.blog_card_link} href={`/blog/${articleId}`} aria-label={`阅读更多关于 ${articleTitle}`} onClick={triggerTransition}>
                         Read More <FaAngleRight aria-hidden="true" />
                     </Link>
                 </div>

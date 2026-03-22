@@ -42,6 +42,20 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     const [isCompactToc, setIsCompactToc] = useState(false);
     const postMainRef = useRef<HTMLDivElement | null>(null);
     const tocRef = useRef<HTMLElement | null>(null);
+    const loadingStateRef = useRef(false);
+
+    /**
+     * 触发全局过渡页展示，用于文章切换与返回列表。
+     *
+     * 使用示例：
+     * triggerTransition();
+     *
+     * @returns void
+     */
+    const triggerTransition = () => {
+        if (typeof window === 'undefined') return;
+        window.dispatchEvent(new CustomEvent("app-transition-start"));
+    };
 
     // NOTE: 通过标记首渲染，在有服务端初始内容时避免重复请求
     const isFirstRender = useRef(true);
@@ -107,6 +121,21 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         
         fetchData();
     }, [slug, locale, initialContent, initialLocale, t]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (status === "Loading") {
+            if (!loadingStateRef.current) {
+                loadingStateRef.current = true;
+                window.dispatchEvent(new CustomEvent("app-transition-start"));
+            }
+            return;
+        }
+        if (loadingStateRef.current) {
+            loadingStateRef.current = false;
+        }
+        window.dispatchEvent(new CustomEvent("app-transition-end"));
+    }, [status]);
 
     const showCategory = process.env.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED !== 'false';
     const showTags = process.env.NEXT_PUBLIC_BLOG_TAGS_ENABLED !== 'false';
@@ -283,7 +312,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     return (
         <div className={style.post_wrapper}>
             <div className={style.post_container}>
-                <Link href="/blog" className={style.post_backlink}>
+                <Link href="/blog" className={style.post_backlink} onClick={triggerTransition}>
                     &lt; Back to blog list
                 </Link>
                 {showCategory && categoryLabel && articleContent?.category?.id && (
@@ -364,7 +393,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                 <div className={style.tip_error}>{t('Status.Error')}</div>
                                 <div className={style.tip_error_details} id="error_details">{errorMsg}</div>
                                 <div className={style.tip_error_details}>
-                                    <Link href="/blog">{t('Error.BackToBlog')}</Link>
+                                    <Link href="/blog" onClick={triggerTransition}>{t('Error.BackToBlog')}</Link>
                                 </div>
                             </>
                         ) : (
@@ -372,7 +401,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         )}
                         {
                             status === "Done"
-                                ? <Link href="/blog">{`< Back to blog list`}</Link>
+                                ? <Link href="/blog" onClick={triggerTransition}>{`< Back to blog list`}</Link>
                                 : null
                         }
                     </div>
@@ -383,7 +412,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         <ul className={style.post_series_list}>
                             {seriesPosts.map(item => (
                                 <li key={item.slug} className={item.slug === slug ? style.post_series_item_active : style.post_series_item}>
-                                    <Link href={`/blog/${item.slug}`}>{item.title}</Link>
+                                    <Link href={`/blog/${item.slug}`} onClick={triggerTransition}>{item.title}</Link>
                                 </li>
                             ))}
                         </ul>
@@ -395,7 +424,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         <ul className={style.post_recommend_list}>
                             {recommendPosts.map(item => (
                                 <li key={item.slug} className={style.post_recommend_item}>
-                                    <Link href={`/blog/${item.slug}`}>{item.title}</Link>
+                                    <Link href={`/blog/${item.slug}`} onClick={triggerTransition}>{item.title}</Link>
                                 </li>
                             ))}
                         </ul>

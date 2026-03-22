@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import style from "./Blog.module.css";
 import Background from "../Common/Background/Background";
@@ -62,6 +62,8 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     const restoredScrollRef = useRef(false);
     const restoreStateRef = useRef<{ scrollY: number; page: number; sortMode: "recommend" | "date-desc" | "date-asc" } | null>(null);
     const skipScrollToTopRef = useRef(false);
+    const loadingStateRef = useRef(false);
+    const skipTransitionOnceRef = useRef(false);
 
     const storageKey = useMemo(() => {
         if (!pathname) return "blog:list:unknown";
@@ -85,6 +87,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
             };
             if (restoreStateRef.current.page !== currentPage) {
                 skipScrollToTopRef.current = true;
+                skipTransitionOnceRef.current = true;
                 setCurrentPage(restoreStateRef.current.page);
             }
             if (restoreStateRef.current.sortMode !== sortMode) {
@@ -174,6 +177,43 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         restoredScrollRef.current = true;
         window.scrollTo({ top: restoreStateRef.current.scrollY, behavior: "auto" });
     }, [status]);
+
+    /**
+     * 触发全局过渡事件，确保列表加载与跳转有视觉承接。
+     *
+     * 使用示例：
+     * dispatchTransition("app-transition-start");
+     *
+     * @param eventName 过渡事件名称
+     * @returns void
+     */
+    const dispatchTransition = useCallback((eventName: "app-transition-start" | "app-transition-end") => {
+        if (typeof window === "undefined") return;
+        window.dispatchEvent(new CustomEvent(eventName));
+    }, []);
+
+    useEffect(() => {
+        if (status === "Loading") {
+            if (skipTransitionOnceRef.current) {
+                loadingStateRef.current = true;
+                return;
+            }
+            if (!loadingStateRef.current) {
+                loadingStateRef.current = true;
+                dispatchTransition("app-transition-start");
+            }
+            return;
+        }
+        if (skipTransitionOnceRef.current) {
+            skipTransitionOnceRef.current = false;
+            loadingStateRef.current = false;
+            return;
+        }
+        if (loadingStateRef.current) {
+            loadingStateRef.current = false;
+            dispatchTransition("app-transition-end");
+        }
+    }, [dispatchTransition, status]);
 
     /**
      * 处理分页切换
