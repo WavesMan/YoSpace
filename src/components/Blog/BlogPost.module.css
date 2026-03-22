@@ -723,7 +723,7 @@
     gap: 2rem;
     align-items: flex-start;
     justify-content: center;
-    padding: 0 1.5rem;
+    padding: 0 calc(1.5rem + 320px) 0 1.5rem;
 }
 
 .post_toc {
@@ -732,8 +732,9 @@
     font-family: var(--font-family-main);
     font-size: var(--font-size-small);
     color: var(--color-article-text-secondary);
-    position: sticky;
+    position: fixed;
     top: 120px;
+    right: max(1.5rem, calc(50% - 600px));
     align-self: flex-start;
     background-color: var(--color-bg-secondary);
     border-radius: 16px;
@@ -743,6 +744,12 @@
     max-height: calc(100dvh - 170px);
     display: flex;
     flex-direction: column;
+}
+
+@media (max-width: 1100px) {
+    .post_main {
+        padding: 0 1.5rem;
+    }
 }
 
 .post_toc_title {

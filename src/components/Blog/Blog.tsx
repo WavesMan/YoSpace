@@ -61,6 +61,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     const hasRestoredRef = useRef(false);
     const restoredScrollRef = useRef(false);
     const restoreStateRef = useRef<{ scrollY: number; page: number; sortMode: "recommend" | "date-desc" | "date-asc" } | null>(null);
+    const restoreTargetPageRef = useRef<number | null>(null);
     const skipScrollToTopRef = useRef(false);
     const loadingStateRef = useRef(false);
     const skipTransitionOnceRef = useRef(false);
@@ -70,6 +71,29 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         return `blog:list:${pathname}:${locale}`;
     }, [pathname, locale]);
 
+    /**
+     * 重置列表恢复状态，避免跨语言或路由误复用。
+     *
+     * 使用示例：
+     * hasRestoredRef.current = false;
+     *
+     * @returns void
+     */
+    useEffect(() => {
+        hasRestoredRef.current = false;
+        restoredScrollRef.current = false;
+        restoreTargetPageRef.current = null;
+        restoreStateRef.current = null;
+    }, [storageKey]);
+
+    /**
+     * 读取列表页记忆状态，恢复分页与滚动位置。
+     *
+     * 使用示例：
+     * window.sessionStorage.getItem(storageKey);
+     *
+     * @returns void
+     */
     useEffect(() => {
         if (typeof window === "undefined") return;
         if (hasRestoredRef.current) return;
@@ -85,6 +109,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                 sortMode: nextSortMode === "date-desc" || nextSortMode === "date-asc" ? nextSortMode : "recommend",
                 scrollY: Number.isFinite(nextScrollY) && nextScrollY >= 0 ? nextScrollY : 0,
             };
+            restoreTargetPageRef.current = restoreStateRef.current.page;
             if (restoreStateRef.current.page !== currentPage) {
                 skipScrollToTopRef.current = true;
                 skipTransitionOnceRef.current = true;
@@ -169,14 +194,24 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         return () => window.removeEventListener("scroll", handleScroll);
     }, [currentPage, sortMode, storageKey]);
 
+    /**
+     * 在列表数据就绪后恢复滚动位置，确保分页一致。
+     *
+     * 使用示例：
+     * window.scrollTo({ top, behavior: "auto" });
+     *
+     * @returns void
+     */
     useEffect(() => {
         if (typeof window === "undefined") return;
         if (status !== "Done") return;
         if (restoredScrollRef.current) return;
         if (!restoreStateRef.current) return;
+        if (restoreTargetPageRef.current !== null && restoreTargetPageRef.current !== currentPage) return;
         restoredScrollRef.current = true;
+        restoreTargetPageRef.current = null;
         window.scrollTo({ top: restoreStateRef.current.scrollY, behavior: "auto" });
-    }, [status]);
+    }, [status, currentPage]);
 
     /**
      * 触发全局过渡事件，确保列表加载与跳转有视觉承接。

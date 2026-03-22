@@ -43,6 +43,11 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     const postMainRef = useRef<HTMLDivElement | null>(null);
     const tocRef = useRef<HTMLElement | null>(null);
     const loadingStateRef = useRef(false);
+    const restoredScrollRef = useRef(false);
+    const restoreScrollYRef = useRef<number | null>(null);
+    const scrollStorageKey = slug
+        ? `scroll:post:${slug}:${locale}`
+        : `scroll:post:unknown:${locale}`;
 
     /**
      * 触发全局过渡页展示，用于文章切换与返回列表。
@@ -136,6 +141,89 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         }
         window.dispatchEvent(new CustomEvent("app-transition-end"));
     }, [status]);
+
+    /**
+     * 重置详情页滚动恢复状态，避免跨文章误恢复。
+     *
+     * 使用示例：
+     * restoredScrollRef.current = false;
+     *
+     * @returns void
+     */
+    useEffect(() => {
+        restoredScrollRef.current = false;
+        restoreScrollYRef.current = null;
+    }, [scrollStorageKey]);
+
+    /**
+     * 读取详情页滚动位置，支持返回时恢复阅读进度。
+     *
+     * 使用示例：
+     * window.sessionStorage.getItem(scrollStorageKey);
+     *
+     * @returns void
+     */
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const raw = window.sessionStorage.getItem(scrollStorageKey);
+        if (!raw) return;
+        try {
+            const parsed = JSON.parse(raw) as { scrollY?: number };
+            const nextScrollY = Number(parsed.scrollY);
+            restoreScrollYRef.current = Number.isFinite(nextScrollY) && nextScrollY >= 0 ? nextScrollY : 0;
+        } catch {
+        }
+    }, [scrollStorageKey]);
+
+    /**
+     * 记录详情页滚动位置，保持阅读进度。
+     *
+     * 使用示例：
+     * window.sessionStorage.setItem(scrollStorageKey, JSON.stringify({ scrollY }));
+     *
+     * @returns void
+     */
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        let ticking = false;
+        /**
+         * 通过 requestAnimationFrame 节流滚动写入，降低性能开销。
+         *
+         * 使用示例：
+         * window.addEventListener("scroll", handleScroll);
+         *
+         * @returns void
+         */
+        const handleScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                ticking = false;
+                const payload = { scrollY: window.scrollY };
+                window.sessionStorage.setItem(scrollStorageKey, JSON.stringify(payload));
+            });
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [scrollStorageKey]);
+
+    /**
+     * 在文章内容渲染完成后恢复滚动位置。
+     *
+     * 使用示例：
+     * window.scrollTo({ top, behavior: "auto" });
+     *
+     * @returns void
+     */
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (status !== "Done") return;
+        if (!isDeferredReady) return;
+        if (restoredScrollRef.current) return;
+        if (restoreScrollYRef.current === null) return;
+        restoredScrollRef.current = true;
+        window.scrollTo({ top: restoreScrollYRef.current, behavior: "auto" });
+    }, [isDeferredReady, status]);
 
     const showCategory = process.env.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED !== 'false';
     const showTags = process.env.NEXT_PUBLIC_BLOG_TAGS_ENABLED !== 'false';
