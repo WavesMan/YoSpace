@@ -1,6 +1,5 @@
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
-import sharp from 'sharp';
 
 /**
  * 解析外部或本地 favicon 资源为二进制数据
@@ -142,7 +141,9 @@ export const resolveCircleSvg = async (size: number): Promise<string> => {
  */
 export const resolveCirclePngBuffer = async (size: number): Promise<Buffer> => {
   const svg = await resolveCircleSvg(size);
-  return sharp(Buffer.from(svg))
+  const sharpModule = await import('sharp');
+  const sharpInstance = sharpModule.default ?? sharpModule;
+  return sharpInstance(Buffer.from(svg))
     .resize(size, size, { fit: 'cover' })
     .png()
     .toBuffer();
