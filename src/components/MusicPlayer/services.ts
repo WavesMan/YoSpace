@@ -93,3 +93,35 @@ export const getSongUrl = async (id: number): Promise<string | null> => {
     return null;
   }
 };
+
+/**
+ * 获取歌曲歌词（逐字优先、普通歌词兜底）
+ *
+ * 使用示例：
+ * const lyric = await fetchLyricData(trackId);
+ *
+ * @param id 歌曲ID
+ * @returns 歌词文本数据
+ */
+export const fetchLyricData = async (id: number): Promise<{ yrc: string; lrc: string }> => {
+  const empty = { yrc: '', lrc: '' };
+  try {
+    const yrcRes = await fetch(`${BASE_URL}/lyric/new?id=${id}&timestamp=${Date.now()}`);
+    const yrcType = yrcRes.headers.get('content-type') || '';
+    const yrcJson = yrcType.includes('application/json') ? await yrcRes.json().catch(() => null) : null;
+    const yrcText = typeof yrcJson?.yrc?.lyric === 'string' ? yrcJson.yrc.lyric : '';
+
+    if (yrcText) {
+      return { yrc: yrcText, lrc: '' };
+    }
+
+    const lrcRes = await fetch(`${BASE_URL}/lyric?id=${id}&timestamp=${Date.now()}`);
+    const lrcType = lrcRes.headers.get('content-type') || '';
+    const lrcJson = lrcType.includes('application/json') ? await lrcRes.json().catch(() => null) : null;
+    const lrcText = typeof lrcJson?.lrc?.lyric === 'string' ? lrcJson.lrc.lyric : '';
+    return { yrc: '', lrc: lrcText || '' };
+  } catch (error) {
+    console.error('fetchLyricData error', error);
+    return empty;
+  }
+};

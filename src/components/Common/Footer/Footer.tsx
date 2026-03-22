@@ -16,6 +16,12 @@ import style from "./Footer.module.css";
  */
 const Footer = () => {
     const pathname = usePathname();
+    const [footerLyric, setFooterLyric] = useState<{
+        line: string;
+        nextLine: string;
+        isPlaying: boolean;
+        hasLyric: boolean;
+    } | null>(null);
 
     // NOTE: 来自 Next.js 公共环境变量的站点配置
     const icpCode: string | undefined = process.env.NEXT_PUBLIC_ICP_CODE;
@@ -45,6 +51,49 @@ const Footer = () => {
             window.removeEventListener('resize', measure);
         };
     }, [pathname]);
+
+    /**
+     * 监听播放器歌词事件，同步页脚显示
+     *
+     * 使用示例：
+     * // 播放状态变化时自动触发
+     *
+     * @returns 无返回值
+     */
+    useEffect(() => {
+        /**
+         * 处理歌词事件并更新页脚状态
+         *
+         * 使用示例：
+         * // event.detail 包含歌词与播放状态
+         *
+         * @param event 自定义歌词事件
+         * @returns 无返回值
+         */
+        const handleLyric = (event: Event) => {
+            const detail = (event as CustomEvent<{
+                line: string;
+                nextLine: string;
+                isPlaying: boolean;
+                hasLyric: boolean;
+            }>).detail;
+            if (!detail) {
+                setFooterLyric(null);
+                return;
+            }
+            setFooterLyric({
+                line: detail.line || '',
+                nextLine: detail.nextLine || '',
+                isPlaying: !!detail.isPlaying,
+                hasLyric: !!detail.hasLyric,
+            });
+        };
+
+        window.addEventListener('music-lyric-update', handleLyric);
+        return () => {
+            window.removeEventListener('music-lyric-update', handleLyric);
+        };
+    }, []);
 
     const siteName = (siteNameRaw || "WaveYo").trim();
 
@@ -108,18 +157,33 @@ const Footer = () => {
         return null;
     }
 
+    const shouldShowLyric = !!footerLyric?.hasLyric && !!footerLyric?.isPlaying && !!footerLyric?.line;
+
     // NOTE: 桌面端始终贴底展示，移动端按 shouldStaticOnMobile 控制是否固定
     return (
         <div className={`${style.footer_wrapper} ${shouldStaticOnMobile ? style.footer_wrapper_mobile_static : ''}`}>
             <div className={style.footer_container}>
-                <div className={style.footer_miit}>
-                    {footerItems.map((item, index) => (
-                        <React.Fragment key={item.key ?? index}>
-                            {index > 0 ? <span className={style.separator}>|</span> : null}
-                            {item}
-                        </React.Fragment>
-                    ))}
-                </div>
+                {shouldShowLyric ? (
+                    <div className={style.footer_lyric}>
+                        <div className={style.footer_lyric_line}>
+                            {footerLyric?.line}
+                        </div>
+                        {footerLyric?.nextLine ? (
+                            <div className={style.footer_lyric_next}>
+                                {footerLyric.nextLine}
+                            </div>
+                        ) : null}
+                    </div>
+                ) : (
+                    <div className={style.footer_miit}>
+                        {footerItems.map((item, index) => (
+                            <React.Fragment key={item.key ?? index}>
+                                {index > 0 ? <span className={style.separator}>|</span> : null}
+                                {item}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )

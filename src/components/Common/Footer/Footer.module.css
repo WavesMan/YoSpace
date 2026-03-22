@@ -53,6 +53,27 @@
     margin: 0 0.25rem;
 }
 
+.footer_lyric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.footer_lyric_line {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.footer_lyric_next {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    opacity: 0.85;
+}
+
 @media (max-width: 768px) {
     .footer_wrapper {
         padding: 0.75rem 0;
@@ -72,6 +93,14 @@
     }
 
     .copyright {
+        font-size: 0.75rem;
+    }
+
+    .footer_lyric_line {
+        font-size: 0.85rem;
+    }
+
+    .footer_lyric_next {
         font-size: 0.75rem;
     }
 }

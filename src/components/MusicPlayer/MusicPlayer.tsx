@@ -10,6 +10,8 @@ import { PlayMode } from './types';
 // Hooks & Services
 import { useAudio } from './hooks/useAudio';
 import { usePlaylist } from './hooks/usePlaylist';
+import { fetchLyricData } from './services';
+import { parseLrcLines, parseYrcLines, type LyricLine } from './utils';
 
 // 子组件
 import PlayerHeader from './components/PlayerHeader';
@@ -36,6 +38,17 @@ export default function MusicPlayer() {
   const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
   const preloadRequestIdRef = useRef(0);
   const preloadedUrlRef = useRef<string | null>(null);
+  const lyricLineRef = useRef('');
+  const lyricNextLineRef = useRef('');
+  const lyricLinesRef = useRef<LyricLine[]>([]);
+  const lyricIndexRef = useRef(-1);
+  const lyricRequestIdRef = useRef(0);
+  const footerLyricRef = useRef<{
+    line: string;
+    nextLine: string;
+    isPlaying: boolean;
+    hasLyric: boolean;
+  } | null>(null);
 
   // --- Logic Hooks ---
   const {
@@ -134,6 +147,79 @@ export default function MusicPlayer() {
     }
   }, [audioRef, playlist, currentTrackIndex, playTrack, toggleAudio]);
 
+  /**
+   * 重置歌词状态，避免切歌残留
+   *
+   * 使用示例：
+   * resetLyricState();
+   *
+   * @returns 无返回值
+   */
+  const resetLyricState = useCallback(() => {
+    lyricLinesRef.current = [];
+    lyricIndexRef.current = -1;
+    lyricLineRef.current = '';
+    lyricNextLineRef.current = '';
+  }, []);
+
+  /**
+   * 向页脚派发歌词变更事件，避免重复派发
+   *
+   * 使用示例：
+   * emitFooterLyricIfChanged({ line, nextLine, isPlaying, hasLyric });
+   *
+   * @param payload 页脚歌词事件载荷
+   * @returns 无返回值
+   */
+  const emitFooterLyricIfChanged = useCallback((payload: {
+    line: string;
+    nextLine: string;
+    isPlaying: boolean;
+    hasLyric: boolean;
+  }) => {
+    if (typeof window === 'undefined') return;
+    const prev = footerLyricRef.current;
+    if (
+      prev
+      && prev.line === payload.line
+      && prev.nextLine === payload.nextLine
+      && prev.isPlaying === payload.isPlaying
+      && prev.hasLyric === payload.hasLyric
+    ) {
+      return;
+    }
+    footerLyricRef.current = payload;
+    window.dispatchEvent(new CustomEvent('music-lyric-update', { detail: payload }));
+  }, []);
+
+  /**
+   * 根据时间戳定位当前歌词行索引
+   *
+   * 使用示例：
+   * const index = resolveLyricIndex(lines, timeMs);
+   *
+   * @param lines 行级歌词数据
+   * @param timeMs 当前播放时间（毫秒）
+   * @returns 命中的行索引
+   */
+  const resolveLyricIndex = useCallback((lines: LyricLine[], timeMs: number) => {
+    if (lines.length === 0) return -1;
+    let left = 0;
+    let right = lines.length - 1;
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      const target = lines[mid];
+      if (timeMs < target.startMs) {
+        right = mid - 1;
+      } else if (timeMs >= target.endMs) {
+        left = mid + 1;
+      } else {
+        return mid;
+      }
+    }
+    return Math.min(left - 1, lines.length - 1);
+  }, []);
+
   // --- Effects ---
 
   // 初始化加载
@@ -196,6 +282,83 @@ export default function MusicPlayer() {
 
     run();
   }, [playlist.length, currentTrackIndex, getNextIndex, prepareTrack]);
+
+  /**
+   * 获取并解析歌词数据，逐字歌词优先
+   *
+   * 使用示例：
+   * // currentTrack 变化时自动触发
+   */
+  useEffect(() => {
+    if (!currentTrack?.id) {
+      resetLyricState();
+      emitFooterLyricIfChanged({
+        line: '',
+        nextLine: '',
+        isPlaying: false,
+        hasLyric: false,
+      });
+      return;
+    }
+
+    const requestId = (lyricRequestIdRef.current += 1);
+
+    const run = async () => {
+      const payload = await fetchLyricData(currentTrack.id);
+      if (requestId !== lyricRequestIdRef.current) return;
+      const yrcLines = parseYrcLines(payload.yrc);
+      const lrcLines = yrcLines.length > 0 ? [] : parseLrcLines(payload.lrc);
+      const parsedLines = yrcLines.length > 0 ? yrcLines : lrcLines;
+      lyricLinesRef.current = parsedLines;
+      lyricIndexRef.current = -1;
+      lyricLineRef.current = '';
+      lyricNextLineRef.current = '';
+      if (parsedLines.length === 0) {
+        emitFooterLyricIfChanged({
+          line: '',
+          nextLine: '',
+          isPlaying: false,
+          hasLyric: false,
+        });
+      }
+    };
+
+    run();
+  }, [currentTrack?.id, emitFooterLyricIfChanged, resetLyricState]);
+
+  /**
+   * 根据播放进度刷新歌词行并同步页脚
+   *
+   * 使用示例：
+   * // progress 变化时自动触发
+   */
+  useEffect(() => {
+    const lines = lyricLinesRef.current;
+    if (lines.length === 0) {
+      emitFooterLyricIfChanged({
+        line: '',
+        nextLine: '',
+        isPlaying,
+        hasLyric: false,
+      });
+      return;
+    }
+
+    const timeMs = Math.max(0, Math.floor(progress * 1000));
+    const index = resolveLyricIndex(lines, timeMs);
+    if (index !== lyricIndexRef.current) {
+      lyricIndexRef.current = index;
+      lyricLineRef.current = index >= 0 ? lines[index]?.text || '' : '';
+      lyricNextLineRef.current = index + 1 < lines.length ? lines[index + 1].text : '';
+    }
+
+    emitFooterLyricIfChanged({
+      line: lyricLineRef.current,
+      nextLine: lyricNextLineRef.current,
+      isPlaying,
+      hasLyric: true,
+    });
+  }, [isPlaying, progress, resolveLyricIndex, emitFooterLyricIfChanged]);
 
   // 监听播放结束，自动下一曲
   useEffect(() => {
