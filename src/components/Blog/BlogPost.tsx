@@ -481,7 +481,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                                 <div className={style.tip_error}>{t('Status.Error')}</div>
                                 <div className={style.tip_error_details} id="error_details">{errorMsg}</div>
                                 <div className={style.tip_error_details}>
-                                    <Link href="/blog" onClick={triggerTransition}>{t('Error.BackToBlog')}</Link>
+                                    <Link href="/blog" className={style.post_backlink_inline} onClick={triggerTransition}>
+                                        {t('Error.BackToBlog')}
+                                    </Link>
                                 </div>
                             </>
                         ) : (
@@ -489,7 +491,11 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         )}
                         {
                             status === "Done"
-                                ? <Link href="/blog" onClick={triggerTransition}>{`< Back to blog list`}</Link>
+                                ? (
+                                    <Link href="/blog" className={style.post_backlink_inline} onClick={triggerTransition}>
+                                        {`< Back to blog list`}
+                                    </Link>
+                                )
                                 : null
                         }
                     </div>
