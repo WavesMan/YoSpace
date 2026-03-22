@@ -67,7 +67,47 @@ const localeInitScript = `
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
   description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "从群众出发，扎根群众。向前，无限进步",
-  // icons 由 src/app/icon.tsx 自动生成，支持圆形裁剪
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        sizes: "16x16",
+        type: "image/x-icon",
+      },
+      {
+        url: "/favicon.ico",
+        sizes: "32x32",
+        type: "image/x-icon",
+      },
+      {
+        url: "/icon-48.png",
+        sizes: "48x48",
+        type: "image/png",
+      },
+      {
+        url: "/icon-64.png",
+        sizes: "64x64",
+        type: "image/png",
+      },
+      {
+        url: "/icon-180.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+      {
+        url: "/icon",
+        sizes: "any",
+        type: "image/svg+xml",
+      },
+    ],
+    apple: [
+      {
+        url: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 /**
