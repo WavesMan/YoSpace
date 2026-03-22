@@ -732,9 +732,8 @@
     font-family: var(--font-family-main);
     font-size: var(--font-size-small);
     color: var(--color-article-text-secondary);
-    position: fixed;
+    position: sticky;
     top: 120px;
-    left: 1.5rem;
     align-self: flex-start;
     background-color: var(--color-bg-secondary);
     border-radius: 16px;
