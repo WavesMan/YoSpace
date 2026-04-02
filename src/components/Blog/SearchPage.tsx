@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import style from "./Blog.module.css";
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
@@ -23,51 +23,68 @@ interface SearchPostItem {
 
 type SearchStatus = "Idle" | "Loading" | "Error" | "Ready";
 
+/**
+ * 归一化搜索关键字文本
+ *
+ * 统一转为小写字符串，避免因为大小写差异导致匹配失败，
+ * 同时兼容 Future 中服务端搜索实现的大小写不敏感约定。
+ *
+ * @param value 原始输入内容
+ * @returns 归一化后的文本
+ */
 const normalize = (value: string) => value.toLowerCase();
 
 const SearchPage: React.FC = () => {
     const { t, locale } = useI18n();
     const [status, setStatus] = useState<SearchStatus>("Idle");
-    const [posts, setPosts] = useState<SearchPostItem[]>([]);
+    const [results, setResults] = useState<SearchPostItem[]>([]);
     const [query, setQuery] = useState("");
 
     useEffect(() => {
-        const fetchAll = async () => {
+        const trimmed = query.trim();
+        if (!trimmed) {
+            setResults([]);
+            setStatus("Idle");
+            return;
+        }
+
+        let isCancelled = false;
+        const runSearch = async () => {
             const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
+            const params = new URLSearchParams({
+                query: trimmed,
+                offset: "0",
+                limit: "50",
+                locale: queryLocale,
+            });
+
             try {
                 setStatus("Loading");
-                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/search?${params.toString()}`);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch posts: ${response.status}`);
+                    throw new Error(`Failed to search posts: ${response.status}`);
                 }
                 const data = await response.json();
-                setPosts(Array.isArray(data.items) ? data.items : []);
+                if (isCancelled) {
+                    return;
+                }
+                setResults(Array.isArray(data.items) ? data.items : []);
                 setStatus("Ready");
             } catch (error) {
-                console.error("Search index fetch error:", error);
+                if (isCancelled) {
+                    return;
+                }
+                console.error("Search request error:", error);
                 setStatus("Error");
             }
         };
 
-        fetchAll();
-    }, [locale]);
+        void runSearch();
 
-    const results = useMemo(() => {
-        const trimmed = query.trim();
-        if (!trimmed) {
-            return [] as SearchPostItem[];
-        }
-        const keyword = normalize(trimmed);
-        return posts.filter(item => {
-            const title = normalize(item.title || "");
-            const description = normalize(item.description || "");
-            const tagsText = Array.isArray(item.tags) ? normalize(item.tags.join(" ")) : "";
-            if (title.includes(keyword)) return true;
-            if (description.includes(keyword)) return true;
-            if (tagsText.includes(keyword)) return true;
-            return false;
-        });
-    }, [posts, query]);
+        return () => {
+            isCancelled = true;
+        };
+    }, [query, locale]);
 
     const renderPostCard = (post: SearchPostItem, index: number) => (
         <BlogCard

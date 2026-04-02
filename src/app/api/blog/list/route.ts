@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLocalPostsList } from '@/utils/content/local';
+import { getDbPostsList } from '@/utils/content/db';
+
+/**
+ * 判断当前是否启用数据库作为博客内容数据源
+ *
+ * @returns 是否启用数据库内容数据源
+ */
+function shouldUseDatabaseContent(): boolean {
+  return process.env.NEXT_PUBLIC_USE_DB_CONTENT === 'true';
+}
 
 /**
  * 博客文章列表 API
  *
- * 从本地 Markdown 文件系统读取文章元数据并做分页处理，
+ * 从本地 Markdown 文件或 PostgreSQL 数据库中读取文章元数据并做分页处理，
  * 通过 offset/limit/locale 控制分页游标与语言版本，
  * 用于替代远程 CMS / Server Actions 的列表查询。
  */
@@ -23,8 +33,8 @@ export async function GET(request: NextRequest) {
   const locale = localeParam || 'en';
 
   try {
-    // NOTE: 调用本地内容读取工具，按语言与分页返回文章列表
-    const data = await getLocalPostsList(offset, limit, locale);
+    const useDb = shouldUseDatabaseContent();
+    const data = useDb ? await getDbPostsList(offset, limit, locale) : await getLocalPostsList(offset, limit, locale);
     return NextResponse.json(data);
   } catch (error) {
     // NOTE: 仅在服务端输出具体错误，对客户端返回统一错误信息，避免泄露实现细节

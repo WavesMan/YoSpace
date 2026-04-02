@@ -1,15 +1,34 @@
 import BlogPost from '@/components/Blog/BlogPost';
 import { Metadata } from 'next';
 import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
+import { getDbPostContent, getAllDbPostSlugs } from '@/utils/content/db';
 import { buildUrl, seoConfig } from '@/utils/seo';
 import { cookies, headers } from 'next/headers';
 
 // ISR: 每小时重新验证一次
 export const revalidate = 3600;
 
+/**
+ * 判断当前是否启用数据库作为博客内容数据源
+ *
+ * 通过环境变量 NEXT_PUBLIC_USE_DB_CONTENT 控制博客详情页的内容来源，
+ * 在保持本地 Markdown 回退能力的同时，优先支持 PostgreSQL 作为主数据源。
+ *
+ * @returns 是否启用数据库内容数据源
+ */
+function shouldUseDatabaseContent(): boolean {
+    return process.env.NEXT_PUBLIC_USE_DB_CONTENT === 'true';
+}
+
 // 预生成所有文章路径 (SSG)
 export async function generateStaticParams() {
     try {
+        if (shouldUseDatabaseContent()) {
+            const slugs = await getAllDbPostSlugs();
+            return slugs.map((post) => ({
+                slug: post.slug,
+            }));
+        }
         const slugs = await getAllLocalPostSlugs();
         return slugs.map((post) => ({
             slug: post.slug,
@@ -46,7 +65,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const ogImages = seoConfig.defaultOgImage ? [buildUrl(seoConfig.defaultOgImage)] : undefined;
 
     try {
-        const post = await getLocalPostContent(slug, locale);
+        const useDb = shouldUseDatabaseContent();
+        const post = useDb
+            ? await getDbPostContent(slug, locale)
+            : await getLocalPostContent(slug, locale);
         const title = `${post.title} - ${seoConfig.siteName}`;
         const descRaw = post.description || seoConfig.defaultDescription;
         const description = descRaw.replace(/\s+/g, ' ').trim().slice(0, 180);
@@ -130,7 +152,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     let initialContent;
     
     try {
-        initialContent = await getLocalPostContent(slug, locale);
+        const useDb = shouldUseDatabaseContent();
+        initialContent = useDb
+            ? await getDbPostContent(slug, locale)
+            : await getLocalPostContent(slug, locale);
     } catch (e) {
         console.error(`Failed to fetch content for slug: ${slug}`, e);
         // 如果服务端获取失败，不中断渲染，让客户端尝试或显示错误
