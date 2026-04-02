@@ -1,0 +1,116 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+
+  extensions = [pg_trgm(schema: "public")]
+}
+
+model Post {
+  id            String   @id @default(cuid())
+  slug          String
+  locale        String   @default("en")
+  title         String
+  description   String?  @default("")
+  content       String   @db.Text
+  meta          Json?    @db.JsonB
+
+  isPinned      Boolean  @default(false)
+  pinnedRank    Int?     @default(99)
+  isRecommended Boolean  @default(false)
+  recommendRank Int?     @default(99)
+
+  publishedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  views         Int      @default(0)
+
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+
+  seriesId      String?
+  series        Series?   @relation(fields: [seriesId], references: [id])
+  seriesIndex   Int?
+
+  tags          PostTag[]
+
+  @@unique([slug, locale])
+  @@index([slug])
+  @@index([locale])
+  @@index([title(ops: raw("gin_trgm_ops")), description(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+model Category {
+  id          String  @id
+  labelZh     String?
+  labelEn     String?
+  i18nKey     String?
+  colorToken  String?
+  order       Int?    @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts       Post[]
+}
+
+model Tag {
+  id        String  @id
+  labelZh   String?
+  labelEn   String?
+  i18nKey   String?
+  colorToken String?
+  order     Int?    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts     PostTag[]
+}
+
+model PostTag {
+  postId String
+  tagId  String
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model Series {
+  id        String  @id
+  label     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts     Post[]
+}
+
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json?    @db.JsonB
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VisitorLog {
+  id         String   @id @default(cuid())
+  ipHash     String
+  path       String
+  userAgent  String?
+  referer    String?
+  locale     String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
+}
