@@ -255,6 +255,79 @@ tags: ["Next.js", "Markdown"]
 正文内容...
 ```
 
+## 数据库内容源与 Markdown 迁移
+
+项目已内置从本地 Markdown 迁移到 PostgreSQL 的数据管道，并支持通过环境变量在「文件内容源」与「数据库内容源」之间切换。
+
+### 1. 准备数据库配置
+
+1. 在 `.env` 或 `.env.local` 中配置数据库连接（示例参见 `.env.example`）：
+
+```env
+DATABASE_URL=postgresql://user:password@host:5432/database_name?sslmode=require
+PGSSLMODE=require
+```
+
+2. 确保 PostgreSQL 实例可访问，并根据实际情况调整 `sslmode` / `PGSSLMODE`。
+
+### 2. 同步 Prisma Schema 到数据库
+
+在项目根目录执行（二选一）：
+
+```bash
+pnpm prisma db push
+# 或
+pnpm prisma migrate dev --name init
+```
+
+这一步会根据 [`prisma/schema.prisma`](./prisma/schema.prisma) 在数据库中创建/更新 `Post/Category/Tag/Series` 等表结构。
+
+### 3. 从 Markdown 迁移数据到数据库
+
+迁移脚本位置：[`scripts/migrate-posts-to-pg.ts`](./scripts/migrate-posts-to-pg.ts)  
+该脚本会扫描 `src/content/posts/` 下的所有 Markdown 文件，解析 frontmatter 与正文，并写入 PostgreSQL：
+
+- 支持中英文多语言（`slug.md` / `slug.zh-CN.md`）；
+- 自动维护分类、标签、系列等表；
+- 使用 upsert 策略，支持重复执行而不会产生重复数据。
+
+运行命令：
+
+```bash
+pnpm tsx scripts/migrate-posts-to-pg.ts
+```
+
+执行过程中，终端会输出：
+
+- 数据库连接初始化日志（`[DB] PrismaClient 初始化完成` 等）；
+- 迁移进度（例如 `已迁移文章：welcome (zh-CN)`）。
+
+### 4. 切换为数据库内容源
+
+默认情况下，博客内容仍然从本地 Markdown 读取。若需改为以数据库为主的数据源，在 `.env` 或 `.env.local` 中设置：
+
+```env
+NEXT_PUBLIC_USE_DB_CONTENT=true
+```
+
+然后重新启动开发/生产服务：
+
+```bash
+pnpm dev
+# 或重新执行构建与部署流程
+```
+
+开启数据库内容源后：
+
+- 列表 API：`/api/blog/list`
+- 详情 API：`/api/blog/post`
+- 搜索 API：`/api/blog/search`
+- 博客详情页 SSR（`/blog/[slug]` 的首屏内容与 SEO metadata）
+
+都会优先从 PostgreSQL 读取内容，本地 Markdown 仅作为备份与导入源使用。
+
+> 提示：确认数据库中的文章数据完整、页面渲染正常后，可以将 `src/content/posts/` 目录备份到其他位置，避免误编辑 Markdown 导致内容源不一致。
+
 ## 目录结构
 
 ```text
