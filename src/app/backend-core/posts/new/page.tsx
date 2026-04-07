@@ -4,29 +4,25 @@ import { resolveAdminEditableUiLocales, resolveI18nRuntimeConfig, toContentLocal
 import styles from "../PostForm.module.css";
 
 /**
- * 新建文章页面
+ * 后台新建文章页面
  *
- * 提供基础的标题、Slug、摘要与正文录入能力，
- * 通过 Server Action 将数据持久化到数据库，并触发博客页面的缓存重验证。
+ * 提供文章标题、Slug、状态、标签、摘要、正文等字段录入能力。
  *
- * @returns 新建文章页面 JSX 节点
+ * @returns 新建文章页面节点
  */
 const AdminNewPostPage = () => {
   const i18nConfig = resolveI18nRuntimeConfig();
   const editableUiLocales = resolveAdminEditableUiLocales();
   const defaultContentLocale = toContentLocale(i18nConfig.defaultUiLocale);
+
   return (
     <div className={styles.postFormRoot}>
       <div className={styles.postFormHeader}>
-        <h1 className={styles.postFormTitle}>
-          新建文章
-        </h1>
+        <h1 className={styles.postFormTitle}>新建文章</h1>
       </div>
       <form action={createPostAction} className={styles.postForm}>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            语种
-          </span>
+          <span className={styles.postFormLabelText}>语种</span>
           <select
             name="locale"
             defaultValue={defaultContentLocale}
@@ -37,50 +33,30 @@ const AdminNewPostPage = () => {
               const locale = toContentLocale(uiLocale);
               return (
                 <option key={uiLocale} value={locale}>
-                  {uiLocale}
+                  {uiLocale === "en-US" ? "English" : "中文"}
                 </option>
               );
             })}
           </select>
         </label>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            标题
-          </span>
-          <input
-            name="title"
-            type="text"
-            className={styles.postFormInput}
-          />
+          <span className={styles.postFormLabelText}>标题</span>
+          <input name="title" type="text" className={styles.postFormInput} />
         </label>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            Slug
-          </span>
-          <input
-            name="slug"
-            type="text"
-            className={styles.postFormInput}
-          />
+          <span className={styles.postFormLabelText}>Slug</span>
+          <input name="slug" type="text" className={styles.postFormInput} />
         </label>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            状态
-          </span>
-          <select
-            name="status"
-            defaultValue="PUBLISHED"
-            className={styles.postFormInput}
-          >
+          <span className={styles.postFormLabelText}>状态</span>
+          <select name="status" defaultValue="PUBLISHED" className={styles.postFormInput}>
             <option value="DRAFT">草稿</option>
             <option value="PUBLISHED">发布</option>
             <option value="ARCHIVED">归档</option>
           </select>
         </label>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            标签（逗号分隔）
-          </span>
+          <span className={styles.postFormLabelText}>标签（逗号分隔）</span>
           <input
             name="tags"
             type="text"
@@ -89,19 +65,11 @@ const AdminNewPostPage = () => {
           />
         </label>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            摘要
-          </span>
-          <textarea
-            name="description"
-            rows={3}
-            className={styles.postFormTextarea}
-          />
+          <span className={styles.postFormLabelText}>摘要</span>
+          <textarea name="description" rows={3} className={styles.postFormTextarea} />
         </label>
         <label className={styles.postFormField}>
-          <span className={styles.postFormLabelText}>
-            正文内容
-          </span>
+          <span className={styles.postFormLabelText}>正文内容</span>
           <textarea
             name="content"
             rows={12}
