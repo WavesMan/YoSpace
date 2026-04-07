@@ -1,7 +1,75 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "./LoginPage.module.css";
+
+const ADMIN_LOGIN_STORAGE_KEY = "yo_admin_login_draft";
+
+interface AdminLoginDraft {
+    username: string;
+    password: string;
+    rememberPassword: boolean;
+}
+
+/**
+ * 读取浏览器本地存储中的登录草稿
+ *
+ * @returns 登录草稿，读取失败时返回空草稿
+ */
+function readAdminLoginDraft(): AdminLoginDraft {
+    if (typeof window === "undefined") {
+        return {
+            username: "",
+            password: "",
+            rememberPassword: false,
+        };
+    }
+    try {
+        const raw = window.localStorage.getItem(ADMIN_LOGIN_STORAGE_KEY);
+        if (!raw) {
+            return {
+                username: "",
+                password: "",
+                rememberPassword: false,
+            };
+        }
+        const parsed = JSON.parse(raw) as Partial<AdminLoginDraft>;
+        return {
+            username: typeof parsed.username === "string" ? parsed.username : "",
+            password: typeof parsed.password === "string" ? parsed.password : "",
+            rememberPassword: Boolean(parsed.rememberPassword),
+        };
+    } catch {
+        return {
+            username: "",
+            password: "",
+            rememberPassword: false,
+        };
+    }
+}
+
+/**
+ * 将登录草稿写入浏览器本地存储
+ *
+ * @param draft 登录草稿
+ */
+function writeAdminLoginDraft(draft: AdminLoginDraft): void {
+    if (typeof window === "undefined") {
+        return;
+    }
+    window.localStorage.setItem(ADMIN_LOGIN_STORAGE_KEY, JSON.stringify(draft));
+}
+
+/**
+ * 清理登录草稿
+ */
+function clearAdminLoginDraft(): void {
+    if (typeof window === "undefined") {
+        return;
+    }
+    window.localStorage.removeItem(ADMIN_LOGIN_STORAGE_KEY);
+}
 
 /**
  * 管理员登录页面
@@ -12,10 +80,23 @@ import styles from "./LoginPage.module.css";
  * @returns 管理员登录页 JSX 节点
  */
 const AdminLoginPage: React.FC = () => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
+    const [loginDraft] = useState<AdminLoginDraft>(() => readAdminLoginDraft());
+    const [username, setUsername] = useState(loginDraft.username);
+    const [password, setPassword] = useState(loginDraft.password);
+    const [rememberPassword, setRememberPassword] = useState(loginDraft.rememberPassword);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+    const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
+
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, []);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -42,7 +123,16 @@ const AdminLoginPage: React.FC = () => {
                 setSubmitting(false);
                 return;
             }
-            window.location.reload();
+            if (rememberPassword) {
+                writeAdminLoginDraft({
+                    username,
+                    password,
+                    rememberPassword: true,
+                });
+            } else {
+                clearAdminLoginDraft();
+            }
+            window.location.href = adminPath;
         } catch {
             setErrorMessage("登录请求异常，请稍后重试。");
             setSubmitting(false);
@@ -77,15 +167,36 @@ const AdminLoginPage: React.FC = () => {
                     <label className={styles.loginLabel} htmlFor="admin-password">
                         密码
                     </label>
-                    <input
-                        id="admin-password"
-                        type="password"
-                        value={password}
-                        onChange={event => setPassword(event.target.value)}
-                        autoComplete="current-password"
-                        className={styles.loginInput}
-                    />
+                    <div className={styles.loginPasswordRow}>
+                        <input
+                            id="admin-password"
+                            type={isPasswordVisible ? "text" : "password"}
+                            value={password}
+                            onChange={event => setPassword(event.target.value)}
+                            autoComplete="current-password"
+                            className={styles.loginInput}
+                        />
+                        <button
+                            type="button"
+                            className={styles.loginPasswordToggle}
+                            onClick={() => setIsPasswordVisible(prev => !prev)}
+                            aria-label={isPasswordVisible ? "隐藏密码" : "显示密码"}
+                            title={isPasswordVisible ? "隐藏密码" : "显示密码"}
+                        >
+                            {isPasswordVisible ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                        </button>
+                    </div>
                 </div>
+                <label className={styles.loginRemember}>
+                    <input
+                        type="checkbox"
+                        checked={rememberPassword}
+                        onChange={event => setRememberPassword(event.target.checked)}
+                        className={styles.loginRememberInput}
+                    />
+                    <span className={styles.loginRememberIndicator} aria-hidden="true" />
+                    <span className={styles.loginRememberText}>记住密码（仅当前浏览器）</span>
+                </label>
                 {errorMessage && (
                     <div className={styles.loginError}>
                         {errorMessage}

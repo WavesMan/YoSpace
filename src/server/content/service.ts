@@ -2,6 +2,7 @@ import type { PostContentResponse, PostListResponse } from "@/utils/content/loca
 import { getAllLocalPostSlugs, getLocalPostContent, getLocalPostsList } from "@/utils/content/local";
 import { getAllDbPostSlugs, getDbPostContent, getDbPostsList, searchDbPosts } from "@/utils/content/db";
 import { getDbClient } from "@/server/db/client";
+import { resolveContentLocale } from "@/utils/i18n/runtime";
 
 interface PublicPostContentResult {
   content: PostContentResponse;
@@ -31,13 +32,7 @@ export function shouldUseDatabaseContent(): boolean {
  * @returns 归一化后的语言标识
  */
 function normalizeDetailLocale(rawLocale: string): string {
-  if (rawLocale === "en-US") {
-    return "en";
-  }
-  if (rawLocale === "zh-Hans") {
-    return "zh-CN";
-  }
-  return rawLocale;
+  return resolveContentLocale(rawLocale);
 }
 
 /**
@@ -96,10 +91,11 @@ async function resolveDbSlug(slug: string, locale: string): Promise<string> {
  * @returns 列表响应结构
  */
 export async function fetchPublicPostsList(offset: number, limit: number, locale: string): Promise<PostListResponse> {
+  const resolvedLocale = resolveContentLocale(locale);
   if (shouldUseDatabaseContent()) {
-    return getDbPostsList(offset, limit, locale);
+    return getDbPostsList(offset, limit, resolvedLocale);
   }
-  return getLocalPostsList(offset, limit, locale);
+  return getLocalPostsList(offset, limit, resolvedLocale);
 }
 
 /**
@@ -110,16 +106,17 @@ export async function fetchPublicPostsList(offset: number, limit: number, locale
  * @returns 文章内容与最终解析的 slug
  */
 export async function fetchPublicPostContentBySlug(slug: string, locale: string): Promise<PublicPostContentResult> {
+  const resolvedLocale = resolveContentLocale(locale);
   if (!shouldUseDatabaseContent()) {
-    const content = await getLocalPostContent(slug, locale);
+    const content = await getLocalPostContent(slug, resolvedLocale);
     return {
       content,
       resolvedSlug: slug,
     };
   }
 
-  const resolvedSlug = await resolveDbSlug(slug, locale);
-  const content = await getDbPostContent(resolvedSlug, locale);
+  const resolvedSlug = await resolveDbSlug(slug, resolvedLocale);
+  const content = await getDbPostContent(resolvedSlug, resolvedLocale);
   return {
     content,
     resolvedSlug,
@@ -153,20 +150,21 @@ export async function searchPublicPosts(
   limit: number,
   locale: string,
 ): Promise<PostListResponse> {
+  const resolvedLocale = resolveContentLocale(locale);
   const trimmed = keyword.trim();
   if (!trimmed) {
     return {
       items: [],
       total: 0,
-      locale,
+      locale: resolvedLocale,
     };
   }
 
   if (shouldUseDatabaseContent()) {
-    return searchDbPosts(trimmed, offset, limit, locale);
+    return searchDbPosts(trimmed, offset, limit, resolvedLocale);
   }
 
-  const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
+  const queryLocale = resolvedLocale === "zh-CN" ? "zh-CN" : "en";
   const safeLimit = Math.max(1, Math.floor(limit));
   const safeOffset = Math.max(0, Math.floor(offset));
   const fetchLimit = Math.min(Math.max(100, safeLimit * 8), 5000);
@@ -183,6 +181,6 @@ export async function searchPublicPosts(
   return {
     items: paged,
     total: filtered.length,
-    locale: listData.locale,
+    locale: resolvedLocale === "zh-CN" ? "zh-CN" : "en",
   };
 }

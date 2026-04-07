@@ -3,6 +3,7 @@ import CategoryDetail from "@/components/Blog/CategoryDetail";
 import type { PostItem } from "@/utils/content/local";
 import { cookies, headers } from "next/headers";
 import { fetchPublicPostsList } from "@/server/content/service";
+import { resolveContentLocale, resolveI18nRuntimeConfig } from "@/utils/i18n/runtime";
 
 export const metadata: Metadata = {
     title: `Category - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
@@ -30,12 +31,13 @@ export default async function CategoryPage({ params }: { params: Promise<Categor
     const savedLocale = cookieStore.get('locale')?.value;
     const requestHeaders = await headers();
     const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
+    const i18nConfig = resolveI18nRuntimeConfig();
+    const uiLocale = i18nConfig.enabled && (savedLocale === 'en-US' || savedLocale === 'zh-CN')
         ? savedLocale
         : acceptLang.startsWith('en')
             ? 'en-US'
             : 'zh-CN';
-    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
+    const locale = resolveContentLocale(uiLocale);
     let initialPosts: PostItem[];
     try {
         const list = await fetchPublicPostsList(0, 2000, locale);

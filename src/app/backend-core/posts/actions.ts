@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { getDbClient } from '@/server/db/client';
+import { resolveContentLocale } from '@/utils/i18n/runtime';
 
 type AdminPostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-const ADMIN_LOCALE = 'zh-CN';
 
 /**
  * 判断异常是否由 status 字段兼容问题导致
@@ -57,6 +57,19 @@ function resolvePostStatus(rawValue: FormDataEntryValue | null): AdminPostStatus
     return upper;
   }
   return 'PUBLISHED';
+}
+
+/**
+ * 解析后台提交的文章语种
+ *
+ * @param rawValue 表单中的原始语种值
+ * @returns 归一化后的内容语种
+ */
+function resolveAdminPostLocale(rawValue: FormDataEntryValue | null): 'zh-CN' | 'en' {
+  if (typeof rawValue !== 'string') {
+    return resolveContentLocale(null);
+  }
+  return resolveContentLocale(rawValue);
 }
 
 /**
@@ -148,6 +161,7 @@ async function upsertSlugRedirect(
   db: Awaited<ReturnType<typeof getDbClient>>,
   oldSlug: string,
   newSlug: string,
+  locale: 'zh-CN' | 'en',
 ): Promise<void> {
   const redirectDelegate = (db as {
     postSlugRedirect?: {
@@ -168,7 +182,7 @@ async function upsertSlugRedirect(
     where: {
       oldSlug_locale: {
         oldSlug,
-        locale: ADMIN_LOCALE,
+        locale,
       },
     },
     update: {
@@ -177,7 +191,7 @@ async function upsertSlugRedirect(
     create: {
       oldSlug,
       newSlug,
-      locale: ADMIN_LOCALE,
+      locale,
     },
   });
 }
@@ -191,6 +205,7 @@ async function upsertSlugRedirect(
 async function cleanupSlugRedirect(
   db: Awaited<ReturnType<typeof getDbClient>>,
   slug: string,
+  locale: 'zh-CN' | 'en',
 ): Promise<void> {
   const redirectDelegate = (db as {
     postSlugRedirect?: {
@@ -212,11 +227,11 @@ async function cleanupSlugRedirect(
       OR: [
         {
           oldSlug: slug,
-          locale: ADMIN_LOCALE,
+          locale,
         },
         {
           newSlug: slug,
-          locale: ADMIN_LOCALE,
+          locale,
         },
       ],
     },
@@ -233,6 +248,7 @@ async function cleanupSlugRedirect(
  */
 export async function createPostAction(formData: FormData): Promise<void> {
   const db = await getDbClient();
+  const locale = resolveAdminPostLocale(formData.get('locale'));
   const title = String(formData.get('title') || '').trim();
   const slug = normalizeSlug(String(formData.get('slug') || ''));
   const description = String(formData.get('description') ?? formData.get('summary') ?? '').trim();
@@ -249,7 +265,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
     where: {
       slug_locale: {
         slug,
-        locale: ADMIN_LOCALE,
+        locale,
       },
     },
   });
@@ -266,7 +282,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
         description,
         content,
         ...(supportStatusField ? { status } : {}),
-        locale: ADMIN_LOCALE,
+        locale,
       },
     });
   } catch (error) {
@@ -279,7 +295,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
         slug,
         description,
         content,
-        locale: ADMIN_LOCALE,
+        locale,
       },
     });
   }
@@ -301,6 +317,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
  */
 export async function updatePostAction(slug: string, formData: FormData): Promise<void> {
   const db = await getDbClient();
+  const locale = resolveAdminPostLocale(formData.get('locale'));
   const title = String(formData.get('title') || '').trim();
   const nextSlug = normalizeSlug(String(formData.get('slug') || slug));
   const description = String(formData.get('description') ?? formData.get('summary') ?? '').trim();
@@ -317,13 +334,63 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
     where: {
       slug_locale: {
         slug,
-        locale: ADMIN_LOCALE,
+        locale,
       },
     },
   });
 
   if (!target) {
-    throw new Error('待更新文章不存在');
+    const existedSameSlug = await db.post.findUnique({
+      where: {
+        slug_locale: {
+          slug: nextSlug,
+          locale,
+        },
+      },
+    });
+    if (existedSameSlug) {
+      throw new Error('目标 Slug 已存在，请更换后重试');
+    }
+
+    let createdPost: { id: string; slug: string };
+    try {
+      createdPost = await db.post.create({
+        data: {
+          title,
+          slug: nextSlug,
+          description,
+          content,
+          ...(supportStatusField ? { status } : {}),
+          locale,
+        },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+    } catch (error) {
+      if (!isStatusFieldUnavailableError(error)) {
+        throw error;
+      }
+      createdPost = await db.post.create({
+        data: {
+          title,
+          slug: nextSlug,
+          description,
+          content,
+          locale,
+        },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
+    }
+
+    await syncPostTags(db, createdPost.id, tags);
+    revalidatePath('/blog');
+    revalidatePath(`/blog/${createdPost.slug}`);
+    return;
   }
 
   if (nextSlug !== slug) {
@@ -331,7 +398,7 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
       where: {
         slug_locale: {
           slug: nextSlug,
-          locale: ADMIN_LOCALE,
+          locale,
         },
       },
     });
@@ -371,7 +438,7 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
   }
 
   if (nextSlug !== slug) {
-    await upsertSlugRedirect(db, slug, nextSlug);
+    await upsertSlugRedirect(db, slug, nextSlug, locale);
   }
 
   await syncPostTags(db, target.id, tags);
@@ -389,14 +456,14 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
  *
  * @param slug 待删除文章的唯一标识
  */
-export async function deletePostAction(slug: string): Promise<void> {
+export async function deletePostAction(slug: string, locale: 'zh-CN' | 'en' = resolveContentLocale(null)): Promise<void> {
   const db = await getDbClient();
 
   const target = await db.post.findUnique({
     where: {
       slug_locale: {
         slug,
-        locale: ADMIN_LOCALE,
+        locale,
       },
     },
   });
@@ -411,7 +478,7 @@ export async function deletePostAction(slug: string): Promise<void> {
       id: target.id,
     },
   });
-  await cleanupSlugRedirect(db, slug);
+  await cleanupSlugRedirect(db, slug, locale);
 
   revalidatePath('/blog');
   revalidatePath(`/blog/${slug}`);

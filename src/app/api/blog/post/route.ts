@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPublicPostContentBySlug } from '@/server/content/service';
+import { trackPostView } from '@/server/analytics/service';
+import { resolveContentLocale } from '@/utils/i18n/runtime';
 
 /**
  * 博客文章详情 API
@@ -12,8 +14,8 @@ export async function GET(request: NextRequest) {
 
   const slug = searchParams.get('slug');
   const localeParam = searchParams.get('locale');
+  const locale = resolveContentLocale(localeParam);
   // NOTE: 未指定语言时默认使用英文内容，保持与本地内容约定一致
-  const locale = localeParam || 'en';
 
   if (!slug) {
     // NOTE: 缺少 slug 属于客户端请求错误，返回 400
@@ -22,6 +24,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await fetchPublicPostContentBySlug(slug, locale);
+    await trackPostView({
+      slug: result.resolvedSlug,
+      locale,
+      path: `/blog/${encodeURIComponent(result.resolvedSlug)}`,
+      headers: request.headers,
+    });
     return NextResponse.json({
       ...result.content,
       resolvedSlug: result.resolvedSlug,

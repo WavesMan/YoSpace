@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPublicPostsList } from '@/server/content/service';
+import { resolveContentLocale } from '@/utils/i18n/runtime';
 
 /**
  * 博客文章列表 API
@@ -14,13 +15,13 @@ export async function GET(request: NextRequest) {
   const offsetParam = searchParams.get('offset');
   const limitParam = searchParams.get('limit');
   const localeParam = searchParams.get('locale');
+  const locale = resolveContentLocale(localeParam);
 
   // NOTE: offset/limit 允许传入任意字符串，这里统一做 Number 转换与兜底
   const offset = Number.isFinite(Number(offsetParam)) ? Number(offsetParam) : 0;
   const defaultLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10', 10) || 10;
   const limit = Number.isFinite(Number(limitParam)) && Number(limitParam) > 0 ? Number(limitParam) : defaultLimit;
   // NOTE: 未指定语言时默认使用英文内容，保持与本地内容约定一致
-  const locale = localeParam || 'en';
 
   try {
     const data = await fetchPublicPostsList(offset, limit, locale);

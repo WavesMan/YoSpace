@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { getDbClient } from "@/server/db/client";
 import { deletePostAction } from "./actions";
+import { resolveContentLocale } from "@/utils/i18n/runtime";
 import styles from "./AdminPosts.module.css";
 
 /**
@@ -14,11 +15,12 @@ import styles from "./AdminPosts.module.css";
  */
 const AdminPostsPage = async () => {
   const db = await getDbClient();
+  const adminLocale = resolveContentLocale(null);
   const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
   const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
   const posts = await db.post.findMany({
     where: {
-      locale: "zh-CN",
+      locale: adminLocale,
     },
     orderBy: {
       updatedAt: "desc",
@@ -82,13 +84,13 @@ const AdminPostsPage = async () => {
                 </td>
                 <td className={styles.postsCell}>
                   <div className={styles.postsActions}>
-                    <Link className={styles.postsActionLink} href={`${adminPath}/posts/${post.slug}`}>
+                    <Link className={styles.postsActionLink} href={`${adminPath}/posts/${post.slug}?locale=${encodeURIComponent(adminLocale)}`}>
                       编辑
                     </Link>
                     <form
                       action={async () => {
                         "use server";
-                        await deletePostAction(post.slug);
+                        await deletePostAction(post.slug, adminLocale);
                       }}
                     >
                       <button className={styles.postsActionDanger} type="submit">

@@ -1,5 +1,6 @@
 import React from "react";
 import { createPostAction } from "../actions";
+import { resolveAdminEditableUiLocales, resolveI18nRuntimeConfig, toContentLocale } from "@/utils/i18n/runtime";
 import styles from "../PostForm.module.css";
 
 /**
@@ -11,6 +12,9 @@ import styles from "../PostForm.module.css";
  * @returns 新建文章页面 JSX 节点
  */
 const AdminNewPostPage = () => {
+  const i18nConfig = resolveI18nRuntimeConfig();
+  const editableUiLocales = resolveAdminEditableUiLocales();
+  const defaultContentLocale = toContentLocale(i18nConfig.defaultUiLocale);
   return (
     <div className={styles.postFormRoot}>
       <div className={styles.postFormHeader}>
@@ -19,6 +23,26 @@ const AdminNewPostPage = () => {
         </h1>
       </div>
       <form action={createPostAction} className={styles.postForm}>
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
+            语种
+          </span>
+          <select
+            name="locale"
+            defaultValue={defaultContentLocale}
+            className={styles.postFormInput}
+            disabled={!i18nConfig.enabled}
+          >
+            {editableUiLocales.map((uiLocale) => {
+              const locale = toContentLocale(uiLocale);
+              return (
+                <option key={uiLocale} value={locale}>
+                  {uiLocale}
+                </option>
+              );
+            })}
+          </select>
+        </label>
         <label className={styles.postFormField}>
           <span className={styles.postFormLabelText}>
             标题

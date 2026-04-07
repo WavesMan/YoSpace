@@ -2,6 +2,7 @@ import Blog from '@/components/Blog/Blog';
 import { Metadata } from 'next';
 import { cookies, headers } from 'next/headers';
 import { fetchPublicPostsList } from '@/server/content/service';
+import { resolveContentLocale, resolveI18nRuntimeConfig } from '@/utils/i18n/runtime';
 
 // 博客页面
 export const metadata: Metadata = {
@@ -26,12 +27,13 @@ export default async function BlogPage() {
   const savedLocale = cookieStore.get('locale')?.value;
   const requestHeaders = await headers();
   const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-  const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
+  const i18nConfig = resolveI18nRuntimeConfig();
+  const uiLocale = i18nConfig.enabled && (savedLocale === 'en-US' || savedLocale === 'zh-CN')
     ? savedLocale
     : acceptLang.startsWith('en')
       ? 'en-US'
       : 'zh-CN';
-  const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
+  const locale = resolveContentLocale(uiLocale);
   const itemsLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10') || 10;
   let initialData;
   

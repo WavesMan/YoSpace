@@ -1,4 +1,5 @@
 import { getDbClient } from "@/server/db/client";
+import { resolveContentLocale, resolveI18nRuntimeConfig } from "@/utils/i18n/runtime";
 import type {
     PostCategory,
     PostContentResponse,
@@ -16,16 +17,7 @@ import type {
  * @returns 数据库可用的语言标识
  */
 function normalizeListLocale(rawLocale: string | undefined): string {
-    if (!rawLocale) {
-        return "en";
-    }
-    if (rawLocale === "zh-CN" || rawLocale === "zh-Hans") {
-        return "zh-CN";
-    }
-    if (rawLocale === "en-US") {
-        return "en";
-    }
-    return rawLocale;
+    return resolveContentLocale(rawLocale);
 }
 
 /**
@@ -114,6 +106,10 @@ async function canUsePostStatusField(dbClient: any): Promise<boolean> {
  * @returns (slug, locale) 组合候选列表
  */
 function buildContentLocaleCandidates(slug: string, locale: string): { slug: string; locale: string }[] {
+    const i18nConfig = resolveI18nRuntimeConfig();
+    if (!i18nConfig.enabled) {
+        return [{ slug, locale: resolveContentLocale(null) }];
+    }
     if (locale === "en") {
         return [
             { slug, locale: "en" },

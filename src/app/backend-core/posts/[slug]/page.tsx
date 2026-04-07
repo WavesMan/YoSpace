@@ -1,12 +1,29 @@
 import React from 'react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDbClient } from '@/server/db/client';
 import { updatePostAction } from '../actions';
+import { normalizeUiLocale, resolveAdminEditableUiLocales, resolveI18nRuntimeConfig, toContentLocale } from '@/utils/i18n/runtime';
 
 interface AdminEditPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
+  searchParams: Promise<{
+    locale?: string;
+  }>;
+}
+
+/**
+ * 判断是否为数据库连接不可用错误
+ *
+ * @param error 捕获到的异常
+ * @returns 是否为数据库不可达错误
+ */
+function isDatabaseConnectionError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const lowered = message.toLowerCase();
+  return lowered.includes("can't reach database server") || lowered.includes("prismaclientinitializationerror");
 }
 
 /**
@@ -18,23 +35,111 @@ interface AdminEditPostPageProps {
  * @param props.params 路由参数，包含文章 slug
  * @returns 编辑文章页面 JSX 节点
  */
-const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
-  const db = await getDbClient();
-  const post = await db.post.findUnique({
-    where: {
-      slug_locale: {
-        slug: params.slug,
-        locale: 'zh-CN',
-      },
-    },
-    include: {
-      tags: {
-        include: {
-          tag: true,
+const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProps) => {
+  const { slug } = await params;
+  const query = await searchParams;
+  const i18nConfig = resolveI18nRuntimeConfig();
+  const activeUiLocale = i18nConfig.enabled ? normalizeUiLocale(query.locale) : i18nConfig.defaultUiLocale;
+  const activeLocale = toContentLocale(activeUiLocale);
+  const editableLocales = resolveAdminEditableUiLocales();
+  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
+  let post: {
+    slug: string;
+    title: string;
+    description: string | null;
+    content: string;
+    status?: string | null;
+    tags: Array<{ tag?: { id?: string } }>;
+  } | null = null;
+  let isCurrentLocaleMissing = false;
+
+  try {
+    const db = await getDbClient();
+    const currentLocalePost = await db.post.findUnique({
+      where: {
+        slug_locale: {
+          slug,
+          locale: activeLocale,
         },
       },
-    },
-  });
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    const fallbackPost = currentLocalePost
+      ? null
+      : await db.post.findFirst({
+        where: {
+          slug,
+        },
+        include: {
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
+        },
+      });
+    post = currentLocalePost || fallbackPost;
+    isCurrentLocaleMissing = !currentLocalePost;
+  } catch (error) {
+    if (!isDatabaseConnectionError(error)) {
+      throw error;
+    }
+    return (
+      <div>
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 600,
+            marginBottom: 12,
+          }}
+        >
+          数据库暂不可用
+        </h1>
+        <p
+          style={{
+            margin: '0 0 12px',
+            color: '#4b5563',
+            fontSize: 14,
+          }}
+        >
+          当前无法连接数据库，请稍后重试。
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link
+            href={`${adminPath}/posts`}
+            style={{
+              border: '1px solid #d1d5db',
+              borderRadius: 6,
+              padding: '6px 10px',
+              fontSize: 14,
+            }}
+          >
+            返回文章列表
+          </Link>
+          <Link
+            href={`${adminPath}/posts/${encodeURIComponent(slug)}?locale=${encodeURIComponent(activeUiLocale)}`}
+            style={{
+              border: '1px solid #2563eb',
+              color: '#2563eb',
+              borderRadius: 6,
+              padding: '6px 10px',
+              fontSize: 14,
+            }}
+          >
+            重新尝试
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     notFound();
@@ -57,6 +162,46 @@ const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
       >
         编辑文章
       </h1>
+      {i18nConfig.enabled && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          {editableLocales.map((uiLocale) => {
+            const localeValue = toContentLocale(uiLocale);
+            const isActive = activeLocale === localeValue;
+            return (
+              <Link
+                key={uiLocale}
+                href={`?locale=${encodeURIComponent(uiLocale)}`}
+                style={{
+                  border: isActive ? '1px solid #2563eb' : '1px solid #d1d5db',
+                  color: isActive ? '#2563eb' : '#4b5563',
+                  borderRadius: 999,
+                  padding: '4px 10px',
+                  fontSize: 13,
+                }}
+              >
+                {uiLocale}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+      {isCurrentLocaleMissing && (
+        <p
+          style={{
+            margin: '0 0 12px',
+            color: '#b45309',
+            fontSize: 13,
+          }}
+        >
+          当前语种尚无内容版本，保存后将创建该语种文章。
+        </p>
+      )}
       <form
         action={updatePostAction.bind(null, post.slug)}
         style={{
@@ -66,6 +211,7 @@ const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
           maxWidth: 720,
         }}
       >
+        <input name="locale" type="hidden" value={activeLocale} />
         <label
           style={{
             fontSize: 14,

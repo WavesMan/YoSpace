@@ -92,13 +92,12 @@ function isAdminEntryPath(pathname: string): boolean {
  * @param request 当前请求对象
  * @returns 重写后的响应对象
  */
-function rewriteToBackendCore(request: NextRequest): NextResponse {
+function buildBackendRewriteUrl(request: NextRequest): URL {
     const adminPath = getAdminEntryPath();
     const { pathname, search } = request.nextUrl;
     const rest = pathname.slice(adminPath.length) || '';
     const targetPath = `${BACKEND_CORE_PREFIX}${rest || ''}`;
-    const url = new URL(targetPath + search, request.url);
-    return NextResponse.rewrite(url);
+    return new URL(targetPath + search, request.url);
 }
 
 /**
@@ -121,20 +120,37 @@ function redirectToAdminEntry(request: NextRequest): NextResponse {
     return NextResponse.redirect(url);
 }
 
+/**
+ * 构建携带当前请求路径的请求头集合
+ *
+ * @param request 当前请求对象
+ * @returns 注入路径信息后的请求头
+ */
+function buildRequestHeadersWithPath(request: NextRequest): Headers {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-yospace-pathname', request.nextUrl.pathname);
+    return requestHeaders;
+}
+
 export async function middleware(request: NextRequest) {
     const { nextUrl } = request;
     const pathname = nextUrl.pathname;
+    const requestHeaders = buildRequestHeadersWithPath(request);
 
     if (isBackendCorePath(pathname)) {
         return redirectToAdminEntry(request);
     }
 
     if (!isAdminEntryPath(pathname)) {
-        return NextResponse.next();
+        return NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        });
     }
 
     const adminPath = getAdminEntryPath();
-    const isLoginPath = pathname === adminPath || pathname === `${adminPath}/login`;
+    const adminLoginPath = `${adminPath}/login`;
 
     const token = request.cookies.get('yo_admin_token')?.value;
     let isAdmin = false;
@@ -149,12 +165,40 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    if (!isAdmin && !isLoginPath) {
-        const loginUrl = new URL(`${adminPath}/login`, request.url);
-        return NextResponse.redirect(loginUrl);
+    // /admin/login 统一收敛到 /admin，避免登录后仍停留在独立登录路径
+    if (pathname === adminLoginPath) {
+        const adminUrl = new URL(adminPath, request.url);
+        return NextResponse.redirect(adminUrl);
     }
 
-    return rewriteToBackendCore(request);
+    // /admin 作为统一入口：未登录进入登录页，已登录进入后台首页
+    if (pathname === adminPath) {
+        if (isAdmin) {
+            return NextResponse.rewrite(buildBackendRewriteUrl(request), {
+                request: {
+                    headers: requestHeaders,
+                },
+            });
+        }
+        const loginUrl = new URL(`${BACKEND_CORE_PREFIX}/login`, request.url);
+        return NextResponse.rewrite(loginUrl, {
+            request: {
+                headers: requestHeaders,
+            },
+        });
+    }
+
+    // 其余后台子路径要求已登录，否则回到统一入口
+    if (!isAdmin) {
+        const adminUrl = new URL(adminPath, request.url);
+        return NextResponse.redirect(adminUrl);
+    }
+
+    return NextResponse.rewrite(buildBackendRewriteUrl(request), {
+        request: {
+            headers: requestHeaders,
+        },
+    });
 }
 
 export const config = {

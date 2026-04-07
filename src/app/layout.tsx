@@ -111,6 +111,33 @@ export const metadata: Metadata = {
 };
 
 /**
+ * 获取后台入口路径前缀
+ *
+ * @returns 标准化后的后台入口路径
+ */
+function getAdminEntryPath(): string {
+  const raw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+  if (!raw.startsWith("/")) {
+    return `/${raw}`;
+  }
+  return raw;
+}
+
+/**
+ * 判断当前请求是否命中后台页面
+ *
+ * @param pathname 请求路径
+ * @returns 是否属于后台路由
+ */
+function isAdminPathname(pathname: string): boolean {
+  const adminPath = getAdminEntryPath();
+  if (pathname === "/backend-core" || pathname.startsWith("/backend-core/")) {
+    return true;
+  }
+  return pathname === adminPath || pathname.startsWith(`${adminPath}/`);
+}
+
+/**
  *
  * RootLayout 组件
  *
@@ -128,6 +155,8 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const savedLocale = cookieStore.get('locale')?.value;
   const requestHeaders = await headers();
+  const requestPathname = requestHeaders.get("x-yospace-pathname") || "";
+  const shouldRenderPublicShell = !isAdminPathname(requestPathname);
   const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
   const htmlLang = savedLocale === 'en-US'
     ? 'en-US'
@@ -149,11 +178,11 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <I18nProvider>
-          <Header />
+          {shouldRenderPublicShell && <Header />}
           <main style={{ minHeight: '100vh' }}>
             {children}
           </main>
-          <ClientShell />
+          {shouldRenderPublicShell && <ClientShell />}
         </I18nProvider>
       </body>
     </html>

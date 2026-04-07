@@ -4,6 +4,8 @@ import { buildUrl, seoConfig } from "@/utils/seo";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchPublicPostContentBySlug, fetchPublicPostSlugs } from "@/server/content/service";
+import { trackPostView } from "@/server/analytics/service";
+import { resolveContentLocale, resolveI18nRuntimeConfig } from "@/utils/i18n/runtime";
 
 const __blogRevalidate = 3600;
 void __blogRevalidate;
@@ -24,12 +26,16 @@ async function resolveBlogLocale(): Promise<string> {
     const savedLocale = cookieStore.get('locale')?.value;
     const requestHeaders = await headers();
     const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
+    const i18nConfig = resolveI18nRuntimeConfig();
+    if (!i18nConfig.enabled) {
+        return resolveContentLocale(null);
+    }
     const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
         ? savedLocale
         : acceptLang.startsWith('en')
             ? 'en-US'
             : 'zh-CN';
-    return uiLocale === 'en-US' ? 'en' : 'zh-CN';
+    return resolveContentLocale(uiLocale);
 }
 
 // 预生成所有文章路径 (SSG)
@@ -135,10 +141,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const locale = await resolveBlogLocale();
+    const requestHeaders = await headers();
     let initialContent;
     
     try {
         const result = await fetchPublicPostContentBySlug(slug, locale);
+        await trackPostView({
+            slug: result.resolvedSlug,
+            locale,
+            path: `/blog/${encodeURIComponent(result.resolvedSlug)}`,
+            headers: requestHeaders,
+        });
         if (result.resolvedSlug !== slug) {
             redirect(`/blog/${encodeURIComponent(result.resolvedSlug)}`);
         }

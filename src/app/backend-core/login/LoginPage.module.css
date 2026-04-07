@@ -1,10 +1,11 @@
- .loginPageRoot {
-  min-height: 100vh;
-  min-height: 100dvh;
+.loginPageRoot {
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 16px;
+  overflow: hidden;
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 55%),
     var(--color-bg);
@@ -67,6 +68,81 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-solid) 40%, transparent);
 }
 
+.loginPasswordRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loginPasswordToggle {
+  flex-shrink: 0;
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  padding: 8px 10px;
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+}
+
+.loginPasswordToggle:hover {
+  color: var(--color-accent-title);
+  background-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.loginRemember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.loginRememberInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loginRememberIndicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-accent-stroke);
+  background-color: var(--color-bg);
+  position: relative;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.loginRememberInput:checked + .loginRememberIndicator {
+  border-color: var(--color-accent-title);
+  background-color: var(--color-accent-title);
+}
+
+.loginRememberInput:checked + .loginRememberIndicator::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg);
+}
+
+.loginRememberText {
+  line-height: 1.4;
+}
+
 .loginError {
   margin-bottom: 10px;
   font-size: 13px;
@@ -110,4 +186,3 @@
     font-size: var(--font-size-main);
   }
 }
-
