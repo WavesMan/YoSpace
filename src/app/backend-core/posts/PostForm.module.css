@@ -1,0 +1,86 @@
+ .postFormRoot {
+  width: 100%;
+}
+
+.postFormHeader {
+  margin-bottom: 18px;
+}
+
+.postFormTitle {
+  margin: 0;
+  font-size: var(--font-size-medium);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent-title);
+}
+
+.postForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.postFormField {
+  font-size: var(--font-size-small);
+}
+
+.postFormLabelText {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.postFormInput,
+.postFormTextarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-accent-stroke);
+  font-size: var(--font-size-small);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.postFormTextarea {
+  resize: vertical;
+}
+
+.postFormInput:focus,
+.postFormTextarea:focus {
+  border-color: var(--color-accent-solid);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-solid) 40%, transparent);
+}
+
+.postFormTextareaMono {
+  font-family: var(--font-family-mono);
+}
+
+.postFormSubmit {
+  width: 132px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-bg-card);
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-accent-title), var(--color-theme-main));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .postFormSubmit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+  }
+}
+
+@media (max-width: 640px) {
+  .postForm {
+    max-width: none;
+  }
+}
+

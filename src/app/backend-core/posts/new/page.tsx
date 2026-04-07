@@ -1,5 +1,6 @@
-import React from 'react';
-import { createPostAction } from '../actions';
+import React from "react";
+import { createPostAction } from "../actions";
+import styles from "../PostForm.module.css";
 
 /**
  * 新建文章页面
@@ -11,141 +12,54 @@ import { createPostAction } from '../actions';
  */
 const AdminNewPostPage = () => {
   return (
-    <div>
-      <h1
-        style={{
-          fontSize: 22,
-          fontWeight: 600,
-          marginBottom: 16,
-        }}
-      >
-        新建文章
-      </h1>
-      <form
-        action={createPostAction}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          maxWidth: 720,
-        }}
-      >
-        <label
-          style={{
-            fontSize: 14,
-          }}
-        >
-          <span
-            style={{
-              display: 'block',
-              marginBottom: 4,
-            }}
-          >
+    <div className={styles.postFormRoot}>
+      <div className={styles.postFormHeader}>
+        <h1 className={styles.postFormTitle}>
+          新建文章
+        </h1>
+      </div>
+      <form action={createPostAction} className={styles.postForm}>
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
             标题
           </span>
           <input
             name="title"
             type="text"
-            style={{
-              width: '100%',
-              padding: '8px 10px',
-              borderRadius: 4,
-              border: '1px solid #d1d5db',
-              fontSize: 14,
-            }}
+            className={styles.postFormInput}
           />
         </label>
-        <label
-          style={{
-            fontSize: 14,
-          }}
-        >
-          <span
-            style={{
-              display: 'block',
-              marginBottom: 4,
-            }}
-          >
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
             Slug
           </span>
           <input
             name="slug"
             type="text"
-            style={{
-              width: '100%',
-              padding: '8px 10px',
-              borderRadius: 4,
-              border: '1px solid #d1d5db',
-              fontSize: 14,
-            }}
+            className={styles.postFormInput}
           />
         </label>
-        <label
-          style={{
-            fontSize: 14,
-          }}
-        >
-          <span
-            style={{
-              display: 'block',
-              marginBottom: 4,
-            }}
-          >
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
             摘要
           </span>
           <textarea
-            name="summary"
+            name="description"
             rows={3}
-            style={{
-              width: '100%',
-              padding: '8px 10px',
-              borderRadius: 4,
-              border: '1px solid #d1d5db',
-              fontSize: 14,
-            }}
+            className={styles.postFormTextarea}
           />
         </label>
-        <label
-          style={{
-            fontSize: 14,
-          }}
-        >
-          <span
-            style={{
-              display: 'block',
-              marginBottom: 4,
-            }}
-          >
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
             正文内容
           </span>
           <textarea
             name="content"
             rows={12}
-            style={{
-              width: '100%',
-              padding: '8px 10px',
-              borderRadius: 4,
-              border: '1px solid #d1d5db',
-              fontSize: 14,
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            }}
+            className={`${styles.postFormTextarea} ${styles.postFormTextareaMono}`}
           />
         </label>
-        <button
-          type="submit"
-          style={{
-            width: 120,
-            padding: '8px 10px',
-            fontSize: 14,
-            fontWeight: 500,
-            color: '#ffffff',
-            backgroundColor: '#2563eb',
-            borderRadius: 4,
-            border: 'none',
-            cursor: 'pointer',
-            marginTop: 8,
-          }}
-        >
+        <button className={styles.postFormSubmit} type="submit">
           保存
         </button>
       </form>
@@ -154,4 +68,3 @@ const AdminNewPostPage = () => {
 };
 
 export default AdminNewPostPage;
-

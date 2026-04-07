@@ -42,10 +42,16 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 24,
     });
+    response.cookies.set('yo_admin_username', username, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24,
+    });
     return response;
   } catch (error) {
     console.error('Admin login error:', error);
     return NextResponse.json({ message: 'Login failed' }, { status: 500 });
   }
 }
-

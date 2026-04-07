@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import styles from "./LoginPage.module.css";
 
 /**
  * 管理员登录页面
@@ -49,58 +50,18 @@ const AdminLoginPage: React.FC = () => {
     };
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#f9fafb",
-                padding: 16,
-            }}
-        >
-            <form
-                onSubmit={handleSubmit}
-                style={{
-                    width: "100%",
-                    maxWidth: 360,
-                    backgroundColor: "#ffffff",
-                    borderRadius: 8,
-                    padding: 24,
-                    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
-                }}
-            >
-                <h1
-                    style={{
-                        fontSize: 20,
-                        fontWeight: 600,
-                        marginBottom: 16,
-                    }}
-                >
-                    管理员登录
-                </h1>
-                <p
-                    style={{
-                        fontSize: 13,
-                        color: "#6b7280",
-                        marginBottom: 20,
-                    }}
-                >
-                    请输入管理员账号和密码，仅授权用户可访问后台管理功能。
-                </p>
-                <div
-                    style={{
-                        marginBottom: 12,
-                    }}
-                >
-                    <label
-                        htmlFor="admin-username"
-                        style={{
-                            display: "block",
-                            fontSize: 13,
-                            marginBottom: 4,
-                        }}
-                    >
+        <div className={styles.loginPageRoot}>
+            <form onSubmit={handleSubmit} className={styles.loginCard}>
+                <div className={styles.loginHeader}>
+                    <h1 className={styles.loginTitle}>
+                        管理员登录
+                    </h1>
+                    <p className={styles.loginSubtitle}>
+                        请输入管理员账号和密码，仅授权用户可访问后台管理功能。
+                    </p>
+                </div>
+                <div className={styles.loginField}>
+                    <label className={styles.loginLabel} htmlFor="admin-username">
                         用户名
                     </label>
                     <input
@@ -109,28 +70,11 @@ const AdminLoginPage: React.FC = () => {
                         value={username}
                         onChange={event => setUsername(event.target.value)}
                         autoComplete="username"
-                        style={{
-                            width: "100%",
-                            padding: "8px 10px",
-                            fontSize: 14,
-                            borderRadius: 4,
-                            border: "1px solid #d1d5db",
-                        }}
+                        className={styles.loginInput}
                     />
                 </div>
-                <div
-                    style={{
-                        marginBottom: 16,
-                    }}
-                >
-                    <label
-                        htmlFor="admin-password"
-                        style={{
-                            display: "block",
-                            fontSize: 13,
-                            marginBottom: 4,
-                        }}
-                    >
+                <div className={styles.loginField}>
+                    <label className={styles.loginLabel} htmlFor="admin-password">
                         密码
                     </label>
                     <input
@@ -139,40 +83,18 @@ const AdminLoginPage: React.FC = () => {
                         value={password}
                         onChange={event => setPassword(event.target.value)}
                         autoComplete="current-password"
-                        style={{
-                            width: "100%",
-                            padding: "8px 10px",
-                            fontSize: 14,
-                            borderRadius: 4,
-                            border: "1px solid #d1d5db",
-                        }}
+                        className={styles.loginInput}
                     />
                 </div>
                 {errorMessage && (
-                    <div
-                        style={{
-                            marginBottom: 12,
-                            fontSize: 13,
-                            color: "#b91c1c",
-                        }}
-                    >
+                    <div className={styles.loginError}>
                         {errorMessage}
                     </div>
                 )}
                 <button
                     type="submit"
                     disabled={submitting}
-                    style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: "#ffffff",
-                        backgroundColor: submitting ? "#9ca3af" : "#2563eb",
-                        borderRadius: 4,
-                        border: "none",
-                        cursor: submitting ? "default" : "pointer",
-                    }}
+                    className={`${styles.loginButton} ${submitting ? styles.loginButtonDisabled : ""}`}
                 >
                     {submitting ? "登录中..." : "登录"}
                 </button>
@@ -182,4 +104,3 @@ const AdminLoginPage: React.FC = () => {
 };
 
 export default AdminLoginPage;
-

@@ -1,7 +1,8 @@
-import React from 'react';
-import Link from 'next/link';
-import { getDbClient } from '@/server/db/client';
-import { deletePostAction } from './actions';
+import React from "react";
+import Link from "next/link";
+import { getDbClient } from "@/server/db/client";
+import { deletePostAction } from "./actions";
+import styles from "./AdminPosts.module.css";
 
 /**
  * 后台文章列表页面
@@ -13,99 +14,50 @@ import { deletePostAction } from './actions';
  */
 const AdminPostsPage = async () => {
   const db = await getDbClient();
+  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
   const posts = await db.post.findMany({
     where: {
-      locale: 'zh-CN',
+      locale: "zh-CN",
     },
     orderBy: {
-      createdAt: 'desc',
+      updatedAt: "desc",
     },
     select: {
       id: true,
       title: true,
       slug: true,
-      createdAt: true,
+      publishedAt: true,
       updatedAt: true,
     },
   });
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 600,
-          }}
-        >
+    <div className={styles.postsRoot}>
+      <div className={styles.postsHeader}>
+        <h1 className={styles.postsTitle}>
           文章管理
         </h1>
-        <Link
-          href="posts/new"
-          style={{
-            fontSize: 14,
-            padding: '6px 10px',
-            borderRadius: 4,
-            backgroundColor: '#2563eb',
-            color: '#ffffff',
-          }}
-        >
+        <Link className={styles.postsCreateButton} href={`${adminPath}/posts/new`}>
           新建文章
         </Link>
       </div>
       {posts.length === 0 ? (
-        <p>暂无文章，请先通过「新建文章」创建首篇内容。</p>
+        <p className={styles.postsEmpty}>暂无文章，请先通过「新建文章」创建首篇内容。</p>
       ) : (
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: 14,
-          }}
-        >
+        <table className={styles.postsTable}>
           <thead>
             <tr>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '8px 6px',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
+              <th className={styles.postsHeadCell}>
                 标题
               </th>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '8px 6px',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
+              <th className={styles.postsHeadCell}>
                 Slug
               </th>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '8px 6px',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
+              <th className={styles.postsHeadCell}>
                 创建时间
               </th>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '8px 6px',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
+              <th className={styles.postsHeadCell}>
                 操作
               </th>
             </tr>
@@ -115,73 +67,35 @@ const AdminPostsPage = async () => {
               id: string;
               title: string;
               slug: string;
-              createdAt: Date;
+              publishedAt: Date;
               updatedAt: Date;
             }) => (
               <tr key={post.id}>
-                <td
-                  style={{
-                    padding: '8px 6px',
-                    borderBottom: '1px solid #f3f4f6',
-                  }}
-                >
+                <td className={styles.postsCell}>
                   {post.title}
                 </td>
-                <td
-                  style={{
-                    padding: '8px 6px',
-                    borderBottom: '1px solid #f3f4f6',
-                    color: '#6b7280',
-                  }}
-                >
+                <td className={`${styles.postsCell} ${styles.postsCellMuted}`}>
                   {post.slug}
                 </td>
-                <td
-                  style={{
-                    padding: '8px 6px',
-                    borderBottom: '1px solid #f3f4f6',
-                    color: '#6b7280',
-                  }}
-                >
-                  {post.createdAt.toISOString().slice(0, 10)}
+                <td className={`${styles.postsCell} ${styles.postsCellMuted}`}>
+                  {post.publishedAt.toISOString().slice(0, 10)}
                 </td>
-                <td
-                  style={{
-                    padding: '8px 6px',
-                    borderBottom: '1px solid #f3f4f6',
-                    display: 'flex',
-                    gap: 8,
-                  }}
-                >
-                  <Link
-                    href={`posts/${post.slug}`}
-                    style={{
-                      fontSize: 13,
-                      color: '#2563eb',
-                    }}
-                  >
-                    编辑
-                  </Link>
-                  <form
-                    action={async () => {
-                      'use server';
-                      await deletePostAction(post.slug);
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      style={{
-                        fontSize: 13,
-                        color: '#b91c1c',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0,
+                <td className={styles.postsCell}>
+                  <div className={styles.postsActions}>
+                    <Link className={styles.postsActionLink} href={`${adminPath}/posts/${post.slug}`}>
+                      编辑
+                    </Link>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await deletePostAction(post.slug);
                       }}
                     >
-                      删除
-                    </button>
-                  </form>
+                      <button className={styles.postsActionDanger} type="submit">
+                        删除
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -1,5 +1,6 @@
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
+import styles from "./AdminLayout.module.css";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -15,44 +16,25 @@ interface AdminLayoutProps {
  * @returns 后台布局 JSX 节点
  */
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header
-        style={{
-          borderBottom: '1px solid #e5e7eb',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 600,
-          }}
-        >
-          YoSpace Admin
+    <div className={styles.adminRoot}>
+      <header className={styles.adminHeader}>
+        <div className={styles.adminBrand}>
+          <span className={styles.adminBrandPrimary}>YoSpace Admin</span>
+          <span className={styles.adminBrandSecondary}>后台管理</span>
         </div>
-        <nav
-          style={{
-            display: 'flex',
-            gap: 16,
-            fontSize: 14,
-          }}
-        >
-          <Link href=".">仪表盘</Link>
-          <Link href="posts">文章管理</Link>
+        <nav className={styles.adminNav}>
+          <Link className={`${styles.adminNavLink} ${styles.adminNavLinkPrimary}`} href={adminPath}>
+            仪表盘
+          </Link>
+          <Link className={styles.adminNavLink} href={`${adminPath}/posts`}>
+            文章管理
+          </Link>
         </nav>
       </header>
-      <main
-        style={{
-          flex: 1,
-          padding: '16px',
-          maxWidth: 960,
-          margin: '0 auto',
-          width: '100%',
-        }}
-      >
+      <main className={styles.adminMain}>
         {children}
       </main>
     </div>
@@ -60,4 +42,3 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 };
 
 export default AdminLayout;
-

@@ -1,6 +1,7 @@
-import React from 'react';
-import { cookies } from 'next/headers';
-import { isAdminRequest } from '@/server/auth/adminAuth';
+import React from "react";
+import { cookies } from "next/headers";
+import { isAdminRequest } from "@/server/auth/adminAuth";
+import styles from "./AdminDashboard.module.css";
 
 /**
  * 后台仪表盘首页
@@ -12,46 +13,27 @@ import { isAdminRequest } from '@/server/auth/adminAuth';
  */
 const AdminHomePage = async () => {
   const cookieStore = await cookies();
-  const usernameFromCookie = cookieStore.get('yo_admin_username')?.value;
+  const usernameFromCookie = cookieStore.get("yo_admin_username")?.value;
   const isAdmin = await isAdminRequest();
 
   return (
-    <div>
-      <h1
-        style={{
-          fontSize: 24,
-          fontWeight: 600,
-          marginBottom: 16,
-        }}
-      >
-        后台仪表盘
-      </h1>
+    <div className={styles.dashboardRoot}>
+      <div className={styles.dashboardHeader}>
+        <h1 className={styles.dashboardTitle}>
+          后台仪表盘
+        </h1>
+      </div>
       {!isAdmin && (
-        <p
-          style={{
-            color: '#b91c1c',
-            marginBottom: 16,
-          }}
-        >
+        <p className={styles.dashboardWarning}>
           当前未登录管理员，请返回登录页重新登录。
         </p>
       )}
       {isAdmin && (
         <>
-          <p
-            style={{
-              marginBottom: 16,
-            }}
-          >
-            欢迎回来，{usernameFromCookie || '管理员'}。
+          <p className={styles.dashboardWelcome}>
+            欢迎回来，{usernameFromCookie || "管理员"}。
           </p>
-          <ul
-            style={{
-              listStyle: 'disc',
-              paddingLeft: 20,
-              lineHeight: 1.8,
-            }}
-          >
+          <ul className={styles.dashboardList}>
             <li>通过顶部导航进入「文章管理」，可以查看与编辑博客文章。</li>
             <li>文章变更后系统会自动触发博客列表与详情页的缓存重验证。</li>
           </ul>
@@ -62,4 +44,3 @@ const AdminHomePage = async () => {
 };
 
 export default AdminHomePage;
-

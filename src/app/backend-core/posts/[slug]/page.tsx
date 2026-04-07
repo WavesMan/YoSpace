@@ -93,8 +93,8 @@ const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
             摘要
           </span>
           <textarea
-            name="summary"
-            defaultValue={post.summary || ''}
+            name="description"
+            defaultValue={post.description || ''}
             rows={3}
             style={{
               width: '100%',
@@ -155,4 +155,3 @@ const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
 };
 
 export default AdminEditPostPage;
-

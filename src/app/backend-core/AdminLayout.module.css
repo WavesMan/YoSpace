@@ -1,0 +1,96 @@
+.adminRoot {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.adminHeader {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 24px;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-accent-stroke);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.adminBrand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-family-main);
+}
+
+.adminBrandPrimary {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-main);
+  color: var(--color-accent-title);
+}
+
+.adminBrandSecondary {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.adminNav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: var(--font-size-small);
+}
+
+.adminNavLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.adminNavLinkPrimary {
+  font-weight: var(--font-weight-bold);
+}
+
+.adminNavLink:hover {
+  background-color: var(--color-bg);
+  color: var(--color-accent-title);
+  transform: translateY(-1px);
+}
+
+.adminMain {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .adminHeader {
+    padding: 0 16px;
+  }
+
+  .adminMain {
+    padding: 16px 12px 32px;
+  }
+
+  .adminNav {
+    gap: 8px;
+  }
+
+  .adminNavLink {
+    padding-inline: 8px;
+  }
+}
+

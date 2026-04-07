@@ -13,10 +13,9 @@ import { getDbClient } from '@/server/db/client';
  */
 export async function createPostAction(formData: FormData): Promise<void> {
   const db = await getDbClient();
-  const now = new Date();
   const title = String(formData.get('title') || '').trim();
   const slug = String(formData.get('slug') || '').trim();
-  const summary = String(formData.get('summary') || '').trim();
+  const description = String(formData.get('description') ?? formData.get('summary') ?? '').trim();
   const content = String(formData.get('content') || '').trim();
 
   if (!title || !slug || !content) {
@@ -32,18 +31,15 @@ export async function createPostAction(formData: FormData): Promise<void> {
     },
     update: {
       title,
-      summary,
+      description,
       content,
-      updatedAt: now,
     },
     create: {
       title,
       slug,
-      summary,
+      description,
       content,
       locale: 'zh-CN',
-      createdAt: now,
-      updatedAt: now,
     },
   });
 
@@ -62,9 +58,8 @@ export async function createPostAction(formData: FormData): Promise<void> {
  */
 export async function updatePostAction(slug: string, formData: FormData): Promise<void> {
   const db = await getDbClient();
-  const now = new Date();
   const title = String(formData.get('title') || '').trim();
-  const summary = String(formData.get('summary') || '').trim();
+  const description = String(formData.get('description') ?? formData.get('summary') ?? '').trim();
   const content = String(formData.get('content') || '').trim();
 
   if (!title || !content) {
@@ -90,9 +85,8 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
     },
     data: {
       title,
-      summary,
+      description,
       content,
-      updatedAt: now,
     },
   });
 
@@ -134,4 +128,3 @@ export async function deletePostAction(slug: string): Promise<void> {
   revalidatePath('/blog');
   revalidatePath(`/blog/${slug}`);
 }
-

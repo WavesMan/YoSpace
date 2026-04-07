@@ -1,0 +1,113 @@
+ .loginPageRoot {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 55%),
+    var(--color-bg);
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 380px;
+  padding: 24px 22px 22px;
+  border-radius: 16px;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-accent-stroke);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.loginHeader {
+  margin-bottom: 18px;
+}
+
+.loginTitle {
+  margin: 0 0 8px;
+  font-size: var(--font-size-medium);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent-title);
+}
+
+.loginSubtitle {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.loginField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.loginLabel {
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+}
+
+.loginInput {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: var(--font-size-small);
+  border-radius: 8px;
+  border: 1px solid var(--color-accent-stroke);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.loginInput:focus {
+  border-color: var(--color-accent-solid);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-solid) 40%, transparent);
+}
+
+.loginError {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 9px 10px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-bg-card);
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-accent-title), var(--color-theme-main));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.loginButtonDisabled {
+  cursor: default;
+  filter: grayscale(0.2);
+  box-shadow: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .loginButton:not(.loginButtonDisabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.26);
+  }
+}
+
+@media (max-width: 640px) {
+  .loginCard {
+    border-radius: 14px;
+    padding-inline: 18px;
+  }
+
+  .loginTitle {
+    font-size: var(--font-size-main);
+  }
+}
+
