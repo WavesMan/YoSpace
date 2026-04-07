@@ -1,8 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { getDbClient } from '@/server/db/client';
-import { resolveContentLocale } from '@/utils/i18n/runtime';
+import { resolveContentLocale, toUiLocale } from '@/utils/i18n/runtime';
 
 type AdminPostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
@@ -70,6 +71,99 @@ function resolveAdminPostLocale(rawValue: FormDataEntryValue | null): 'zh-CN' | 
     return resolveContentLocale(null);
   }
   return resolveContentLocale(rawValue);
+}
+
+/**
+ * 解析后台根路径
+ *
+ * 根据环境变量统一构建后台访问前缀，确保跳转路径稳定。
+ *
+ * @returns 后台根路径
+ */
+function resolveAdminPath(): string {
+  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
+  return adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+}
+
+/**
+ * 解析内容语种候选列表（兼容历史值）
+ *
+ * 旧数据中可能存在 `en-US` 或 `zh`，这里统一在查询阶段兼容，
+ * 保证切换语言后仍可命中对应语种记录。
+ *
+ * @param locale 归一化后的内容语种
+ * @returns 可用于查询的语种候选列表
+ */
+function resolveLocaleCandidates(locale: 'zh-CN' | 'en'): string[] {
+  if (locale === 'en') {
+    return ['en', 'en-US'];
+  }
+  return ['zh-CN', 'zh'];
+}
+
+/**
+ * 获取历史兼容语种候选（排除当前规范语种）
+ *
+ * @param locale 当前规范语种
+ * @returns 历史兼容语种列表
+ */
+function resolveLegacyLocaleCandidates(locale: 'zh-CN' | 'en'): string[] {
+  return resolveLocaleCandidates(locale).filter(item => item !== locale);
+}
+
+/**
+ * 按 slug + 语种兼容策略查询文章
+ *
+ * 优先精确匹配规范语种；若不存在则回退历史语种值。
+ *
+ * @param db 数据库客户端
+ * @param slug 文章 slug
+ * @param locale 规范语种
+ * @returns 命中的文章记录或 null
+ */
+async function findPostBySlugWithLocaleFallback(
+  db: Awaited<ReturnType<typeof getDbClient>>,
+  slug: string,
+  locale: 'zh-CN' | 'en',
+): Promise<{ id: string; slug: string; locale: string } | null> {
+  const exact = await db.post.findUnique({
+    where: {
+      slug_locale: {
+        slug,
+        locale,
+      },
+    },
+    select: {
+      id: true,
+      slug: true,
+      locale: true,
+    },
+  });
+  if (exact) {
+    return exact;
+  }
+
+  const legacyCandidates = resolveLegacyLocaleCandidates(locale);
+  if (legacyCandidates.length === 0) {
+    return null;
+  }
+
+  return db.post.findFirst({
+    where: {
+      slug,
+      locale: {
+        in: legacyCandidates,
+      },
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+    select: {
+      id: true,
+      slug: true,
+      locale: true,
+    },
+  });
 }
 
 /**
@@ -261,14 +355,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
     throw new Error('标题、Slug 与内容为必填项');
   }
 
-  const existingPost = await db.post.findUnique({
-    where: {
-      slug_locale: {
-        slug,
-        locale,
-      },
-    },
-  });
+  const existingPost = await findPostBySlugWithLocaleFallback(db, slug, locale);
   if (existingPost) {
     throw new Error('Slug 已存在，请更换后重试');
   }
@@ -318,6 +405,8 @@ export async function createPostAction(formData: FormData): Promise<void> {
 export async function updatePostAction(slug: string, formData: FormData): Promise<void> {
   const db = await getDbClient();
   const locale = resolveAdminPostLocale(formData.get('locale'));
+  const adminPath = resolveAdminPath();
+  const uiLocale = toUiLocale(locale);
   const title = String(formData.get('title') || '').trim();
   const nextSlug = normalizeSlug(String(formData.get('slug') || slug));
   const description = String(formData.get('description') ?? formData.get('summary') ?? '').trim();
@@ -330,24 +419,10 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
     throw new Error('标题与内容为必填项');
   }
 
-  const target = await db.post.findUnique({
-    where: {
-      slug_locale: {
-        slug,
-        locale,
-      },
-    },
-  });
+  const target = await findPostBySlugWithLocaleFallback(db, slug, locale);
 
   if (!target) {
-    const existedSameSlug = await db.post.findUnique({
-      where: {
-        slug_locale: {
-          slug: nextSlug,
-          locale,
-        },
-      },
-    });
+    const existedSameSlug = await findPostBySlugWithLocaleFallback(db, nextSlug, locale);
     if (existedSameSlug) {
       throw new Error('目标 Slug 已存在，请更换后重试');
     }
@@ -390,19 +465,14 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
     await syncPostTags(db, createdPost.id, tags);
     revalidatePath('/blog');
     revalidatePath(`/blog/${createdPost.slug}`);
-    return;
+    redirect(
+      `${adminPath}/posts/${encodeURIComponent(createdPost.slug)}?locale=${encodeURIComponent(uiLocale)}&saved=1`,
+    );
   }
 
   if (nextSlug !== slug) {
-    const slugConflictPost = await db.post.findUnique({
-      where: {
-        slug_locale: {
-          slug: nextSlug,
-          locale,
-        },
-      },
-    });
-    if (slugConflictPost) {
+    const slugConflictPost = await findPostBySlugWithLocaleFallback(db, nextSlug, locale);
+    if (slugConflictPost && slugConflictPost.id !== target.id) {
       throw new Error('目标 Slug 已存在，请更换后重试');
     }
   }
@@ -446,6 +516,9 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
   revalidatePath('/blog');
   revalidatePath(`/blog/${slug}`);
   revalidatePath(`/blog/${nextSlug}`);
+  redirect(
+    `${adminPath}/posts/${encodeURIComponent(nextSlug)}?locale=${encodeURIComponent(uiLocale)}&saved=1`,
+  );
 }
 
 /**
@@ -458,15 +531,7 @@ export async function updatePostAction(slug: string, formData: FormData): Promis
  */
 export async function deletePostAction(slug: string, locale: 'zh-CN' | 'en' = resolveContentLocale(null)): Promise<void> {
   const db = await getDbClient();
-
-  const target = await db.post.findUnique({
-    where: {
-      slug_locale: {
-        slug,
-        locale,
-      },
-    },
-  });
+  const target = await findPostBySlugWithLocaleFallback(db, slug, locale);
 
   if (!target) {
     revalidatePath('/blog');

@@ -42,6 +42,10 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
+.postFormInput {
+  appearance: none;
+}
+
 .postFormTextarea {
   resize: vertical;
 }
@@ -54,6 +58,18 @@
 
 .postFormTextareaMono {
   font-family: var(--font-family-mono);
+}
+
+.postFormInput:-webkit-autofill,
+.postFormInput:-webkit-autofill:hover,
+.postFormInput:-webkit-autofill:focus,
+.postFormTextarea:-webkit-autofill,
+.postFormTextarea:-webkit-autofill:hover,
+.postFormTextarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-bg) inset;
+  box-shadow: 0 0 0 1000px var(--color-bg) inset;
+  transition: background-color 9999s ease-out 0s;
 }
 
 .postFormSubmit {
@@ -83,4 +99,3 @@
     max-width: none;
   }
 }
-

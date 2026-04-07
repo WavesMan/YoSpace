@@ -1,0 +1,78 @@
+.toastContainer {
+  position: fixed;
+  top: 84px;
+  right: 24px;
+  z-index: 70;
+  pointer-events: none;
+}
+
+.toastCard {
+  min-width: 280px;
+  max-width: min(92vw, 380px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-accent-stroke);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--color-bg-card) 92%, white 8%), var(--color-bg-card));
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
+  color: var(--color-text-primary);
+  animation: toastSlideIn 0.22s ease-out;
+  pointer-events: auto;
+}
+
+.toastTitle {
+  margin: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent-title);
+}
+
+.toastDescription {
+  margin: 2px 0 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.toastClose {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+  font-size: 18px;
+  padding: 1px 2px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.toastClose:hover {
+  color: var(--color-accent-title);
+  background-color: color-mix(in srgb, var(--color-accent-stroke) 35%, transparent);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .toastContainer {
+    top: 72px;
+    right: 12px;
+    left: 12px;
+  }
+
+  .toastCard {
+    min-width: 0;
+    max-width: none;
+  }
+}

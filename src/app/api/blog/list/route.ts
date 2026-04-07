@@ -5,9 +5,11 @@ import { resolveContentLocale } from '@/utils/i18n/runtime';
 /**
  * 博客文章列表 API
  *
- * 从本地 Markdown 文件或 PostgreSQL 数据库中读取文章元数据并做分页处理，
- * 通过 offset/limit/locale 控制分页游标与语言版本，
- * 用于替代远程 CMS / Server Actions 的列表查询。
+ * 从本地 Markdown 或 PostgreSQL 数据源读取文章列表，
+ * 并支持通过 offset/limit/locale 控制分页与语种。
+ *
+ * @param request Next.js 请求对象
+ * @returns 文章列表响应
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -17,17 +19,16 @@ export async function GET(request: NextRequest) {
   const localeParam = searchParams.get('locale');
   const locale = resolveContentLocale(localeParam);
 
-  // NOTE: offset/limit 允许传入任意字符串，这里统一做 Number 转换与兜底
+  // NOTE: offset/limit 允许传入任意字符串，这里统一做 Number 转换与兜底。
   const offset = Number.isFinite(Number(offsetParam)) ? Number(offsetParam) : 0;
   const defaultLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10', 10) || 10;
   const limit = Number.isFinite(Number(limitParam)) && Number(limitParam) > 0 ? Number(limitParam) : defaultLimit;
-  // NOTE: 未指定语言时默认使用英文内容，保持与本地内容约定一致
 
   try {
     const data = await fetchPublicPostsList(offset, limit, locale);
     return NextResponse.json(data);
   } catch (error) {
-    // NOTE: 仅在服务端输出具体错误，对客户端返回统一错误信息，避免泄露实现细节
+    // NOTE: 仅在服务端输出具体错误，对客户端返回统一错误信息，避免泄露实现细节。
     console.error('API /api/blog/list error:', error);
     return NextResponse.json({ message: 'Failed to load posts' }, { status: 500 });
   }
