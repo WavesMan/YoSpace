@@ -27,11 +27,24 @@ const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
         locale: 'zh-CN',
       },
     },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
   });
 
   if (!post) {
     notFound();
   }
+  const tagValues = Array.isArray(post.tags)
+    ? post.tags
+      .map((relationItem: { tag?: { id?: string } }) => relationItem?.tag?.id)
+      .filter((tagId: unknown): tagId is string => typeof tagId === 'string')
+    : [];
+  const tagsInput = tagValues.join(', ');
 
   return (
     <div>
@@ -69,6 +82,87 @@ const AdminEditPostPage = async ({ params }: AdminEditPostPageProps) => {
           <input
             name="title"
             defaultValue={post.title}
+            type="text"
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              borderRadius: 4,
+              border: '1px solid #d1d5db',
+              fontSize: 14,
+            }}
+          />
+        </label>
+        <label
+          style={{
+            fontSize: 14,
+          }}
+        >
+          <span
+            style={{
+              display: 'block',
+              marginBottom: 4,
+            }}
+          >
+            Slug
+          </span>
+          <input
+            name="slug"
+            defaultValue={post.slug}
+            type="text"
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              borderRadius: 4,
+              border: '1px solid #d1d5db',
+              fontSize: 14,
+            }}
+          />
+        </label>
+        <label
+          style={{
+            fontSize: 14,
+          }}
+        >
+          <span
+            style={{
+              display: 'block',
+              marginBottom: 4,
+            }}
+          >
+            状态
+          </span>
+          <select
+            name="status"
+            defaultValue={post.status || 'PUBLISHED'}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              borderRadius: 4,
+              border: '1px solid #d1d5db',
+              fontSize: 14,
+            }}
+          >
+            <option value="DRAFT">草稿</option>
+            <option value="PUBLISHED">发布</option>
+            <option value="ARCHIVED">归档</option>
+          </select>
+        </label>
+        <label
+          style={{
+            fontSize: 14,
+          }}
+        >
+          <span
+            style={{
+              display: 'block',
+              marginBottom: 4,
+            }}
+          >
+            标签（逗号分隔）
+          </span>
+          <input
+            name="tags"
+            defaultValue={tagsInput}
             type="text"
             style={{
               width: '100%',

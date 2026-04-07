@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLocalPostContent } from '@/utils/content/local';
-import { getDbPostContent } from '@/utils/content/db';
-
-/**
- * 判断当前是否启用数据库作为博客内容数据源
- *
- * @returns 是否启用数据库内容数据源
- */
-function shouldUseDatabaseContent(): boolean {
-  return process.env.NEXT_PUBLIC_USE_DB_CONTENT === 'true';
-}
+import { fetchPublicPostContentBySlug } from '@/server/content/service';
 
 /**
  * 博客文章详情 API
@@ -31,9 +21,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const useDb = shouldUseDatabaseContent();
-    const data = useDb ? await getDbPostContent(slug, locale) : await getLocalPostContent(slug, locale);
-    return NextResponse.json(data);
+    const result = await fetchPublicPostContentBySlug(slug, locale);
+    return NextResponse.json({
+      ...result.content,
+      resolvedSlug: result.resolvedSlug,
+    });
   } catch (error) {
     // NOTE: 未找到文章或解析失败时统一返回 404，避免暴露具体失败原因
     console.error(`API /api/blog/post error for slug ${slug}:`, error);

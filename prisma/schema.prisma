@@ -10,10 +10,17 @@ datasource db {
   extensions = [pg_trgm(schema: "public")]
 }
 
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model Post {
   id            String   @id @default(cuid())
   slug          String
   locale        String   @default("en")
+  status        PostStatus @default(PUBLISHED)
   title         String
   description   String?  @default("")
   content       String   @db.Text
@@ -40,8 +47,22 @@ model Post {
   @@unique([slug, locale])
   @@index([slug])
   @@index([locale])
+  @@index([status])
   @@index([title(ops: raw("gin_trgm_ops")), description(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+model PostSlugRedirect {
+  id        String   @id @default(cuid())
+  oldSlug   String
+  newSlug   String
+  locale    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([oldSlug, locale])
+  @@index([newSlug])
+  @@index([locale])
 }
 
 model Category {

@@ -29,6 +29,79 @@ function normalizeListLocale(rawLocale: string | undefined): string {
 }
 
 /**
+ * 判断错误是否由 status 字段尚未完成数据库迁移导致
+ *
+ * 兼容场景：
+ * - Prisma Client 仍是旧模型（Unknown arg `status`）
+ * - 数据库表结构尚未包含 status 列
+ *
+ * @param error 捕获到的异常对象
+ * @returns 是否属于 status 字段兼容性错误
+ */
+function isStatusFieldUnavailableError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    const lowered = message.toLowerCase();
+    if (lowered.includes("unknown arg `status`")) {
+        return true;
+    }
+    if (lowered.includes("column") && lowered.includes("status") && lowered.includes("does not exist")) {
+        return true;
+    }
+    if (lowered.includes("unknown argument") && lowered.includes("status")) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 判断当前 Prisma Client 是否已包含 Post.status 字段
+ *
+ * @param dbClient Prisma 客户端实例
+ * @returns 是否支持 status 字段
+ */
+function supportsPostStatusField(dbClient: any): boolean {
+    const postFields = dbClient?._runtimeDataModel?.models?.Post?.fields;
+    if (!Array.isArray(postFields)) {
+        return false;
+    }
+    return postFields.some((field: { name?: unknown }) => field?.name === "status");
+}
+
+let cachedPostStatusColumnSupport: boolean | null = null;
+
+/**
+ * 探测当前数据库是否已包含 Post.status 列，并进行进程级缓存
+ *
+ * 仅当 Prisma Client 声明支持 status 字段时才继续探测真实库结构，
+ * 用于避免“Client 已更新但数据库尚未迁移”场景下重复触发运行时报错。
+ *
+ * @param dbClient Prisma 客户端实例
+ * @returns 当前数据库是否可安全使用 status 字段
+ */
+async function canUsePostStatusField(dbClient: any): Promise<boolean> {
+    if (!supportsPostStatusField(dbClient)) {
+        return false;
+    }
+    if (cachedPostStatusColumnSupport !== null) {
+        return cachedPostStatusColumnSupport;
+    }
+    try {
+        const rows = await dbClient.$queryRaw<Array<{ column_name?: string }>>`
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'Post'
+              AND column_name = 'status'
+            LIMIT 1
+        `;
+        cachedPostStatusColumnSupport = Array.isArray(rows) && rows.length > 0;
+    } catch {
+        cachedPostStatusColumnSupport = false;
+    }
+    return cachedPostStatusColumnSupport;
+}
+
+/**
  * 根据输入语言生成详情查询的候选语言序列
  *
  * 为了兼容现有本地 Markdown 逻辑，这里仍然保留“按语言优先级回退”的策略：
@@ -143,33 +216,67 @@ export async function getDbPostsList(
     const safeOffset = Math.max(0, Math.floor(offset));
     const safeLimit = Math.max(1, Math.floor(limit));
     const normalizedLocale = normalizeListLocale(locale);
+    const supportStatusField = await canUsePostStatusField(dbClient);
+    const listWhereClause = supportStatusField
+        ? { locale: normalizedLocale, status: "PUBLISHED" }
+        : { locale: normalizedLocale };
 
-    const [total, posts] = await Promise.all([
-        dbClient.post.count({
-            where: {
-                locale: normalizedLocale,
-            },
-        }),
-        dbClient.post.findMany({
-            where: {
-                locale: normalizedLocale,
-            },
-            include: {
-                category: true,
-                series: true,
-                tags: {
-                    include: {
-                        tag: true,
+    let total = 0;
+    let posts: any[] = [];
+    try {
+        [total, posts] = await Promise.all([
+            dbClient.post.count({
+                where: listWhereClause,
+            }),
+            dbClient.post.findMany({
+                where: listWhereClause,
+                include: {
+                    category: true,
+                    series: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
                     },
                 },
-            },
-            orderBy: {
-                publishedAt: "desc",
-            },
-            skip: safeOffset,
-            take: safeLimit,
-        }),
-    ]);
+                orderBy: {
+                    publishedAt: "desc",
+                },
+                skip: safeOffset,
+                take: safeLimit,
+            }),
+        ]);
+    } catch (error) {
+        if (!isStatusFieldUnavailableError(error)) {
+            throw error;
+        }
+        [total, posts] = await Promise.all([
+            dbClient.post.count({
+                where: {
+                    locale: normalizedLocale,
+                },
+            }),
+            dbClient.post.findMany({
+                where: {
+                    locale: normalizedLocale,
+                },
+                include: {
+                    category: true,
+                    series: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    publishedAt: "desc",
+                },
+                skip: safeOffset,
+                take: safeLimit,
+            }),
+        ]);
+    }
 
     const items = posts.map((postRecord: any) => {
         const category = mapCategory(postRecord.category);
@@ -200,6 +307,7 @@ export async function getDbPostsList(
             slug: postRecord.slug as string,
             title: (postRecord.title as string) || (postRecord.slug as string),
             description: (postRecord.description as string) || "",
+            status: (postRecord.status as "DRAFT" | "PUBLISHED" | "ARCHIVED") || "PUBLISHED",
             publishedTime: (postRecord.publishedAt as Date).toISOString(),
             isPinned: Boolean(postRecord.isPinned),
             isRecommended: Boolean(postRecord.isRecommended),
@@ -237,27 +345,50 @@ export async function getDbPostsList(
 export async function getDbPostContent(slug: string, locale: string = "en"): Promise<PostContentResponse> {
     const dbClient = getDbClient() as any;
     const candidates = buildContentLocaleCandidates(slug, locale);
+    const supportStatusField = await canUsePostStatusField(dbClient);
 
     let matchedPost: any | null = null;
     for (const candidate of candidates) {
-        // eslint-disable-next-line no-await-in-loop
-        const record = await dbClient.post.findUnique({
-            where: {
-                slug_locale: {
+        let record: any | null = null;
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            record = await dbClient.post.findFirst({
+                where: {
+                    slug: candidate.slug,
+                    locale: candidate.locale,
+                    ...(supportStatusField ? { status: "PUBLISHED" } : {}),
+                },
+                include: {
+                    category: true,
+                    series: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
+                    },
+                },
+            });
+        } catch (error) {
+            if (!isStatusFieldUnavailableError(error)) {
+                throw error;
+            }
+            // eslint-disable-next-line no-await-in-loop
+            record = await dbClient.post.findFirst({
+                where: {
                     slug: candidate.slug,
                     locale: candidate.locale,
                 },
-            },
-            include: {
-                category: true,
-                series: true,
-                tags: {
-                    include: {
-                        tag: true,
+                include: {
+                    category: true,
+                    series: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
                     },
                 },
-            },
-        });
+            });
+        }
         if (record) {
             matchedPost = record;
             break;
@@ -295,6 +426,7 @@ export async function getDbPostContent(slug: string, locale: string = "en"): Pro
     const response: PostContentResponse = {
         title: (matchedPost.title as string) || (matchedPost.slug as string),
         content: matchedPost.content as string,
+        status: (matchedPost.status as "DRAFT" | "PUBLISHED" | "ARCHIVED") || "PUBLISHED",
         publishedTime: (matchedPost.publishedAt as Date).toISOString(),
         isPinned: Boolean(matchedPost.isPinned),
         isRecommended: Boolean(matchedPost.isRecommended),
@@ -348,9 +480,11 @@ export async function searchDbPosts(
     const safeLimit = Math.max(1, Math.floor(limit));
     const normalizedLocale = normalizeListLocale(locale);
     const loweredKeyword = trimmed.toLowerCase();
+    const supportStatusField = await canUsePostStatusField(dbClient);
 
     const whereClause = {
         locale: normalizedLocale,
+        ...(supportStatusField ? { status: "PUBLISHED" } : {}),
         OR: [
             {
                 title: {
@@ -401,36 +535,75 @@ export async function searchDbPosts(
         ],
     };
 
-    const [total, posts] = await Promise.all([
-        dbClient.post.count({
-            where: whereClause,
-        }),
-        dbClient.post.findMany({
-            where: whereClause,
-            include: {
-                category: true,
-                series: true,
-                tags: {
-                    include: {
-                        tag: true,
+    let total = 0;
+    let posts: any[] = [];
+    try {
+        [total, posts] = await Promise.all([
+            dbClient.post.count({
+                where: whereClause,
+            }),
+            dbClient.post.findMany({
+                where: whereClause,
+                include: {
+                    category: true,
+                    series: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
                     },
                 },
-            },
-            orderBy: [
-                {
-                    isPinned: "desc",
+                orderBy: [
+                    {
+                        isPinned: "desc",
+                    },
+                    {
+                        recommendRank: "asc",
+                    },
+                    {
+                        publishedAt: "desc",
+                    },
+                ],
+                skip: safeOffset,
+                take: safeLimit,
+            }),
+        ]);
+    } catch (error) {
+        if (!isStatusFieldUnavailableError(error)) {
+            throw error;
+        }
+        const { status: _removedStatus, ...legacyWhereClause } = whereClause;
+        [total, posts] = await Promise.all([
+            dbClient.post.count({
+                where: legacyWhereClause,
+            }),
+            dbClient.post.findMany({
+                where: legacyWhereClause,
+                include: {
+                    category: true,
+                    series: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
+                    },
                 },
-                {
-                    recommendRank: "asc",
-                },
-                {
-                    publishedAt: "desc",
-                },
-            ],
-            skip: safeOffset,
-            take: safeLimit,
-        }),
-    ]);
+                orderBy: [
+                    {
+                        isPinned: "desc",
+                    },
+                    {
+                        recommendRank: "asc",
+                    },
+                    {
+                        publishedAt: "desc",
+                    },
+                ],
+                skip: safeOffset,
+                take: safeLimit,
+            }),
+        ]);
+    }
 
     const items = posts.map((postRecord: any) => {
         const category = mapCategory(postRecord.category);
@@ -461,6 +634,7 @@ export async function searchDbPosts(
             slug: postRecord.slug as string,
             title: (postRecord.title as string) || (postRecord.slug as string),
             description: (postRecord.description as string) || "",
+            status: (postRecord.status as "DRAFT" | "PUBLISHED" | "ARCHIVED") || "PUBLISHED",
             publishedTime: (postRecord.publishedAt as Date).toISOString(),
             isPinned: Boolean(postRecord.isPinned),
             isRecommended: Boolean(postRecord.isRecommended),
@@ -495,14 +669,31 @@ export async function searchDbPosts(
  */
 export async function getAllDbPostSlugs(): Promise<{ slug: string }[]> {
     const dbClient = getDbClient() as any;
-    const posts = await dbClient.post.findMany({
-        select: {
-            slug: true,
-        },
-        orderBy: {
-            publishedAt: "desc",
-        },
-    });
+    const supportStatusField = await canUsePostStatusField(dbClient);
+    let posts: Array<{ slug?: string }> = [];
+    try {
+        posts = await dbClient.post.findMany({
+            ...(supportStatusField ? { where: { status: "PUBLISHED" } } : {}),
+            select: {
+                slug: true,
+            },
+            orderBy: {
+                publishedAt: "desc",
+            },
+        });
+    } catch (error) {
+        if (!isStatusFieldUnavailableError(error)) {
+            throw error;
+        }
+        posts = await dbClient.post.findMany({
+            select: {
+                slug: true,
+            },
+            orderBy: {
+                publishedAt: "desc",
+            },
+        });
+    }
 
     const seen = new Set<string>();
     const result: { slug: string }[] = [];
@@ -517,4 +708,3 @@ export async function getAllDbPostSlugs(): Promise<{ slug: string }[]> {
     }
     return result;
 }
-

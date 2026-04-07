@@ -1,7 +1,7 @@
 import Blog from '@/components/Blog/Blog';
 import { Metadata } from 'next';
-import { getLocalPostsList } from '@/utils/content/local';
 import { cookies, headers } from 'next/headers';
+import { fetchPublicPostsList } from '@/server/content/service';
 
 // 博客页面
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default async function BlogPage() {
   let initialData;
   
   try {
-      initialData = await getLocalPostsList(0, itemsLimit, locale);
+      initialData = await fetchPublicPostsList(0, itemsLimit, locale);
   } catch (e) {
       console.error("Failed to fetch initial blog posts", e);
   }

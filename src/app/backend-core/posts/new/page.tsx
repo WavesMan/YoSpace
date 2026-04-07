@@ -41,6 +41,31 @@ const AdminNewPostPage = () => {
         </label>
         <label className={styles.postFormField}>
           <span className={styles.postFormLabelText}>
+            状态
+          </span>
+          <select
+            name="status"
+            defaultValue="PUBLISHED"
+            className={styles.postFormInput}
+          >
+            <option value="DRAFT">草稿</option>
+            <option value="PUBLISHED">发布</option>
+            <option value="ARCHIVED">归档</option>
+          </select>
+        </label>
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
+            标签（逗号分隔）
+          </span>
+          <input
+            name="tags"
+            type="text"
+            className={styles.postFormInput}
+            placeholder="Next.js, TypeScript"
+          />
+        </label>
+        <label className={styles.postFormField}>
+          <span className={styles.postFormLabelText}>
             摘要
           </span>
           <textarea

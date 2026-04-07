@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 import CategoryDetail from "@/components/Blog/CategoryDetail";
-import { getLocalPostsList, type PostItem } from "@/utils/content/local";
+import type { PostItem } from "@/utils/content/local";
 import { cookies, headers } from "next/headers";
+import { fetchPublicPostsList } from "@/server/content/service";
 
 export const metadata: Metadata = {
     title: `Category - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
@@ -37,7 +38,7 @@ export default async function CategoryPage({ params }: { params: Promise<Categor
     const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
     let initialPosts: PostItem[];
     try {
-        const list = await getLocalPostsList(0, 2000, locale);
+        const list = await fetchPublicPostsList(0, 2000, locale);
         initialPosts = list.items;
     } catch {
         initialPosts = [];

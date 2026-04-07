@@ -1,9 +1,12 @@
-import BlogPost from '@/components/Blog/BlogPost';
-import { Metadata } from 'next';
-import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
-import { getDbPostContent, getAllDbPostSlugs } from '@/utils/content/db';
-import { buildUrl, seoConfig } from '@/utils/seo';
-import { cookies, headers } from 'next/headers';
+import BlogPost from "@/components/Blog/BlogPost";
+import { Metadata } from "next";
+import { buildUrl, seoConfig } from "@/utils/seo";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { fetchPublicPostContentBySlug, fetchPublicPostSlugs } from "@/server/content/service";
+
+const __blogRevalidate = 3600;
+void __blogRevalidate;
 
 // ISR: 每小时重新验证一次
 export const revalidate = 3600;
@@ -16,20 +19,23 @@ export const revalidate = 3600;
  *
  * @returns 是否启用数据库内容数据源
  */
-function shouldUseDatabaseContent(): boolean {
-    return process.env.NEXT_PUBLIC_USE_DB_CONTENT === 'true';
+async function resolveBlogLocale(): Promise<string> {
+    const cookieStore = await cookies();
+    const savedLocale = cookieStore.get('locale')?.value;
+    const requestHeaders = await headers();
+    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
+    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
+        ? savedLocale
+        : acceptLang.startsWith('en')
+            ? 'en-US'
+            : 'zh-CN';
+    return uiLocale === 'en-US' ? 'en' : 'zh-CN';
 }
 
 // 预生成所有文章路径 (SSG)
 export async function generateStaticParams() {
     try {
-        if (shouldUseDatabaseContent()) {
-            const slugs = await getAllDbPostSlugs();
-            return slugs.map((post) => ({
-                slug: post.slug,
-            }));
-        }
-        const slugs = await getAllLocalPostSlugs();
+        const slugs = await fetchPublicPostSlugs();
         return slugs.map((post) => ({
             slug: post.slug,
         }));
@@ -51,26 +57,14 @@ export async function generateStaticParams() {
  */
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
-    const cookieStore = await cookies();
-    const savedLocale = cookieStore.get('locale')?.value;
-    const requestHeaders = await headers();
-    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
-        ? savedLocale
-        : acceptLang.startsWith('en')
-            ? 'en-US'
-            : 'zh-CN';
-    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
-    const canonical = buildUrl(`/blog/${encodeURIComponent(slug)}`);
+    const locale = await resolveBlogLocale();
     const ogImages = seoConfig.defaultOgImage ? [buildUrl(seoConfig.defaultOgImage)] : undefined;
 
     try {
-        const useDb = shouldUseDatabaseContent();
-        const post = useDb
-            ? await getDbPostContent(slug, locale)
-            : await getLocalPostContent(slug, locale);
-        const title = `${post.title} - ${seoConfig.siteName}`;
-        const descRaw = post.description || seoConfig.defaultDescription;
+        const result = await fetchPublicPostContentBySlug(slug, locale);
+        const canonical = buildUrl(`/blog/${encodeURIComponent(result.resolvedSlug)}`);
+        const title = `${result.content.title} - ${seoConfig.siteName}`;
+        const descRaw = result.content.description || seoConfig.defaultDescription;
         const description = descRaw.replace(/\s+/g, ' ').trim().slice(0, 180);
         const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
         return {
@@ -97,6 +91,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             },
         };
     } catch {
+        const canonical = buildUrl(`/blog/${encodeURIComponent(slug)}`);
         const title = `${seoConfig.defaultTitle} - ${seoConfig.siteName}`;
         const description = seoConfig.defaultDescription.replace(/\s+/g, ' ').trim().slice(0, 180);
         const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
@@ -139,23 +134,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  */
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const cookieStore = await cookies();
-    const savedLocale = cookieStore.get('locale')?.value;
-    const requestHeaders = await headers();
-    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
-        ? savedLocale
-        : acceptLang.startsWith('en')
-            ? 'en-US'
-            : 'zh-CN';
-    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
+    const locale = await resolveBlogLocale();
     let initialContent;
     
     try {
-        const useDb = shouldUseDatabaseContent();
-        initialContent = useDb
-            ? await getDbPostContent(slug, locale)
-            : await getLocalPostContent(slug, locale);
+        const result = await fetchPublicPostContentBySlug(slug, locale);
+        if (result.resolvedSlug !== slug) {
+            redirect(`/blog/${encodeURIComponent(result.resolvedSlug)}`);
+        }
+        initialContent = result.content;
     } catch (e) {
         console.error(`Failed to fetch content for slug: ${slug}`, e);
         // 如果服务端获取失败，不中断渲染，让客户端尝试或显示错误

@@ -1,11 +1,11 @@
 import { MetadataRoute } from "next";
-import { getAllLocalPostSlugs, getLocalPostsList } from "@/utils/content/local";
 import { buildUrl, seoConfig } from "@/utils/seo";
+import { fetchPublicPostSlugs, fetchPublicPostsList } from "@/server/content/service";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const now = new Date();
-    const list = await getLocalPostsList(0, 5000, "en");
-    const slugs = await getAllLocalPostSlugs();
+    const list = await fetchPublicPostsList(0, 5000, "en");
+    const slugs = await fetchPublicPostSlugs();
 
     const tagSet = new Set<string>();
     const categorySet = new Set<string>();

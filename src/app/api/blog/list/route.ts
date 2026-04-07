@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLocalPostsList } from '@/utils/content/local';
-import { getDbPostsList } from '@/utils/content/db';
-
-/**
- * 判断当前是否启用数据库作为博客内容数据源
- *
- * @returns 是否启用数据库内容数据源
- */
-function shouldUseDatabaseContent(): boolean {
-  return process.env.NEXT_PUBLIC_USE_DB_CONTENT === 'true';
-}
+import { fetchPublicPostsList } from '@/server/content/service';
 
 /**
  * 博客文章列表 API
@@ -33,8 +23,7 @@ export async function GET(request: NextRequest) {
   const locale = localeParam || 'en';
 
   try {
-    const useDb = shouldUseDatabaseContent();
-    const data = useDb ? await getDbPostsList(offset, limit, locale) : await getLocalPostsList(offset, limit, locale);
+    const data = await fetchPublicPostsList(offset, limit, locale);
     return NextResponse.json(data);
   } catch (error) {
     // NOTE: 仅在服务端输出具体错误，对客户端返回统一错误信息，避免泄露实现细节

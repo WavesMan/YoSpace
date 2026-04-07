@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
+export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+
 export interface PostCategory {
     id: string;
     labelZh?: string;
@@ -21,6 +23,7 @@ export interface PostItem {
     title: string;
     description: string;
     slug: string;
+    status?: PostStatus;
     publishedTime: string;
     isPinned?: boolean;
     isRecommended?: boolean;
@@ -41,6 +44,7 @@ export interface PostContentResponse {
     title: string;
     content: string;
     publishedTime: string;
+    status?: PostStatus;
     isPinned?: boolean;
     isRecommended?: boolean;
     recommendRank?: number;
@@ -56,6 +60,23 @@ const postsDirectory = path.join(process.cwd(), 'src/content/posts');
 const CACHE_TTL_MS = 30000;
 const listCache = new Map<string, { data: PostListResponse; expiresAt: number }>();
 const postCache = new Map<string, { data: PostContentResponse; expiresAt: number }>();
+
+/**
+ * 解析并归一化文章状态
+ *
+ * @param rawStatus frontmatter 中的原始状态值
+ * @returns 归一化后的状态枚举，默认 PUBLISHED
+ */
+const normalizePostStatus = (rawStatus: unknown): PostStatus => {
+    if (typeof rawStatus !== 'string') {
+        return 'PUBLISHED';
+    }
+    const upper = rawStatus.trim().toUpperCase();
+    if (upper === 'DRAFT' || upper === 'ARCHIVED' || upper === 'PUBLISHED') {
+        return upper;
+    }
+    return 'PUBLISHED';
+};
 
 // NOTE: 从文件名中解析 slug 与语言，默认语言为 en
 // 命名约定：slug.md（默认英文）或 slug.locale.md（例如 slug.zh-CN.md）
@@ -131,6 +152,7 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
         }
 
         const fm = data as Record<string, unknown>;
+        const status = normalizePostStatus(fm.status);
         const rc = (fm.category ?? fm.categories) as unknown;
         let category: PostCategory | undefined;
         if (rc && typeof rc === 'object') {
@@ -160,6 +182,7 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
             slug,
             title: (fm.title as string) || slug,
             description: (fm.description as string) || '',
+            status,
             publishedTime: (fm.date as string) || '',
             isPinned: (fm.isPinned as boolean) || false,
             isRecommended: (fm.isRecommended as boolean) || false,
@@ -174,18 +197,26 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
 
     // NOTE: 按发布时间倒序排列文章
     const sortedPosts = allPostsData.sort((a, b) => {
+        if (a.status !== 'PUBLISHED' && b.status === 'PUBLISHED') {
+            return 1;
+        }
+        if (a.status === 'PUBLISHED' && b.status !== 'PUBLISHED') {
+            return -1;
+        }
         return b.dateObj.getTime() - a.dateObj.getTime();
     });
 
+    const publishedPosts = sortedPosts.filter(post => post.status === 'PUBLISHED');
+
     // NOTE: offset 使用条目偏移量，避免将 offset 误当页码导致分页错位
-    const paginatedPosts = sortedPosts.slice(safeOffset, safeOffset + safeLimit);
+    const paginatedPosts = publishedPosts.slice(safeOffset, safeOffset + safeLimit);
 
     const response = {
         items: paginatedPosts.map(({ dateObj, ...rest }) => {
             void dateObj;
             return rest;
         }),
-        total: sortedPosts.length,
+        total: publishedPosts.length,
         locale
     };
     listCache.set(cacheKey, { data: response, expiresAt: now + CACHE_TTL_MS });
@@ -260,6 +291,10 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
     }
 
     const fm = data as Record<string, unknown>;
+    const status = normalizePostStatus(fm.status);
+    if (status !== 'PUBLISHED') {
+        throw new Error(`Post not published: ${slug} (${selectedLocale})`);
+    }
     const rc = (fm.category ?? fm.categories) as unknown;
     let category: PostCategory | undefined;
     if (rc && typeof rc === 'object') {
@@ -287,6 +322,7 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
     const response = {
         title: (fm.title as string) || slug,
         content: content,
+        status,
         publishedTime: (fm.date as string) || '',
         isPinned: (fm.isPinned as boolean) || false,
         isRecommended: (fm.isRecommended as boolean) || false,
