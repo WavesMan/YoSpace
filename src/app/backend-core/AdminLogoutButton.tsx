@@ -10,8 +10,8 @@ interface AdminLogoutButtonProps {
 /**
  * 后台退出登录按钮
  *
- * 通过调用 /api/admin/logout 清理管理员 Cookie，
- * 完成后统一跳转至 /admin 入口页由中间件自动分流。
+ * 通过调用 `/api/admin/logout` 清理管理员 Cookie，
+ * 完成后统一跳转到后台入口页。
  *
  * @param props.adminPath 后台入口路径
  * @returns 退出按钮 JSX 节点
@@ -20,7 +20,7 @@ const AdminLogoutButton: React.FC<AdminLogoutButtonProps> = ({ adminPath }) => {
   const [submitting, setSubmitting] = useState(false);
 
   /**
-   * 执行退出登录请求并跳转至后台入口
+   * 执行退出请求并跳转
    *
    * @returns Promise<void>
    */
@@ -52,4 +52,3 @@ const AdminLogoutButton: React.FC<AdminLogoutButtonProps> = ({ adminPath }) => {
 };
 
 export default AdminLogoutButton;
-

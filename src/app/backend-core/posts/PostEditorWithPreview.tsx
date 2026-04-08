@@ -15,7 +15,7 @@ interface PostEditorWithPreviewProps {
   initialValues: {
     title: string;
     slug: string;
-    status: string;
+    status?: string;
     tags: string;
     description: string;
     content: string;
@@ -24,25 +24,29 @@ interface PostEditorWithPreviewProps {
     pageTitle: string;
     localeMissing: string;
     title: string;
-    status: string;
+    status?: string;
     tags: string;
     description: string;
     content: string;
     save: string;
-    draft: string;
-    published: string;
-    archived: string;
+    draft?: string;
+    published?: string;
+    archived?: string;
+    publish?: string;
     preview: string;
     previewHint: string;
   };
   saveAction: (formData: FormData) => void | Promise<void>;
+  publishAction?: (formData: FormData) => void | Promise<void>;
+  showStatus?: boolean;
+  backHref?: string;
+  backText?: string;
 }
 
 /**
  * 文章编辑与实时预览组合面板
  *
- * 左侧负责编辑表单输入，右侧复用博客正文 Markdown 渲染组件进行实时预览，
- * 以保证后台编辑时的展示效果尽量贴近真实 `/blog/[slug]` 页面。
+ * 左侧负责编辑表单输入，右侧复用博客渲染组件进行实时预览。
  *
  * @param props 编辑器参数
  * @returns 编辑与预览组合面板
@@ -55,6 +59,10 @@ function PostEditorWithPreview({
   initialValues,
   uiText,
   saveAction,
+  publishAction,
+  showStatus = true,
+  backHref,
+  backText = '返回',
 }: PostEditorWithPreviewProps) {
   const [title, setTitle] = useState(initialValues.title);
   const [postSlug, setPostSlug] = useState(initialValues.slug);
@@ -65,15 +73,23 @@ function PostEditorWithPreview({
 
   const previewTags = useMemo(() => {
     return tags
-      .split(/[,，]/g)
-      .map(item => item.trim())
+      .split(/[,，\n]/g)
+      .map((item) => item.trim())
       .filter(Boolean)
       .slice(0, 12);
   }, [tags]);
 
   return (
     <div className={editorStyles.editorPage}>
+      {backHref && (
+        <div className={editorStyles.editorTopBar}>
+          <Link href={backHref} className={editorStyles.editorBackLink}>
+            {backText}
+          </Link>
+        </div>
+      )}
       <h1 className={editorStyles.editorTitle}>{uiText.pageTitle}</h1>
+
       {i18nEnabled && (
         <div className={editorStyles.localeTabs}>
           {editableLocales.map((uiLocale) => {
@@ -92,13 +108,14 @@ function PostEditorWithPreview({
           })}
         </div>
       )}
-      {isCurrentLocaleMissing && (
-        <p className={editorStyles.localeWarning}>{uiText.localeMissing}</p>
-      )}
+
+      {isCurrentLocaleMissing && <p className={editorStyles.localeWarning}>{uiText.localeMissing}</p>}
+
       <div className={editorStyles.editorLayout}>
         <div className={editorStyles.editorFormCard}>
           <form action={saveAction} className={editorStyles.editorForm}>
             <input name="locale" type="hidden" value={activeLocale} />
+
             <label className={editorStyles.editorField}>
               <span className={editorStyles.editorLabelText}>{uiText.title}</span>
               <input
@@ -111,6 +128,7 @@ function PostEditorWithPreview({
                 className={postFormStyles.postFormInput}
               />
             </label>
+
             <label className={editorStyles.editorField}>
               <span className={editorStyles.editorLabelText}>Slug</span>
               <input
@@ -123,21 +141,25 @@ function PostEditorWithPreview({
                 className={postFormStyles.postFormInput}
               />
             </label>
-            <label className={editorStyles.editorField}>
-              <span className={editorStyles.editorLabelText}>{uiText.status}</span>
-              <select
-                name="status"
-                value={status}
-                onChange={(event) => {
-                  setStatus(event.target.value);
-                }}
-                className={postFormStyles.postFormInput}
-              >
-                <option value="DRAFT">{uiText.draft}</option>
-                <option value="PUBLISHED">{uiText.published}</option>
-                <option value="ARCHIVED">{uiText.archived}</option>
-              </select>
-            </label>
+
+            {showStatus && (
+              <label className={editorStyles.editorField}>
+                <span className={editorStyles.editorLabelText}>{uiText.status || '状态'}</span>
+                <select
+                  name="status"
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value);
+                  }}
+                  className={postFormStyles.postFormInput}
+                >
+                  <option value="DRAFT">{uiText.draft || '草稿'}</option>
+                  <option value="PUBLISHED">{uiText.published || '发布'}</option>
+                  <option value="ARCHIVED">{uiText.archived || '归档'}</option>
+                </select>
+              </label>
+            )}
+
             <label className={editorStyles.editorField}>
               <span className={editorStyles.editorLabelText}>{uiText.tags}</span>
               <input
@@ -150,6 +172,7 @@ function PostEditorWithPreview({
                 className={postFormStyles.postFormInput}
               />
             </label>
+
             <label className={editorStyles.editorField}>
               <span className={editorStyles.editorLabelText}>{uiText.description}</span>
               <textarea
@@ -162,6 +185,7 @@ function PostEditorWithPreview({
                 className={postFormStyles.postFormTextarea}
               />
             </label>
+
             <label className={editorStyles.editorField}>
               <span className={editorStyles.editorLabelText}>{uiText.content}</span>
               <textarea
@@ -174,9 +198,17 @@ function PostEditorWithPreview({
                 className={`${postFormStyles.postFormTextarea} ${postFormStyles.postFormTextareaMono}`}
               />
             </label>
-            <button type="submit" className={postFormStyles.postFormSubmit}>
-              {uiText.save}
-            </button>
+
+            <div className={postFormStyles.postFormActions}>
+              <button type="submit" className={postFormStyles.postFormSubmit}>
+                {uiText.save}
+              </button>
+              {publishAction && (
+                <button type="submit" formAction={publishAction} className={postFormStyles.postFormSecondary}>
+                  {uiText.publish || '发布'}
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -187,12 +219,10 @@ function PostEditorWithPreview({
           </div>
           <div className={editorStyles.previewBody}>
             <h1 className={editorStyles.previewPostTitle}>{title || 'Untitled'}</h1>
-            {description.trim() ? (
-              <p className={editorStyles.previewDescription}>{description}</p>
-            ) : null}
+            {description.trim() ? <p className={editorStyles.previewDescription}>{description}</p> : null}
             {previewTags.length > 0 && (
               <div className={editorStyles.previewTags}>
-                {previewTags.map(tag => (
+                {previewTags.map((tag) => (
                   <span key={tag} className={editorStyles.previewTag}>
                     {tag}
                   </span>

@@ -6,6 +6,7 @@
   color: var(--color-text-primary);
 }
 
+
 .adminHeader {
   position: sticky;
   top: 0;
@@ -18,6 +19,12 @@
   background-color: var(--color-bg-card);
   border-bottom: 1px solid var(--color-accent-stroke);
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.adminHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .adminBrand {
@@ -57,16 +64,20 @@
   transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-.adminNavLinkPrimary {
-  font-weight: var(--font-weight-bold);
-}
-
-.adminNavLink:hover {
+.adminNavLink:hover,
+.adminNavLinkActive {
   background-color: var(--color-bg);
   color: var(--color-accent-title);
   transform: translateY(-1px);
 }
 
+.adminTools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adminThemeToggleButton,
 .adminLogoutButton {
   border: 1px solid var(--color-accent-stroke);
   background-color: transparent;
@@ -78,11 +89,13 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+.adminThemeToggleButton:hover,
 .adminLogoutButton:hover {
   background-color: var(--color-bg);
   color: var(--color-accent-title);
 }
 
+.adminThemeToggleButton:disabled,
 .adminLogoutButton:disabled {
   cursor: not-allowed;
   opacity: 0.7;
@@ -122,7 +135,20 @@
     gap: 8px;
   }
 
+  .adminHeaderActions {
+    gap: 10px;
+  }
+
+  .adminTools {
+    gap: 6px;
+  }
+
   .adminNavLink {
+    padding-inline: 8px;
+  }
+
+  .adminThemeToggleButton,
+  .adminLogoutButton {
     padding-inline: 8px;
   }
 }

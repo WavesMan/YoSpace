@@ -38,6 +38,22 @@
   margin: 0 0 16px;
 }
 
+.editorTopBar {
+  margin-bottom: 12px;
+}
+
+.editorBackLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-accent-stroke);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
 .localeTabs {
   display: flex;
   gap: 8px;
@@ -168,6 +184,13 @@
   max-width: none;
   margin: 0;
   width: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .editorBackLink:hover {
+    background-color: var(--color-bg);
+    color: var(--color-accent-title);
+  }
 }
 
 @media (max-width: 1200px) {

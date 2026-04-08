@@ -1,0 +1,59 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>后台原型入口</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div class="adminRoot">
+    <header class="adminHeader">
+      <div class="adminBrand">
+        <span class="adminBrandPrimary">YoSpace Admin</span>
+        <span class="adminBrandSecondary">后台管理 Demo</span>
+      </div>
+      <nav class="adminNav">
+        <a class="adminNavLink active" href="./index.html">入口</a>
+        <a class="adminNavLink" href="./dashboard.html">仪表盘</a>
+        <a class="adminNavLink" href="./posts.html">文章管理</a>
+        <a class="adminNavLink" href="./settings.html">设置中心</a>
+        <button class="themeToggle" id="themeToggle" type="button">暗色模式</button>
+      </nav>
+    </header>
+
+    <main class="adminMain">
+      <section class="pageHeader">
+        <div>
+          <h1 class="pageTitle">后台 UI/UX 原型入口</h1>
+          <p class="pageHint">已按现有项目风格对齐：主题变量、顶部导航、卡片和按钮语义。</p>
+        </div>
+      </section>
+
+      <section class="grid grid2">
+        <article class="card">
+          <h2 class="panelTitle">仪表盘</h2>
+          <p class="pageHint">统计卡片、趋势展示、待办提醒。</p>
+          <a class="adminNavLink active" href="./dashboard.html">打开示例</a>
+        </article>
+        <article class="card">
+          <h2 class="panelTitle">文章管理</h2>
+          <p class="pageHint">列表、筛选、状态标记与批量操作入口。</p>
+          <a class="adminNavLink active" href="./posts.html">打开示例</a>
+        </article>
+        <article class="card">
+          <h2 class="panelTitle">设置中心</h2>
+          <p class="pageHint">站点设置、博客设置、管理员安全设置。</p>
+          <a class="adminNavLink active" href="./settings.html">打开示例</a>
+        </article>
+        <article class="card">
+          <h2 class="panelTitle">说明</h2>
+          <p class="pageHint">纯 HTML/CSS/JS 原型，方便先确定交互和视觉，再迁移到 Next 页面。</p>
+          <p class="pageHint">路径：<code>demo-admin-html/*.html</code></p>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="./assets/theme.js"></script>
+</body>
+</html>

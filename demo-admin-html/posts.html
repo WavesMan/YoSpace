@@ -1,0 +1,125 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文章管理 Demo</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div class="adminRoot">
+    <header class="adminHeader">
+      <div class="adminBrand">
+        <span class="adminBrandPrimary">YoSpace Admin</span>
+        <span class="adminBrandSecondary">后台管理</span>
+      </div>
+      <nav class="adminNav">
+        <a class="adminNavLink" href="./index.html">入口</a>
+        <a class="adminNavLink" href="./dashboard.html">仪表盘</a>
+        <a class="adminNavLink active" href="./posts.html">文章管理</a>
+        <a class="adminNavLink" href="./settings.html">设置中心</a>
+        <button class="themeToggle" id="themeToggle" type="button">暗色模式</button>
+      </nav>
+    </header>
+
+    <main class="adminMain">
+      <section class="pageHeader">
+        <div>
+          <h1 class="pageTitle">文章管理</h1>
+          <p class="pageHint">对齐现有后台列表风格，增加状态筛选与关键字检索演示。</p>
+        </div>
+        <button class="btnPrimary">新建文章</button>
+      </section>
+
+      <section class="card">
+        <div class="toolbar" style="margin-bottom:12px;">
+          <input class="input" id="keyword" type="text" placeholder="搜索标题..." style="max-width:220px;" />
+          <select class="select" id="statusFilter" style="max-width:180px;">
+            <option value="all">全部状态</option>
+            <option value="published">已发布</option>
+            <option value="draft">草稿</option>
+            <option value="archived">已归档</option>
+          </select>
+          <button class="btnGhost" id="reset">重置</button>
+          <button class="btnGhost">批量发布</button>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" /></th>
+              <th>标题</th>
+              <th>状态</th>
+              <th>Slug</th>
+              <th>更新时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="postRows">
+            <tr data-status="published" data-title="nextjs admin architecture">
+              <td><input type="checkbox" /></td>
+              <td>Next.js Admin Architecture</td>
+              <td><span class="badge published">已发布</span></td>
+              <td>nextjs-admin-architecture</td>
+              <td>2026-04-06</td>
+              <td><a class="adminNavLink active" href="#">编辑</a></td>
+            </tr>
+            <tr data-status="draft" data-title="settings center blueprint">
+              <td><input type="checkbox" /></td>
+              <td>Settings Center Blueprint</td>
+              <td><span class="badge draft">草稿</span></td>
+              <td>settings-center-blueprint</td>
+              <td>2026-04-04</td>
+              <td><a class="adminNavLink active" href="#">编辑</a></td>
+            </tr>
+            <tr data-status="published" data-title="content strategy in app router">
+              <td><input type="checkbox" /></td>
+              <td>Content Strategy in App Router</td>
+              <td><span class="badge published">已发布</span></td>
+              <td>content-strategy-app-router</td>
+              <td>2026-04-02</td>
+              <td><a class="adminNavLink active" href="#">编辑</a></td>
+            </tr>
+            <tr data-status="archived" data-title="legacy markdown workflow">
+              <td><input type="checkbox" /></td>
+              <td>Legacy Markdown Workflow</td>
+              <td><span class="badge archived">已归档</span></td>
+              <td>legacy-markdown-workflow</td>
+              <td>2026-03-15</td>
+              <td><a class="adminNavLink active" href="#">恢复</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="./assets/theme.js"></script>
+  <script>
+    const rows = Array.from(document.querySelectorAll("#postRows tr"));
+    const keywordEl = document.getElementById("keyword");
+    const statusEl = document.getElementById("statusFilter");
+    const resetEl = document.getElementById("reset");
+
+    function applyFilter() {
+      const q = keywordEl.value.trim().toLowerCase();
+      const status = statusEl.value;
+      rows.forEach((row) => {
+        const title = row.dataset.title || "";
+        const rowStatus = row.dataset.status || "";
+        const matchTitle = !q || title.includes(q);
+        const matchStatus = status === "all" || status === rowStatus;
+        row.style.display = matchTitle && matchStatus ? "" : "none";
+      });
+    }
+
+    keywordEl.addEventListener("input", applyFilter);
+    statusEl.addEventListener("change", applyFilter);
+    resetEl.addEventListener("click", () => {
+      keywordEl.value = "";
+      statusEl.value = "all";
+      applyFilter();
+    });
+  </script>
+</body>
+</html>

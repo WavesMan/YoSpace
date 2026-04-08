@@ -1,0 +1,95 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>后台仪表盘 Demo</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div class="adminRoot">
+    <header class="adminHeader">
+      <div class="adminBrand">
+        <span class="adminBrandPrimary">YoSpace Admin</span>
+        <span class="adminBrandSecondary">后台管理</span>
+      </div>
+      <nav class="adminNav">
+        <a class="adminNavLink" href="./index.html">入口</a>
+        <a class="adminNavLink active" href="./dashboard.html">仪表盘</a>
+        <a class="adminNavLink" href="./posts.html">文章管理</a>
+        <a class="adminNavLink" href="./settings.html">设置中心</a>
+        <button class="themeToggle" id="themeToggle" type="button">暗色模式</button>
+      </nav>
+    </header>
+
+    <main class="adminMain">
+      <section class="pageHeader">
+        <div>
+          <h1 class="pageTitle">后台仪表盘</h1>
+          <p class="pageHint">与项目现有后台一致的卡片化统计与表格区块结构。</p>
+        </div>
+        <div class="toolbar">
+          <button class="btnGhost">导出数据</button>
+          <button class="btnPrimary">新建文章</button>
+        </div>
+      </section>
+
+      <section class="grid grid4" style="margin-bottom:12px;">
+        <article class="card">
+          <div class="statLabel">文章总数</div>
+          <div class="statValue">128</div>
+          <div class="statSub">近 7 天 +6</div>
+        </article>
+        <article class="card">
+          <div class="statLabel">已发布</div>
+          <div class="statValue">91</div>
+          <div class="statSub">发布率 71%</div>
+        </article>
+        <article class="card">
+          <div class="statLabel">累计阅读</div>
+          <div class="statValue">54,212</div>
+          <div class="statSub">较上周 +8.2%</div>
+        </article>
+        <article class="card">
+          <div class="statLabel">近 7 天访问</div>
+          <div class="statValue">12,403</div>
+          <div class="statSub">UV 3,104</div>
+        </article>
+      </section>
+
+      <section class="grid grid2">
+        <article class="card">
+          <h2 class="panelTitle">热门文章（按阅读量）</h2>
+          <table class="table">
+            <thead>
+              <tr><th>标题</th><th>阅读</th><th>更新时间</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Next.js Admin Architecture</td><td>2,102</td><td>2026-04-06</td></tr>
+              <tr><td>Content Strategy in App Router</td><td>1,743</td><td>2026-04-02</td></tr>
+              <tr><td>Settings Center Blueprint</td><td>1,224</td><td>2026-03-28</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="card">
+          <h2 class="panelTitle">近 7 天访客趋势</h2>
+          <table class="table">
+            <thead>
+              <tr><th>日期</th><th>访问次数</th><th>独立访客</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>2026-04-01</td><td>1,602</td><td>406</td></tr>
+              <tr><td>2026-04-02</td><td>1,553</td><td>388</td></tr>
+              <tr><td>2026-04-03</td><td>1,690</td><td>422</td></tr>
+              <tr><td>2026-04-04</td><td>1,734</td><td>433</td></tr>
+              <tr><td>2026-04-05</td><td>1,901</td><td>476</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="./assets/theme.js"></script>
+</body>
+</html>

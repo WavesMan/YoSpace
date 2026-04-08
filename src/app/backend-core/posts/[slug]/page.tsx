@@ -1,16 +1,16 @@
-import React from "react";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getDbClient } from "@/server/db/client";
-import { updatePostAction } from "../actions";
+import React from 'react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getDbClient } from '@/server/db/client';
+import { updatePostAction } from '../actions';
 import {
   normalizeUiLocale,
   resolveAdminEditableUiLocales,
   resolveI18nRuntimeConfig,
   toContentLocale,
-} from "@/utils/i18n/runtime";
-import SaveFeedbackToast from "../SaveFeedbackToast";
-import PostEditorWithPreview from "../PostEditorWithPreview";
+} from '@/utils/i18n/runtime';
+import SaveFeedbackToast from '../SaveFeedbackToast';
+import PostEditorWithPreview from '../PostEditorWithPreview';
 
 interface AdminEditPostPageProps {
   params: Promise<{
@@ -40,16 +40,16 @@ interface EditablePostModel {
 }
 
 /**
- * 解析内容语种候选值
+ * 解析语种候选值
  *
  * @param locale 规范语种
  * @returns 候选语种列表
  */
-function getLocaleCandidates(locale: "zh-CN" | "en"): string[] {
-  if (locale === "en") {
-    return ["en", "en-US"];
+function getLocaleCandidates(locale: 'zh-CN' | 'en'): string[] {
+  if (locale === 'en') {
+    return ['en', 'en-US'];
   }
-  return ["zh-CN", "zh"];
+  return ['zh-CN', 'zh'];
 }
 
 /**
@@ -58,8 +58,8 @@ function getLocaleCandidates(locale: "zh-CN" | "en"): string[] {
  * @param locale 规范语种
  * @returns 历史候选语种列表
  */
-function getLegacyLocaleCandidates(locale: "zh-CN" | "en"): string[] {
-  return getLocaleCandidates(locale).filter(item => item !== locale);
+function getLegacyLocaleCandidates(locale: 'zh-CN' | 'en'): string[] {
+  return getLocaleCandidates(locale).filter((item) => item !== locale);
 }
 
 /**
@@ -71,16 +71,16 @@ function getLegacyLocaleCandidates(locale: "zh-CN" | "en"): string[] {
 function isDatabaseConnectionError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const lowered = message.toLowerCase();
-  return lowered.includes("can't reach database server") || lowered.includes("prismaclientinitializationerror");
+  return lowered.includes("can't reach database server") || lowered.includes('prismaclientinitializationerror');
 }
 
 /**
  * 后台编辑文章页面
  *
- * 按当前语种加载文章内容，并支持在同页完成编辑与实时预览。
+ * 按当前语种加载文章内容，并支持同页实时预览。
  *
  * @param props 页面参数
- * @returns 编辑页节点
+ * @returns 编辑页面节点
  */
 const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProps) => {
   const { slug } = await params;
@@ -88,37 +88,37 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
   const i18nConfig = resolveI18nRuntimeConfig();
   const activeUiLocale = i18nConfig.enabled ? normalizeUiLocale(query.locale) : i18nConfig.defaultUiLocale;
   const activeLocale = toContentLocale(activeUiLocale);
-  const showSavedToast = query.saved === "1";
+  const showSavedToast = query.saved === '1';
   const legacyLocaleCandidates = getLegacyLocaleCandidates(activeLocale);
-  const isEnglish = activeUiLocale === "en-US";
+  const isEnglish = activeUiLocale === 'en-US';
   const editableLocales = resolveAdminEditableUiLocales();
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
-  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
+  const adminPath = adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
 
   const uiText = {
-    pageTitle: isEnglish ? "Edit Post" : "编辑文章",
+    pageTitle: isEnglish ? 'Edit Post' : '编辑文章',
     localeMissing: isEnglish
-      ? "No content found for the selected locale. Saving will create a new locale version."
-      : "当前语种暂无内容版本，保存后将创建该语种文章。",
-    dbUnavailableTitle: isEnglish ? "Database Unavailable" : "数据库暂不可用",
+      ? 'No content found for this locale. Saving will create a locale version.'
+      : '当前语种暂无内容版本，保存后将创建该语种文章。',
+    dbUnavailableTitle: isEnglish ? 'Database Unavailable' : '数据库暂不可用',
     dbUnavailableDesc: isEnglish
-      ? "Cannot connect to database right now. Please try again later."
-      : "当前无法连接数据库，请稍后重试。",
-    backToList: isEnglish ? "Back to list" : "返回文章列表",
-    retry: isEnglish ? "Retry" : "重新尝试",
-    title: isEnglish ? "Title" : "标题",
-    status: isEnglish ? "Status" : "状态",
-    tags: isEnglish ? "Tags (comma separated)" : "标签（逗号分隔）",
-    description: isEnglish ? "Description" : "摘要",
-    content: isEnglish ? "Content (Markdown)" : "正文内容（Markdown）",
-    save: isEnglish ? "Save" : "保存",
-    draft: isEnglish ? "Draft" : "草稿",
-    published: isEnglish ? "Published" : "发布",
-    archived: isEnglish ? "Archived" : "归档",
-    saveSuccessTitle: isEnglish ? "Saved" : "保存成功",
-    saveSuccessDesc: isEnglish ? "Post content has been updated." : "文章内容已更新。",
-    preview: isEnglish ? "Live Preview" : "实时预览",
-    previewHint: isEnglish ? "Same markdown renderer as blog page" : "与博客详情页同源渲染",
+      ? 'Cannot connect to database right now. Please try again later.'
+      : '当前无法连接数据库，请稍后重试。',
+    backToList: isEnglish ? 'Back to list' : '返回文章列表',
+    retry: isEnglish ? 'Retry' : '重新尝试',
+    title: isEnglish ? 'Title' : '标题',
+    status: isEnglish ? 'Status' : '状态',
+    tags: isEnglish ? 'Tags (comma separated)' : '标签（逗号分隔）',
+    description: isEnglish ? 'Description' : '摘要',
+    content: isEnglish ? 'Content (Markdown)' : '正文内容（Markdown）',
+    save: isEnglish ? 'Save' : '保存',
+    draft: isEnglish ? 'Draft' : '草稿',
+    published: isEnglish ? 'Published' : '发布',
+    archived: isEnglish ? 'Archived' : '归档',
+    saveSuccessTitle: isEnglish ? 'Saved' : '保存成功',
+    saveSuccessDesc: isEnglish ? 'Post content has been updated.' : '文章内容已更新。',
+    preview: isEnglish ? 'Live Preview' : '实时预览',
+    previewHint: isEnglish ? 'Same renderer as blog page' : '与博客详情页同源渲染',
   };
 
   let post: EditablePostModel | null = null;
@@ -142,45 +142,47 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
       },
     });
 
-    const legacyLocalePost = exactLocalePost || legacyLocaleCandidates.length === 0
-      ? null
-      : await db.post.findFirst({
-        where: {
-          slug,
-          locale: {
-            in: legacyLocaleCandidates,
-          },
-        },
-        include: {
-          tags: {
-            include: {
-              tag: true,
+    const legacyLocalePost =
+      exactLocalePost || legacyLocaleCandidates.length === 0
+        ? null
+        : await db.post.findFirst({
+            where: {
+              slug,
+              locale: {
+                in: legacyLocaleCandidates,
+              },
             },
-          },
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-      });
+            include: {
+              tags: {
+                include: {
+                  tag: true,
+                },
+              },
+            },
+            orderBy: {
+              updatedAt: 'desc',
+            },
+          });
 
     const currentLocalePost = exactLocalePost || legacyLocalePost;
-    const fallbackPost = currentLocalePost
-      ? null
-      : await db.post.findFirst({
-        where: {
-          slug,
-        },
-        include: {
-          tags: {
-            include: {
-              tag: true,
+    const fallbackPost =
+      currentLocalePost
+        ? null
+        : await db.post.findFirst({
+            where: {
+              slug,
             },
-          },
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-      });
+            include: {
+              tags: {
+                include: {
+                  tag: true,
+                },
+              },
+            },
+            orderBy: {
+              updatedAt: 'desc',
+            },
+          });
 
     if (currentLocalePost) {
       post = currentLocalePost;
@@ -188,9 +190,9 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
       post = {
         ...fallbackPost,
         locale: activeLocale,
-        title: "",
-        description: "",
-        content: "",
+        title: '',
+        description: '',
+        content: '',
         tags: [],
       };
     }
@@ -214,20 +216,20 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
         </h1>
         <p
           style={{
-            margin: "0 0 12px",
-            color: "#4b5563",
+            margin: '0 0 12px',
+            color: '#4b5563',
             fontSize: 14,
           }}
         >
           {uiText.dbUnavailableDesc}
         </p>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           <Link
             href={`${adminPath}/posts`}
             style={{
-              border: "1px solid #d1d5db",
+              border: '1px solid #d1d5db',
               borderRadius: 6,
-              padding: "6px 10px",
+              padding: '6px 10px',
               fontSize: 14,
             }}
           >
@@ -236,10 +238,10 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
           <Link
             href={`${adminPath}/posts/${encodeURIComponent(slug)}?locale=${encodeURIComponent(activeUiLocale)}`}
             style={{
-              border: "1px solid #2563eb",
-              color: "#2563eb",
+              border: '1px solid #2563eb',
+              color: '#2563eb',
               borderRadius: 6,
-              padding: "6px 10px",
+              padding: '6px 10px',
               fontSize: 14,
             }}
           >
@@ -256,18 +258,14 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
 
   const tagValues = Array.isArray(post.tags)
     ? post.tags
-      .map((relationItem: PostTagRelation) => relationItem?.tag?.id)
-      .filter((tagId: unknown): tagId is string => typeof tagId === "string")
+        .map((relationItem: PostTagRelation) => relationItem?.tag?.id)
+        .filter((tagId: unknown): tagId is string => typeof tagId === 'string')
     : [];
-  const tagsInput = tagValues.join(", ");
+  const tagsInput = tagValues.join(', ');
 
   return (
     <div>
-      <SaveFeedbackToast
-        visible={showSavedToast}
-        title={uiText.saveSuccessTitle}
-        description={uiText.saveSuccessDesc}
-      />
+      <SaveFeedbackToast visible={showSavedToast} title={uiText.saveSuccessTitle} description={uiText.saveSuccessDesc} />
       <PostEditorWithPreview
         key={`${slug}:${activeLocale}:${post.id}`}
         activeLocale={activeLocale}
@@ -277,13 +275,16 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
         initialValues={{
           title: post.title,
           slug: post.slug,
-          status: post.status || "PUBLISHED",
+          status: post.status || 'PUBLISHED',
           tags: tagsInput,
-          description: post.description || "",
-          content: post.content || "",
+          description: post.description || '',
+          content: post.content || '',
         }}
         uiText={uiText}
         saveAction={updatePostAction.bind(null, slug)}
+        showStatus
+        backHref={`${adminPath}/posts`}
+        backText={isEnglish ? 'Back' : '返回'}
       />
     </div>
   );

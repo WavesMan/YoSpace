@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { isAdminRequest } from "@/server/auth/adminAuth";
 import { getAdminDashboardMetrics } from "@/server/analytics/service";
@@ -8,7 +9,7 @@ import styles from "./AdminDashboard.module.css";
  * 格式化日期为 yyyy-mm-dd
  *
  * @param value 原始日期字符串
- * @returns 格式化日期文本
+ * @returns 格式化后的日期字符串
  */
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -19,28 +20,43 @@ function formatDate(value: string): string {
 }
 
 /**
- * 后台仪表盘首页
+ * 后台仪表盘页面
  *
- * 展示管理员欢迎信息、内容规模、阅读访问统计与热门文章，
- * 作为前后台分离后的后台入口页，不依赖前台博客组件。
+ * 展示内容概览与访问统计，并提供常用操作入口。
  *
- * @returns 后台首页 JSX 节点
+ * @returns 仪表盘 JSX 节点
  */
 const DashboardPage = async () => {
   const cookieStore = await cookies();
   const usernameFromCookie = cookieStore.get("yo_admin_username")?.value;
   const isAdmin = await isAdminRequest();
   const metrics = isAdmin ? await getAdminDashboardMetrics(7) : null;
+  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
 
   return (
     <div className={styles.dashboardRoot}>
       <div className={styles.dashboardHeader}>
-        <h1 className={styles.dashboardTitle}>后台仪表盘</h1>
+        <div>
+          <h1 className={styles.dashboardTitle}>后台仪表盘</h1>
+          <p className={styles.dashboardSubtitle}>查看内容规模、访问趋势与站点状态。</p>
+        </div>
+        <div className={styles.dashboardToolbar}>
+          <Link className={styles.dashboardActionGhost} href={`${adminPath}/posts`}>
+            进入文章管理
+          </Link>
+          <Link className={styles.dashboardActionPrimary} href={`${adminPath}/posts/new`}>
+            新建文章
+          </Link>
+        </div>
       </div>
-      {!isAdmin && <p className={styles.dashboardWarning}>当前未登录管理员，请返回登录页重新登录。</p>}
+
+      {!isAdmin && <p className={styles.dashboardWarning}>当前会话未通过管理员认证。</p>}
+
       {isAdmin && metrics && (
         <>
           <p className={styles.dashboardWelcome}>欢迎回来，{usernameFromCookie || "管理员"}。</p>
+
           <div className={styles.dashboardStatsGrid}>
             <section className={styles.dashboardStatsCard}>
               <div className={styles.dashboardStatsLabel}>文章总数</div>
@@ -55,14 +71,20 @@ const DashboardPage = async () => {
               <div className={styles.dashboardStatsValue}>{metrics.totalViews}</div>
             </section>
             <section className={styles.dashboardStatsCard}>
-              <div className={styles.dashboardStatsLabel}>近7天访问</div>
+              <div className={styles.dashboardStatsLabel}>近 7 天访问</div>
               <div className={styles.dashboardStatsValue}>{metrics.recentVisits}</div>
               <div className={styles.dashboardStatsSub}>UV: {metrics.recentUniqueVisitors}</div>
             </section>
           </div>
+
           <div className={styles.dashboardPanelGrid}>
             <section className={styles.dashboardPanel}>
-              <h2 className={styles.dashboardPanelTitle}>热门文章（按阅读量）</h2>
+              <div className={styles.dashboardPanelHeader}>
+                <h2 className={styles.dashboardPanelTitle}>热门文章（按阅读量）</h2>
+                <Link className={styles.dashboardPanelMore} href={`${adminPath}/analytics/posts?page=1&pageSize=20`}>
+                  查看全部
+                </Link>
+              </div>
               {metrics.topPosts.length === 0 ? (
                 <p className={styles.dashboardEmpty}>暂无数据</p>
               ) : (
@@ -75,7 +97,7 @@ const DashboardPage = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {metrics.topPosts.map(item => (
+                    {metrics.topPosts.map((item) => (
                       <tr key={item.id}>
                         <td>{item.title}</td>
                         <td>{item.views}</td>
@@ -86,8 +108,9 @@ const DashboardPage = async () => {
                 </table>
               )}
             </section>
+
             <section className={styles.dashboardPanel}>
-              <h2 className={styles.dashboardPanelTitle}>近7天访客趋势</h2>
+              <h2 className={styles.dashboardPanelTitle}>近 7 天访客趋势</h2>
               {metrics.visitTrend.length === 0 ? (
                 <p className={styles.dashboardEmpty}>暂无数据</p>
               ) : (
@@ -100,7 +123,7 @@ const DashboardPage = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {metrics.visitTrend.map(item => (
+                    {metrics.visitTrend.map((item) => (
                       <tr key={item.day}>
                         <td>{item.day}</td>
                         <td>{item.visits}</td>
@@ -111,8 +134,14 @@ const DashboardPage = async () => {
                 </table>
               )}
             </section>
-            <section className={styles.dashboardPanel}>
-              <h2 className={styles.dashboardPanelTitle}>热门访问路径</h2>
+
+            <section className={`${styles.dashboardPanel} ${styles.dashboardPanelWide}`}>
+              <div className={styles.dashboardPanelHeader}>
+                <h2 className={styles.dashboardPanelTitle}>热门访问路径</h2>
+                <Link className={styles.dashboardPanelMore} href={`${adminPath}/analytics/paths?page=1&pageSize=20`}>
+                  查看全部
+                </Link>
+              </div>
               {metrics.topPaths.length === 0 ? (
                 <p className={styles.dashboardEmpty}>暂无数据</p>
               ) : (
@@ -124,7 +153,7 @@ const DashboardPage = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {metrics.topPaths.map(item => (
+                    {metrics.topPaths.map((item) => (
                       <tr key={item.path}>
                         <td>{item.path}</td>
                         <td>{item.count}</td>
@@ -142,4 +171,3 @@ const DashboardPage = async () => {
 };
 
 export default DashboardPage;
-

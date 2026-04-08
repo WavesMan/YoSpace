@@ -31,6 +31,35 @@ export interface AdminDashboardMetrics {
   topPaths: AdminTopPathItem[];
 }
 
+export interface AdminPostViewsPageItem {
+  id: string;
+  slug: string;
+  title: string;
+  views: number;
+  updatedAt: string;
+}
+
+export interface AdminPathViewsPageItem {
+  path: string;
+  count: number;
+}
+
+export interface AdminPagedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AdminPageQueryInput {
+  page?: string;
+  pageSize?: string;
+}
+
+const ADMIN_PAGE_SIZE_OPTIONS = new Set([10, 20, 50]);
+const ADMIN_DEFAULT_PAGE_SIZE = 20;
+
 /**
  * 判断当前 Prisma Client 是否支持 Post.status 字段
  *
@@ -44,6 +73,23 @@ function supportsPostStatusField(db: Awaited<ReturnType<typeof getDbClient>>): b
     return false;
   }
   return postFields.some(field => field?.name === "status");
+}
+
+/**
+ * 解析后台分页参数
+ *
+ * @param query 分页查询参数
+ * @returns 标准化后的分页参数
+ */
+export function normalizeAdminPageQuery(query: AdminPageQueryInput): { page: number; pageSize: number } {
+  const rawPage = Number.parseInt(query.page || "1", 10);
+  const rawPageSize = Number.parseInt(query.pageSize || `${ADMIN_DEFAULT_PAGE_SIZE}`, 10);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+  const pageSize = ADMIN_PAGE_SIZE_OPTIONS.has(rawPageSize) ? rawPageSize : ADMIN_DEFAULT_PAGE_SIZE;
+  return {
+    page,
+    pageSize,
+  };
 }
 
 /**
@@ -131,6 +177,7 @@ export async function getAdminDashboardMetrics(days = 7): Promise<AdminDashboard
   const rangeStart = new Date(now.getTime() - safeDays * 24 * 60 * 60 * 1000);
 
   const hasStatusField = supportsPostStatusField(db);
+  const publishedWhere = hasStatusField ? ({ status: "PUBLISHED" } as unknown as Record<string, unknown>) : {};
 
   const [totalPosts, totalViewsAggregate, topPostsRaw, recentVisits, topPathsRaw] = await Promise.all([
     db.post.count(),
@@ -140,7 +187,7 @@ export async function getAdminDashboardMetrics(days = 7): Promise<AdminDashboard
       },
     }),
     db.post.findMany({
-      where: hasStatusField ? { status: "PUBLISHED" } : {},
+      where: publishedWhere as never,
       orderBy: [
         { views: "desc" },
         { updatedAt: "desc" },
@@ -182,9 +229,7 @@ export async function getAdminDashboardMetrics(days = 7): Promise<AdminDashboard
 
   const publishedPosts = hasStatusField
     ? await db.post.count({
-        where: {
-          status: "PUBLISHED",
-        },
+        where: publishedWhere as never,
       })
     : totalPosts;
 
@@ -249,5 +294,109 @@ export async function getAdminDashboardMetrics(days = 7): Promise<AdminDashboard
     topPosts,
     visitTrend,
     topPaths,
+  };
+}
+
+/**
+ * 获取文章阅读量分页数据
+ *
+ * @param params 分页参数
+ * @returns 文章阅读量分页结果
+ */
+export async function getAdminPostViewsPage(params: {
+  page: number;
+  pageSize: number;
+}): Promise<AdminPagedResult<AdminPostViewsPageItem>> {
+  const db = await getDbClient();
+  const safePage = Math.max(1, Math.floor(params.page));
+  const safePageSize = ADMIN_PAGE_SIZE_OPTIONS.has(params.pageSize) ? params.pageSize : ADMIN_DEFAULT_PAGE_SIZE;
+  const total = await db.post.count();
+  const totalPages = total === 0 ? 1 : Math.ceil(total / safePageSize);
+  const page = Math.min(safePage, totalPages);
+  const skip = (page - 1) * safePageSize;
+
+  const rows = await db.post.findMany({
+    orderBy: [
+      { views: "desc" },
+      { updatedAt: "desc" },
+    ],
+    skip,
+    take: safePageSize,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      views: true,
+      updatedAt: true,
+    },
+  });
+
+  return {
+    items: rows.map((item: {
+      id: string;
+      slug: string;
+      title: string;
+      views: number;
+      updatedAt: Date;
+    }) => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      views: item.views,
+      updatedAt: item.updatedAt.toISOString(),
+    })),
+    total,
+    page,
+    pageSize: safePageSize,
+    totalPages,
+  };
+}
+
+/**
+ * 获取访问路径分页数据
+ *
+ * @param params 分页参数
+ * @returns 访问路径分页结果
+ */
+export async function getAdminPathViewsPage(params: {
+  page: number;
+  pageSize: number;
+}): Promise<AdminPagedResult<AdminPathViewsPageItem>> {
+  const db = await getDbClient();
+  const safePage = Math.max(1, Math.floor(params.page));
+  const safePageSize = ADMIN_PAGE_SIZE_OPTIONS.has(params.pageSize) ? params.pageSize : ADMIN_DEFAULT_PAGE_SIZE;
+
+  const totalRows = await db.$queryRaw<Array<{ count: bigint | number }>>`
+    SELECT COUNT(*)::bigint AS count
+    FROM (
+      SELECT "path"
+      FROM "VisitorLog"
+      GROUP BY "path"
+    ) AS grouped_paths
+  `;
+
+  const total = Number(totalRows[0]?.count || 0);
+  const totalPages = total === 0 ? 1 : Math.ceil(total / safePageSize);
+  const page = Math.min(safePage, totalPages);
+  const offset = (page - 1) * safePageSize;
+
+  const rows = await db.$queryRaw<Array<{ path: string; count: bigint | number }>>`
+    SELECT "path", COUNT(*)::bigint AS count
+    FROM "VisitorLog"
+    GROUP BY "path"
+    ORDER BY COUNT(*) DESC, "path" ASC
+    LIMIT ${safePageSize}
+    OFFSET ${offset}
+  `;
+
+  return {
+    items: rows.map((item) => ({
+      path: item.path,
+      count: Number(item.count),
+    })),
+    total,
+    page,
+    pageSize: safePageSize,
+    totalPages,
   };
 }

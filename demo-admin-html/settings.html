@@ -1,0 +1,87 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>设置中心 Demo</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div class="adminRoot">
+    <header class="adminHeader">
+      <div class="adminBrand">
+        <span class="adminBrandPrimary">YoSpace Admin</span>
+        <span class="adminBrandSecondary">后台管理</span>
+      </div>
+      <nav class="adminNav">
+        <a class="adminNavLink" href="./index.html">入口</a>
+        <a class="adminNavLink" href="./dashboard.html">仪表盘</a>
+        <a class="adminNavLink" href="./posts.html">文章管理</a>
+        <a class="adminNavLink active" href="./settings.html">设置中心</a>
+        <button class="themeToggle" id="themeToggle" type="button">暗色模式</button>
+      </nav>
+    </header>
+
+    <main class="adminMain">
+      <section class="pageHeader">
+        <div>
+          <h1 class="pageTitle">设置中心</h1>
+          <p class="pageHint">覆盖 `.env.example` 的常见配置项与管理员安全配置。</p>
+        </div>
+        <button class="btnPrimary" id="saveAll">保存全部</button>
+      </section>
+
+      <section class="card" style="margin-bottom:12px;">
+        <h2 class="panelTitle">站点设置</h2>
+        <div class="formGrid">
+          <div class="field"><label>NEXT_PUBLIC_SITE_TITLE</label><input class="input" value="Weilai" /></div>
+          <div class="field"><label>NEXT_PUBLIC_SITE_URL</label><input class="input" value="https://yospace.waveyo.cn" /></div>
+          <div class="field full"><label>NEXT_PUBLIC_SITE_DESCRIPTION</label><textarea class="textarea">The future is an unknown journey, may every step forward be accompanied by love.</textarea></div>
+          <div class="field"><label>NEXT_PUBLIC_NAV_TITLE</label><input class="input" value="未来" /></div>
+          <div class="field"><label>NEXT_PUBLIC_FAVICON_URL</label><input class="input" value="/weilai.png" /></div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-bottom:12px;">
+        <h2 class="panelTitle">博客设置</h2>
+        <div class="formGrid">
+          <div class="field">
+            <label>NEXT_PUBLIC_BLOG_MODE</label>
+            <select class="select"><option>internal</option><option selected>external</option></select>
+          </div>
+          <div class="field"><label>NEXT_PUBLIC_BLOG_URL</label><input class="input" value="https://your-external-blog.com" /></div>
+          <div class="field"><label>NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE</label><input class="input" type="number" value="10" /></div>
+          <div class="field">
+            <label>NEXT_PUBLIC_USE_DB_CONTENT</label>
+            <select class="select"><option>true</option><option selected>false</option></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="panelTitle">管理员安全</h2>
+        <div class="formGrid">
+          <div class="field"><label>ADMIN_USERNAME</label><input class="input" value="admin" /></div>
+          <div class="field"><label>ADMIN_PASSWORD（新密码）</label><input class="input" type="password" placeholder="输入新密码" /></div>
+          <div class="field full"><label>ADMIN_JWT_SECRET</label><input class="input" type="password" value="please_replace_with_a_long_random_secret_string" /></div>
+        </div>
+        <div class="notice danger">安全字段应由服务端保存并记录审计日志，密钥变更通常需要服务重启才能完全生效。</div>
+      </section>
+
+      <div id="saveNotice" class="notice" style="display:none;">保存成功（Demo）：下一步可接入 Next.js Route Handler + 数据库存储。</div>
+    </main>
+  </div>
+
+  <script src="./assets/theme.js"></script>
+  <script>
+    const saveButton = document.getElementById("saveAll");
+    const notice = document.getElementById("saveNotice");
+    saveButton.addEventListener("click", () => {
+      notice.style.display = "block";
+      setTimeout(() => {
+        notice.style.display = "none";
+      }, 2200);
+    });
+  </script>
+</body>
+</html>
