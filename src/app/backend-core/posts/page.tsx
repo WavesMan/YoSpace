@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { getDbClient } from '@/server/db/client';
+import { getServerAdminPath } from '@/server/runtime-config/adminPath';
 import { deletePostAction } from './actions';
 import { deleteDraftAction, publishDraftAction } from './draftActions';
 import { resolveContentLocale } from '@/utils/i18n/runtime';
@@ -138,8 +139,7 @@ const AdminPostsPage = async ({ searchParams }: AdminPostsPageProps) => {
   const query = await searchParams;
   const db = await getDbClient();
   const adminLocale = resolveContentLocale(null);
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-  const adminPath = adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   const keyword = (query.q || '').trim();
   const tab = normalizeListTab(query.tab);

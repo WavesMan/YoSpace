@@ -87,8 +87,6 @@ const AdminLoginPage: React.FC = () => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-    const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
-    const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -132,7 +130,7 @@ const AdminLoginPage: React.FC = () => {
             } else {
                 clearAdminLoginDraft();
             }
-            window.location.href = adminPath;
+            window.location.href = window.location.pathname || "/admin";
         } catch {
             setErrorMessage("登录请求异常，请稍后重试。");
             setSubmitting(false);

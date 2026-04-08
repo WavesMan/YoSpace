@@ -1,10 +1,19 @@
 .settingsRoot {
   width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
+.settingsHero {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent-title) 10%, transparent), transparent 60%);
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
 
 .settingsHeader {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .settingsTitle {
@@ -24,15 +33,31 @@
   border: 1px solid var(--color-accent-stroke);
   border-radius: 12px;
   background: var(--color-bg-card);
-  padding: 12px;
+  padding: 14px;
   margin-bottom: 12px;
 }
 
+.settingsSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .settingsSectionTitle {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: var(--font-size-main);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
+}
+
+.settingsSectionCount {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 .settingsTableWrap {
@@ -67,4 +92,222 @@
 .settingsCellValue {
   color: var(--color-text-secondary);
   word-break: break-all;
+}
+
+.settingsFormGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--color-bg-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settingsFieldChanged {
+  border-color: color-mix(in srgb, var(--color-accent-title) 45%, var(--color-accent-stroke));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-title) 12%, transparent);
+}
+
+.settingsFieldTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settingsFieldLabel {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.settingsTagPublic,
+.settingsTagPrivate {
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-accent-stroke);
+}
+
+.settingsTagPublic {
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+}
+
+.settingsTagPrivate {
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+}
+
+.settingsInput {
+  width: 100%;
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+  padding: 8px 10px;
+}
+
+.settingsInput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-accent-title) 65%, var(--color-accent-stroke));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-title) 15%, transparent);
+}
+
+.settingsFieldKey {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--color-accent-title);
+  word-break: break-all;
+}
+
+.settingsFieldDesc {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.settingsHint {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+.settingsError {
+  font-size: var(--font-size-small);
+  color: var(--color-danger, #d93025);
+  margin-bottom: 10px;
+}
+
+.settingsSuccess {
+  font-size: var(--font-size-small);
+  color: var(--color-success, #188038);
+  margin-bottom: 10px;
+}
+
+.settingsToolbar {
+  position: sticky;
+  top: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
+  backdrop-filter: blur(8px);
+  margin-bottom: 12px;
+}
+
+.settingsSearch {
+  flex: 1;
+  min-width: 160px;
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 8px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+  padding: 8px 10px;
+}
+
+.settingsSearch:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-accent-title) 65%, var(--color-accent-stroke));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-title) 15%, transparent);
+}
+
+.settingsStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settingsStatCard {
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--color-bg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settingsStatLabel {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.settingsStatValue {
+  font-size: var(--font-size-main);
+  color: var(--color-text-primary);
+}
+
+.settingsActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.settingsFooterActions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 4px;
+}
+
+.settingsPrimaryButton {
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.settingsPrimaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settingsErrorInline {
+  font-size: var(--font-size-small);
+  color: var(--color-danger, #d93025);
+}
+
+.settingsSuccessInline {
+  font-size: var(--font-size-small);
+  color: var(--color-success, #188038);
+}
+
+@media (max-width: 900px) {
+  .settingsStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .settingsRoot {
+    max-width: 100%;
+  }
+
+  .settingsToolbar {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settingsFormGrid {
+    grid-template-columns: 1fr;
+  }
 }

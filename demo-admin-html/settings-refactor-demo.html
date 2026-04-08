@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>设置中心重构 Demo</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .refactorShell {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 14px;
+    }
+    .refactorSidebar {
+      position: sticky;
+      top: 70px;
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .refactorBrand {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 14px;
+      padding: 14px;
+      background:
+        radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--color-accent-title) 12%, transparent), transparent 56%),
+        var(--color-bg-card);
+    }
+    .refactorBrand h1 {
+      margin: 0;
+      color: var(--color-accent-title);
+      font-size: 22px;
+    }
+    .refactorBrand p {
+      margin: 8px 0 0;
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-small);
+    }
+    .refactorStats {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .refactorStat {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: var(--color-bg);
+    }
+    .refactorStat span {
+      display: block;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    .refactorStat strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--color-text-primary);
+    }
+    .refactorNav {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 14px;
+      background: var(--color-bg-card);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .refactorNav button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--color-text-secondary);
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .refactorNav button.active {
+      color: var(--color-accent-title);
+      border-color: var(--color-accent-stroke);
+      background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-card));
+    }
+    .refactorNav em {
+      font-style: normal;
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 12px;
+    }
+    .refactorMain {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .refactorToolbar {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 14px;
+      background: var(--color-bg-card);
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+    }
+    .refactorSection {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 14px;
+      background: var(--color-bg-card);
+      padding: 14px;
+    }
+    .refactorSectionHeader {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+    .refactorSectionHeader h2 {
+      margin: 0;
+      font-size: var(--font-size-main);
+    }
+    .refactorSectionHeader p {
+      margin: 6px 0 0;
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-small);
+    }
+    .refactorSectionHeader span {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    .refactorConfigGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .refactorConfigCard {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 12px;
+      background: var(--color-bg);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .refactorConfigCard.changed {
+      border-color: color-mix(in srgb, var(--color-accent-title) 45%, var(--color-accent-stroke));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-title) 20%, transparent);
+    }
+    .refactorConfigTop {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .refactorTag {
+      border: 1px solid var(--color-accent-stroke);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 12px;
+    }
+    .refactorTag.public {
+      background: color-mix(in srgb, #16a34a 14%, transparent);
+    }
+    .refactorTag.private {
+      background: color-mix(in srgb, #f59e0b 14%, transparent);
+    }
+    .refactorConfigDesc {
+      color: var(--color-text-secondary);
+      font-size: 12px;
+    }
+    .refactorConfigKey {
+      font-family: "Consolas", "Courier New", monospace;
+      color: var(--color-accent-title);
+      font-size: 11px;
+      word-break: break-all;
+    }
+    @media (max-width: 1100px) {
+      .refactorShell {
+        grid-template-columns: 1fr;
+      }
+      .refactorSidebar {
+        position: static;
+      }
+      .refactorNav {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .refactorNav button {
+        width: auto;
+      }
+    }
+    @media (max-width: 760px) {
+      .refactorToolbar,
+      .refactorConfigGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="adminRoot">
+    <header class="adminHeader">
+      <div class="adminBrand">
+        <span class="adminBrandPrimary">YoSpace Admin</span>
+        <span class="adminBrandSecondary">后台管理</span>
+      </div>
+      <nav class="adminNav">
+        <a class="adminNavLink" href="./dashboard.html">仪表盘</a>
+        <a class="adminNavLink" href="./posts.html">文章管理</a>
+        <a class="adminNavLink active" href="./settings-refactor-demo.html">设置中心</a>
+        <button class="themeToggle" id="themeToggle" type="button">暗色模式</button>
+      </nav>
+    </header>
+
+    <main class="adminMain">
+      <div class="refactorShell">
+        <aside class="refactorSidebar">
+          <section class="refactorBrand">
+            <h1>设置中心</h1>
+            <p>运行时配置与后台安全统一管理入口。</p>
+            <div class="refactorStats">
+              <div class="refactorStat"><span>总配置</span><strong>34</strong></div>
+              <div class="refactorStat"><span>待保存</span><strong>3</strong></div>
+              <div class="refactorStat"><span>公开</span><strong>28</strong></div>
+              <div class="refactorStat"><span>内部</span><strong>6</strong></div>
+            </div>
+          </section>
+          <nav class="refactorNav">
+            <button class="active"><span>全部配置</span><em>34</em></button>
+            <button><span>站点配置</span><em>9</em></button>
+            <button><span>博客配置</span><em>11</em></button>
+            <button><span>国际化配置</span><em>3</em></button>
+            <button><span>资料与页脚</span><em>6</em></button>
+            <button><span>系统配置</span><em>5</em></button>
+            <button><span>管理员安全</span><em>1</em></button>
+          </nav>
+        </aside>
+
+        <section class="refactorMain">
+          <section class="refactorToolbar">
+            <input class="input" placeholder="搜索配置键、名称、说明" />
+            <button class="btnGhost">还原草稿</button>
+            <button class="btnPrimary">保存配置 (3)</button>
+          </section>
+
+          <section class="refactorSection">
+            <div class="refactorSectionHeader">
+              <div>
+                <h2>站点配置</h2>
+                <p>标题、描述、导航、品牌展示</p>
+              </div>
+              <span>9 项</span>
+            </div>
+            <div class="refactorConfigGrid">
+              <label class="refactorConfigCard changed">
+                <div class="refactorConfigTop">
+                  <strong>NEXT_PUBLIC_SITE_TITLE</strong>
+                  <em class="refactorTag public">公开</em>
+                </div>
+                <input class="input" value="Weilai" />
+                <small class="refactorConfigDesc">站点标题</small>
+                <small class="refactorConfigKey">NEXT_PUBLIC_SITE_TITLE</small>
+              </label>
+              <label class="refactorConfigCard">
+                <div class="refactorConfigTop">
+                  <strong>NEXT_PUBLIC_NAV_TITLE</strong>
+                  <em class="refactorTag public">公开</em>
+                </div>
+                <input class="input" value="未来" />
+                <small class="refactorConfigDesc">导航标题</small>
+                <small class="refactorConfigKey">NEXT_PUBLIC_NAV_TITLE</small>
+              </label>
+            </div>
+          </section>
+
+          <section class="refactorSection">
+            <div class="refactorSectionHeader">
+              <div>
+                <h2>管理员安全</h2>
+                <p>修改账号密码后，当前会话会失效并重新登录。</p>
+              </div>
+              <span>敏感操作</span>
+            </div>
+            <div class="refactorConfigGrid">
+              <label class="refactorConfigCard">
+                <strong>新用户名</strong>
+                <input class="input" placeholder="可选，不填保持不变" />
+              </label>
+              <label class="refactorConfigCard">
+                <strong>旧密码</strong>
+                <input class="input" type="password" />
+              </label>
+              <label class="refactorConfigCard">
+                <strong>新密码</strong>
+                <input class="input" type="password" />
+              </label>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="./assets/theme.js"></script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import React from "react";
 import { headers } from "next/headers";
 import { isAdminRequest } from "@/server/auth/adminAuth";
+import { getServerAdminPath } from "@/server/runtime-config/adminPath";
 import AdminLogoutButton from "./AdminLogoutButton";
 import AdminThemeToggleButton from "./AdminThemeToggleButton";
 import AdminNavLinks from "./AdminNavLinks";
@@ -19,8 +20,7 @@ interface AdminLayoutProps {
  * @returns 后台布局 JSX 节点
  */
 const AdminLayout: React.FC<AdminLayoutProps> = async ({ children }) => {
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
-  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   const isAdmin = await isAdminRequest();
   const requestHeaders = await headers();

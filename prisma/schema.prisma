@@ -65,6 +65,23 @@ model PostSlugRedirect {
   @@index([locale])
 }
 
+model PostDraft {
+  id          String   @id @default(cuid())
+  slug        String
+  locale      String   @default("zh-CN")
+  title       String
+  description String?  @default("")
+  content     String   @db.Text
+  tagsText    String?  @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([slug, locale])
+  @@index([slug])
+  @@index([locale])
+  @@index([updatedAt])
+}
+
 model Category {
   id          String  @id
   labelZh     String?
@@ -120,6 +137,37 @@ model SystemConfig {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AdminAccount {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  passwordSalt String
+  tokenVersion Int      @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions AdminSession[]
+}
+
+model AdminSession {
+  id              String   @id @default(cuid())
+  token           String   @unique
+  tokenVersion    Int
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  lastAccessedAt  DateTime @default(now())
+
+  accountId String
+  account   AdminAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([expiresAt])
 }
 
 model VisitorLog {

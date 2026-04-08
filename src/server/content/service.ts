@@ -48,7 +48,7 @@ function normalizeDetailLocale(rawLocale: string): string {
 async function resolveDbSlug(slug: string, locale: string): Promise<string> {
   const db = await getDbClient();
   const normalizedLocale = normalizeDetailLocale(locale);
-  const redirectDelegate = (db as {
+  const redirectDelegate = (db as unknown as {
     postSlugRedirect?: {
       findUnique?: (args: {
         where: { oldSlug_locale: { oldSlug: string; locale: string } };

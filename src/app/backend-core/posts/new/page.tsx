@@ -6,6 +6,7 @@ import {
   resolveI18nRuntimeConfig,
   toContentLocale,
 } from '@/utils/i18n/runtime';
+import { getServerAdminPath } from '@/server/runtime-config/adminPath';
 import PostEditorWithPreview from '../PostEditorWithPreview';
 
 interface AdminNewPostPageProps {
@@ -28,8 +29,7 @@ const AdminNewPostPage = async ({ searchParams }: AdminNewPostPageProps) => {
   const editableUiLocales = resolveAdminEditableUiLocales();
   const activeUiLocale = i18nConfig.enabled ? normalizeUiLocale(query.locale) : i18nConfig.defaultUiLocale;
   const activeLocale = toContentLocale(activeUiLocale);
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-  const adminPath = adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   return (
     <PostEditorWithPreview

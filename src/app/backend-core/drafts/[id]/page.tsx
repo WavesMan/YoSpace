@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDbClient } from '@/server/db/client';
+import { getServerAdminPath } from '@/server/runtime-config/adminPath';
 import { normalizeUiLocale, resolveAdminEditableUiLocales, resolveI18nRuntimeConfig, toContentLocale } from '@/utils/i18n/runtime';
 import PostEditorWithPreview from '@/app/backend-core/posts/PostEditorWithPreview';
 import SaveFeedbackToast from '@/app/backend-core/posts/SaveFeedbackToast';
@@ -52,8 +53,7 @@ const AdminEditDraftPage = async ({ params, searchParams }: AdminEditDraftPagePr
   const activeLocale = toContentLocale(activeUiLocale);
   const editableLocales = resolveAdminEditableUiLocales();
   const showSavedToast = query.saved === '1';
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-  const adminPath = adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   const db = await getDbClient();
   const postDraft = getPostDraftDelegate(db);

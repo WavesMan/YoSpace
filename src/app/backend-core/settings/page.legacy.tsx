@@ -1,4 +1,5 @@
-import SettingsRuntimePage from "./SettingsRuntimePage";
+export { default } from "./SettingsRuntimePage";
+/*
 import styles from "./SettingsPage.module.css";
 
 interface SettingItem {
@@ -147,4 +148,4 @@ const AdminSettingsPage = () => {
     </div>
   );
 };
-export default SettingsRuntimePage;
+*/

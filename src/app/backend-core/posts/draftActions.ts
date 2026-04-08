@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDbClient } from '@/server/db/client';
+import { getServerAdminPath } from '@/server/runtime-config/adminPath';
 import { resolveContentLocale, toUiLocale } from '@/utils/i18n/runtime';
 
 /**
@@ -10,9 +11,8 @@ import { resolveContentLocale, toUiLocale } from '@/utils/i18n/runtime';
  *
  * @returns 后台根路径
  */
-function resolveAdminPath(): string {
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-  return adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+async function resolveAdminPath(): Promise<string> {
+  return getServerAdminPath();
 }
 
 interface PostDraftDelegate {
@@ -213,7 +213,7 @@ async function syncPostTags(
 export async function createDraftAction(formData: FormData): Promise<void> {
   const db = await getDbClient();
   const postDraft = getPostDraftDelegate(db);
-  const adminPath = resolveAdminPath();
+  const adminPath = await resolveAdminPath();
   const locale = resolveAdminPostLocale(formData.get('locale'));
   const title = String(formData.get('title') || '').trim();
   const slug = normalizeSlug(String(formData.get('slug') || ''));
@@ -270,7 +270,7 @@ export async function createDraftAction(formData: FormData): Promise<void> {
 export async function updateDraftAction(draftId: string, formData: FormData): Promise<void> {
   const db = await getDbClient();
   const postDraft = getPostDraftDelegate(db);
-  const adminPath = resolveAdminPath();
+  const adminPath = await resolveAdminPath();
   const locale = resolveAdminPostLocale(formData.get('locale'));
   const uiLocale = toUiLocale(locale);
   const title = String(formData.get('title') || '').trim();
@@ -340,7 +340,7 @@ export async function updateDraftAction(draftId: string, formData: FormData): Pr
 export async function deleteDraftAction(draftId: string): Promise<void> {
   const db = await getDbClient();
   const postDraft = getPostDraftDelegate(db);
-  const adminPath = resolveAdminPath();
+  const adminPath = await resolveAdminPath();
 
   await postDraft.deleteMany({
     where: {
@@ -360,7 +360,7 @@ export async function deleteDraftAction(draftId: string): Promise<void> {
 export async function publishDraftAction(draftId: string): Promise<void> {
   const db = await getDbClient();
   const postDraft = getPostDraftDelegate(db);
-  const adminPath = resolveAdminPath();
+  const adminPath = await resolveAdminPath();
   const supportStatusField = supportsPostStatusField(db);
 
   const draft = (await postDraft.findUnique({

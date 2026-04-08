@@ -4,6 +4,7 @@ import {
   getAdminPathViewsPage,
   normalizeAdminPageQuery,
 } from "@/server/analytics/service";
+import { getServerAdminPath } from "@/server/runtime-config/adminPath";
 import styles from "../AnalyticsPage.module.css";
 
 interface AdminAnalyticsPathsPageProps {
@@ -56,8 +57,7 @@ const AdminAnalyticsPathsPage = async ({ searchParams }: AdminAnalyticsPathsPage
   const range = getDisplayRange(result.page, result.pageSize, result.total);
   const prevPage = Math.max(1, result.page - 1);
   const nextPage = Math.min(result.totalPages, result.page + 1);
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
-  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   return (
     <div className={styles.analyticsRoot}>

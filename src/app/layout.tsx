@@ -115,8 +115,8 @@ export const metadata: Metadata = {
  *
  * @returns 标准化后的后台入口路径
  */
-function getAdminEntryPath(): string {
-  const raw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+function getAdminEntryPath(injectedPath: string): string {
+  const raw = injectedPath || process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
   if (!raw.startsWith("/")) {
     return `/${raw}`;
   }
@@ -129,8 +129,8 @@ function getAdminEntryPath(): string {
  * @param pathname 请求路径
  * @returns 是否属于后台路由
  */
-function isAdminPathname(pathname: string): boolean {
-  const adminPath = getAdminEntryPath();
+function isAdminPathname(pathname: string, injectedAdminPath: string): boolean {
+  const adminPath = getAdminEntryPath(injectedAdminPath);
   if (pathname === "/backend-core" || pathname.startsWith("/backend-core/")) {
     return true;
   }
@@ -156,7 +156,8 @@ export default async function RootLayout({
   const savedLocale = cookieStore.get('locale')?.value;
   const requestHeaders = await headers();
   const requestPathname = requestHeaders.get("x-yospace-pathname") || "";
-  const shouldRenderPublicShell = !isAdminPathname(requestPathname);
+  const injectedAdminPath = requestHeaders.get("x-yospace-admin-path") || "";
+  const shouldRenderPublicShell = !isAdminPathname(requestPathname, injectedAdminPath);
   const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
   const htmlLang = savedLocale === 'en-US'
     ? 'en-US'

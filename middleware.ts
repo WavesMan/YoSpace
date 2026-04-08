@@ -1,206 +1,151 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_CORE_PREFIX = '/backend-core';
+const BACKEND_CORE_PREFIX = "/backend-core";
+const DEFAULT_ADMIN_PATH = "/admin";
+const ADMIN_PATH_CACHE_TTL_MS = 5000;
 
-/**
- * 获取管理员 JWT 签名密钥
- *
- * 使用环境变量 ADMIN_JWT_SECRET 作为对称加密密钥，
- * 若未配置则抛出错误，避免在隐式降级模式下运行导致安全问题。
- *
- * @returns JWT 对称加密密钥原始字节
- */
-function getAdminJwtSecret(): Uint8Array {
-    const secret = process.env.ADMIN_JWT_SECRET;
-    if (!secret || secret.trim().length === 0) {
-        throw new Error('ADMIN_JWT_SECRET 未配置，无法在中间件中进行管理员认证');
-    }
-    return new TextEncoder().encode(secret);
+let cachedAdminPath = DEFAULT_ADMIN_PATH;
+let cachedAdminPathExpiresAt = 0;
+
+function buildRequestHeadersWithPath(request: NextRequest, adminPath: string): Headers {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-yospace-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-yospace-admin-path", adminPath);
+  return requestHeaders;
 }
 
-/**
- * 在中间件环境中解析并校验管理员 JWT
- *
- * 该函数仅依赖 jose 与运行时环境变量，兼容 Edge Runtime，
- * 用于在路由重写前快速判断当前请求是否为已登录管理员。
- *
- * @param token 待校验的 JWT 字符串
- * @returns 解析后的 payload 对象
- */
-async function verifyAdminTokenInMiddleware(token: string) {
-    const secret = getAdminJwtSecret();
-    const result = await jwtVerify(token, secret);
-    return result.payload as {
-        sub?: string;
-        role?: string;
-        username?: string;
-    };
-}
-
-/**
- * 获取配置的后台入口路径前缀
- *
- * 优先使用环境变量 NEXT_PUBLIC_ADMIN_PATH，未配置时退回为 "/admin"，
- * 仅允许配置为以斜杠开头的相对路径，避免意外引入完整 URL。
- *
- * @returns 后台入口路径前缀，例如 "/my-admin"
- */
-function getAdminEntryPath(): string {
-    const raw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-    if (!raw.startsWith('/')) {
-        return `/${raw}`;
-    }
-    return raw;
-}
-
-/**
- * 判断当前请求是否指向后台物理路由
- *
- * 当访问路径以 /backend-core 开头时视为直接访问后台物理路径，
- * 此类请求将被统一重定向到逻辑入口路径，避免暴露真实路由结构。
- *
- * @param pathname 当前请求路径
- * @returns 是否访问后台物理路径
- */
 function isBackendCorePath(pathname: string): boolean {
-    return pathname === BACKEND_CORE_PREFIX || pathname.startsWith(`${BACKEND_CORE_PREFIX}/`);
+  return pathname === BACKEND_CORE_PREFIX || pathname.startsWith(`${BACKEND_CORE_PREFIX}/`);
 }
 
-/**
- * 判断当前请求是否指向后台入口路径
- *
- * 后台入口以环境变量配置的路径为准，例如 "/my-admin"，
- * 统一在该前缀下路由到后台登录页与管理页面。
- *
- * @param pathname 当前请求路径
- * @returns 是否访问后台入口路径
- */
-function isAdminEntryPath(pathname: string): boolean {
-    const adminPath = getAdminEntryPath();
-    return pathname === adminPath || pathname.startsWith(`${adminPath}/`);
+function isAdminEntryPath(pathname: string, adminPath: string): boolean {
+  return pathname === adminPath || pathname.startsWith(`${adminPath}/`);
 }
 
-/**
- * 计算从后台入口路径映射到物理后台路径的目标地址
- *
- * 例如：
- * - 入口路径为 /my-admin
- * - 请求 /my-admin/posts
- * - 重写到 /backend-core/posts
- *
- * @param request 当前请求对象
- * @returns 重写后的响应对象
- */
-function buildBackendRewriteUrl(request: NextRequest): URL {
-    const adminPath = getAdminEntryPath();
-    const { pathname, search } = request.nextUrl;
-    const rest = pathname.slice(adminPath.length) || '';
-    const targetPath = `${BACKEND_CORE_PREFIX}${rest || ''}`;
-    return new URL(targetPath + search, request.url);
+async function getAdminEntryPath(request: NextRequest): Promise<string> {
+  const now = Date.now();
+  if (cachedAdminPath && cachedAdminPathExpiresAt > now) {
+    return cachedAdminPath;
+  }
+
+  try {
+    const verifyUrl = new URL("/api/runtime/admin-entry", request.url);
+    const response = await fetch(verifyUrl, {
+      method: "GET",
+      headers: {
+        cookie: request.headers.get("cookie") || "",
+      },
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as { adminPath?: string };
+      const path = typeof data?.adminPath === "string" ? data.adminPath : DEFAULT_ADMIN_PATH;
+      if (path.startsWith("/")) {
+        cachedAdminPath = path;
+        cachedAdminPathExpiresAt = now + ADMIN_PATH_CACHE_TTL_MS;
+        return cachedAdminPath;
+      }
+    }
+  } catch {
+  }
+
+  cachedAdminPath = DEFAULT_ADMIN_PATH;
+  cachedAdminPathExpiresAt = now + ADMIN_PATH_CACHE_TTL_MS;
+  return cachedAdminPath;
 }
 
-/**
- * 计算从物理后台路径重定向到入口路径的目标地址
- *
- * 例如：
- * - 物理路径为 /backend-core/posts
- * - 入口路径为 /my-admin
- * - 重定向到 /my-admin/posts
- *
- * @param request 当前请求对象
- * @returns 重定向响应对象
- */
-function redirectToAdminEntry(request: NextRequest): NextResponse {
-    const adminPath = getAdminEntryPath();
-    const { pathname, search } = request.nextUrl;
-    const rest = pathname.slice(BACKEND_CORE_PREFIX.length) || '';
-    const targetPath = `${adminPath}${rest || ''}`;
-    const url = new URL(targetPath + search, request.url);
-    return NextResponse.redirect(url);
+async function isAdminAuthenticated(request: NextRequest): Promise<boolean> {
+  try {
+    const verifyUrl = new URL("/api/admin/session/verify", request.url);
+    const response = await fetch(verifyUrl, {
+      method: "GET",
+      headers: {
+        cookie: request.headers.get("cookie") || "",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = (await response.json()) as { ok?: boolean };
+    return data.ok === true;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * 构建携带当前请求路径的请求头集合
- *
- * @param request 当前请求对象
- * @returns 注入路径信息后的请求头
- */
-function buildRequestHeadersWithPath(request: NextRequest): Headers {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-yospace-pathname', request.nextUrl.pathname);
-    return requestHeaders;
+function buildBackendRewriteUrl(request: NextRequest, adminPath: string): URL {
+  const { pathname, search } = request.nextUrl;
+  const rest = pathname.slice(adminPath.length) || "";
+  const targetPath = `${BACKEND_CORE_PREFIX}${rest || ""}`;
+  return new URL(targetPath + search, request.url);
+}
+
+function redirectToAdminEntry(request: NextRequest, adminPath: string): NextResponse {
+  const { pathname, search } = request.nextUrl;
+  const rest = pathname.slice(BACKEND_CORE_PREFIX.length) || "";
+  const targetPath = `${adminPath}${rest || ""}`;
+  return NextResponse.redirect(new URL(targetPath + search, request.url));
 }
 
 export async function middleware(request: NextRequest) {
-    const { nextUrl } = request;
-    const pathname = nextUrl.pathname;
-    const requestHeaders = buildRequestHeadersWithPath(request);
+  const pathname = request.nextUrl.pathname;
+  const adminPath = await getAdminEntryPath(request);
+  const requestHeaders = buildRequestHeadersWithPath(request, adminPath);
 
-    if (isBackendCorePath(pathname)) {
-        return redirectToAdminEntry(request);
-    }
+  if (isBackendCorePath(pathname)) {
+    return redirectToAdminEntry(request, adminPath);
+  }
 
-    if (!isAdminEntryPath(pathname)) {
-        return NextResponse.next({
-            request: {
-                headers: requestHeaders,
-            },
-        });
-    }
+  if (adminPath !== DEFAULT_ADMIN_PATH && (pathname === DEFAULT_ADMIN_PATH || pathname.startsWith(`${DEFAULT_ADMIN_PATH}/`))) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
 
-    const adminPath = getAdminEntryPath();
-    const adminLoginPath = `${adminPath}/login`;
-
-    const token = request.cookies.get('yo_admin_token')?.value;
-    let isAdmin = false;
-    if (token) {
-        try {
-            const payload = await verifyAdminTokenInMiddleware(token);
-            if (payload.sub === 'admin' && payload.role === 'admin') {
-                isAdmin = true;
-            }
-        } catch {
-            isAdmin = false;
-        }
-    }
-
-    // /admin/login 统一收敛到 /admin，避免登录后仍停留在独立登录路径
-    if (pathname === adminLoginPath) {
-        const adminUrl = new URL(adminPath, request.url);
-        return NextResponse.redirect(adminUrl);
-    }
-
-    // /admin 作为统一入口：未登录进入登录页，已登录进入后台首页
-    if (pathname === adminPath) {
-        if (isAdmin) {
-            return NextResponse.rewrite(buildBackendRewriteUrl(request), {
-                request: {
-                    headers: requestHeaders,
-                },
-            });
-        }
-        const loginUrl = new URL(`${BACKEND_CORE_PREFIX}/login`, request.url);
-        return NextResponse.rewrite(loginUrl, {
-            request: {
-                headers: requestHeaders,
-            },
-        });
-    }
-
-    // 其余后台子路径要求已登录，否则回到统一入口
-    if (!isAdmin) {
-        const adminUrl = new URL(adminPath, request.url);
-        return NextResponse.redirect(adminUrl);
-    }
-
-    return NextResponse.rewrite(buildBackendRewriteUrl(request), {
-        request: {
-            headers: requestHeaders,
-        },
+  if (!isAdminEntryPath(pathname, adminPath)) {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
     });
+  }
+
+  const adminLoginPath = `${adminPath}/login`;
+  const isAdmin = await isAdminAuthenticated(request);
+
+  if (pathname === adminLoginPath) {
+    return NextResponse.redirect(new URL(adminPath, request.url));
+  }
+
+  if (pathname === adminPath) {
+    if (isAdmin) {
+      return NextResponse.rewrite(buildBackendRewriteUrl(request, adminPath), {
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
+
+    return NextResponse.rewrite(new URL(`${BACKEND_CORE_PREFIX}/login`, request.url), {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  if (!isAdmin) {
+    return NextResponse.redirect(new URL(adminPath, request.url));
+  }
+
+  return NextResponse.rewrite(buildBackendRewriteUrl(request, adminPath), {
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {
-    matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api).*)"],
 };

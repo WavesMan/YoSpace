@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDbClient } from '@/server/db/client';
+import { getServerAdminPath } from '@/server/runtime-config/adminPath';
 import { updatePostAction } from '../actions';
 import {
   normalizeUiLocale,
@@ -92,8 +93,7 @@ const AdminEditPostPage = async ({ params, searchParams }: AdminEditPostPageProp
   const legacyLocaleCandidates = getLegacyLocaleCandidates(activeLocale);
   const isEnglish = activeUiLocale === 'en-US';
   const editableLocales = resolveAdminEditableUiLocales();
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-  const adminPath = adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   const uiText = {
     pageTitle: isEnglish ? 'Edit Post' : '编辑文章',

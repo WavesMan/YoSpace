@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDbClient } from '@/server/db/client';
+import { getServerAdminPath } from '@/server/runtime-config/adminPath';
 import { resolveContentLocale, toUiLocale } from '@/utils/i18n/runtime';
 
 type AdminPostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
@@ -80,9 +81,8 @@ function resolveAdminPostLocale(rawValue: FormDataEntryValue | null): 'zh-CN' | 
  *
  * @returns 后台根路径
  */
-function resolveAdminPath(): string {
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || '/admin';
-  return adminPathRaw.startsWith('/') ? adminPathRaw : `/${adminPathRaw}`;
+async function resolveAdminPath(): Promise<string> {
+  return getServerAdminPath();
 }
 
 /**
@@ -257,7 +257,7 @@ async function upsertSlugRedirect(
   newSlug: string,
   locale: 'zh-CN' | 'en',
 ): Promise<void> {
-  const redirectDelegate = (db as {
+  const redirectDelegate = (db as unknown as {
     postSlugRedirect?: {
       upsert?: (args: {
         where: { oldSlug_locale: { oldSlug: string; locale: string } };
@@ -301,7 +301,7 @@ async function cleanupSlugRedirect(
   slug: string,
   locale: 'zh-CN' | 'en',
 ): Promise<void> {
-  const redirectDelegate = (db as {
+  const redirectDelegate = (db as unknown as {
     postSlugRedirect?: {
       deleteMany?: (args: {
         where: {
@@ -405,7 +405,7 @@ export async function createPostAction(formData: FormData): Promise<void> {
 export async function updatePostAction(slug: string, formData: FormData): Promise<void> {
   const db = await getDbClient();
   const locale = resolveAdminPostLocale(formData.get('locale'));
-  const adminPath = resolveAdminPath();
+  const adminPath = await resolveAdminPath();
   const uiLocale = toUiLocale(locale);
   const title = String(formData.get('title') || '').trim();
   const nextSlug = normalizeSlug(String(formData.get('slug') || slug));

@@ -1,57 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createAdminToken } from '@/server/auth/adminAuth';
+import { NextRequest, NextResponse } from "next/server";
+import { isAdminSchemaNotReadyError, loginAdminWithPassword } from "@/server/auth/service";
+import { ADMIN_SESSION_COOKIE_KEY, ADMIN_USERNAME_COOKIE_KEY } from "@/server/auth/adminAuth";
 
 /**
- * 管理员登录接口
- *
- * 接收用户名与密码，校验通过后签发管理员 JWT，并通过 HttpOnly Cookie 写回客户端。
- * 账号信息来自环境变量：
- * - ADMIN_USERNAME：管理员用户名
- * - ADMIN_PASSWORD：管理员密码（生产环境建议使用更安全的哈希方案）
- *
- * 请求体示例：
- * {
- *   "username": "admin",
- *   "password": "your_password"
- * }
+ * 绠＄悊鍛樼櫥褰曟帴鍙ｃ€? *
+ * 浣跨敤鏁版嵁搴撲腑鐨勭鐞嗗憳璐﹀彿杩涜璁よ瘉锛岃璇佹垚鍔熷悗绛惧彂鍙挙閿€浼氳瘽浠ょ墝銆? *
+ * @param request 璇锋眰瀵硅薄
+ * @returns 鐧诲綍缁撴灉
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const username = typeof body?.username === 'string' ? body.username.trim() : '';
-    const password = typeof body?.password === 'string' ? body.password : '';
+    const username = typeof body?.username === "string" ? body.username.trim() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
 
-    const expectedUsername = process.env.ADMIN_USERNAME || 'admin';
-    const expectedPassword = process.env.ADMIN_PASSWORD || '';
-
-    if (!expectedPassword) {
-      console.error('ADMIN_PASSWORD 未配置，禁止管理员登录请求');
-      return NextResponse.json({ message: '管理员登录未启用' }, { status: 503 });
+    if (!username || !password) {
+      return NextResponse.json({ message: "鐢ㄦ埛鍚嶅拰瀵嗙爜涓嶈兘涓虹┖" }, { status: 400 });
     }
 
-    if (username !== expectedUsername || password !== expectedPassword) {
-      return NextResponse.json({ message: '用户名或密码错误' }, { status: 401 });
-    }
+    const session = await loginAdminWithPassword(username, password);
 
-    const token = await createAdminToken(username);
-    const response = NextResponse.json({ message: 'Login success' });
-    response.cookies.set('yo_admin_token', token, {
+    const response = NextResponse.json({ message: "Login success" });
+    response.cookies.set(ADMIN_SESSION_COOKIE_KEY, session.sessionToken, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      expires: session.expiresAt,
     });
-    response.cookies.set('yo_admin_username', username, {
+    response.cookies.set(ADMIN_USERNAME_COOKIE_KEY, session.username, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      expires: session.expiresAt,
     });
     return response;
   } catch (error) {
-    console.error('Admin login error:', error);
-    return NextResponse.json({ message: 'Login failed' }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Login failed";
+    if (isAdminSchemaNotReadyError(error)) {
+      return NextResponse.json({ message }, { status: 503 });
+    }
+    const status = message.includes("閿欒") || message.includes("澶辫触") ? 401 : 500;
+    return NextResponse.json({ message: status === 401 ? "鐢ㄦ埛鍚嶆垨瀵嗙爜閿欒" : message }, { status });
   }
 }

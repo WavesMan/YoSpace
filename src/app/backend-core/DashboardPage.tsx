@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { isAdminRequest } from "@/server/auth/adminAuth";
+import { getServerAdminPath } from "@/server/runtime-config/adminPath";
 import { getAdminDashboardMetrics } from "@/server/analytics/service";
 import styles from "./AdminDashboard.module.css";
 
@@ -31,8 +32,7 @@ const DashboardPage = async () => {
   const usernameFromCookie = cookieStore.get("yo_admin_username")?.value;
   const isAdmin = await isAdminRequest();
   const metrics = isAdmin ? await getAdminDashboardMetrics(7) : null;
-  const adminPathRaw = process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
-  const adminPath = adminPathRaw.startsWith("/") ? adminPathRaw : `/${adminPathRaw}`;
+  const adminPath = await getServerAdminPath();
 
   return (
     <div className={styles.dashboardRoot}>
