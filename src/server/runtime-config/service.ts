@@ -134,6 +134,22 @@ function validateBusinessRule(definition: RuntimeConfigDefinition, value: Runtim
     }
     return;
   }
+
+  if (definition.key === "NEXT_PUBLIC_SEO_SITEMAP_CHANGE_FREQUENCY") {
+    const allowed = new Set(["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"]);
+    if (!allowed.has(String(value))) {
+      throw new Error("Sitemap 更新频率仅支持 always/hourly/daily/weekly/monthly/yearly/never");
+    }
+    return;
+  }
+
+  if (definition.key === "NEXT_PUBLIC_SEO_SITEMAP_PRIORITY") {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0 || numeric > 1) {
+      throw new Error("Sitemap 优先级范围必须在 0 到 1");
+    }
+    return;
+  }
 }
 
 /**

@@ -357,6 +357,219 @@
   color: #166534;
 }
 
+.structuredEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.structuredEditorHint {
+  font-size: 12px;
+  color: #b45309;
+  border: 1px solid rgba(180, 83, 9, 0.3);
+  background: rgba(180, 83, 9, 0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.structuredEditorList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.structuredEditorCard {
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 10px;
+  background: var(--color-bg-card);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.structuredEditorRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.structuredEditorLabel {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.structuredEditorInput {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--color-accent-stroke);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+  padding: 0 10px;
+  outline: none;
+}
+
+.structuredEditorInput:focus {
+  border-color: var(--color-accent-solid);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-solid) 16%, transparent);
+}
+
+.structuredEditorActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.structuredEditorButton,
+.structuredEditorButtonDanger {
+  height: 32px;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+  border: 1px solid var(--color-accent-stroke);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.structuredEditorButtonDanger {
+  border-color: rgba(185, 28, 28, 0.35);
+  color: #b91c1c;
+}
+
+.structuredCollapsed {
+  border: 1px dashed var(--color-accent-stroke);
+  border-radius: 10px;
+  background: var(--color-bg-card);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.structuredCollapsedInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.structuredCollapsedTitle {
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.structuredCollapsedMeta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.structuredCollapsedWarn {
+  font-size: 12px;
+  color: #b45309;
+}
+
+.structuredOpenButton {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--color-accent-stroke);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.structuredModalMask {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.structuredModalPanel {
+  width: min(960px, 100%);
+  max-height: min(86vh, 860px);
+  border-radius: 14px;
+  border: 1px solid var(--color-accent-stroke);
+  background: var(--color-bg-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.structuredModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-accent-stroke);
+}
+
+.structuredModalTitle {
+  margin: 0;
+  font-size: var(--font-size-main);
+  color: var(--color-text-primary);
+}
+
+.structuredModalClose {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--color-accent-stroke);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.structuredModalBody {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 14px;
+}
+
+.structuredModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--color-accent-stroke);
+}
+
+.structuredModalButtonSecondary,
+.structuredModalButtonPrimary {
+  height: 34px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.structuredModalButtonSecondary {
+  border: 1px solid var(--color-accent-stroke);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+}
+
+.structuredModalButtonPrimary {
+  border: none;
+  background: linear-gradient(135deg, var(--color-accent-title), var(--color-theme-main));
+  color: var(--color-bg-card);
+}
+
 @media (max-width: 1120px) {
   .settingsShell {
     grid-template-columns: 1fr;
@@ -383,5 +596,18 @@
 
   .settingsConfigGrid {
     grid-template-columns: 1fr;
+  }
+
+  .structuredEditorRow {
+    grid-template-columns: 1fr;
+  }
+
+  .structuredCollapsed {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .structuredOpenButton {
+    width: 100%;
   }
 }

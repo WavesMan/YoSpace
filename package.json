@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "generate-feeds": "tsx scripts/generate-feeds.js"
+    "generate-feeds": "tsx scripts/generate-feeds.js",
+    "migrate:data:runtime": "tsx scripts/migrate-static-data-to-runtime-config.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",

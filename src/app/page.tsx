@@ -7,10 +7,15 @@ import Profile from "@/components/Profile/Profile";
 import BlogCard from "@/components/Blog/BlogCard";
 import profileStyles from "@/components/Profile/Profile.module.css";
 import { useI18n } from "@/context/I18nContext";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
+import {
+    parseNavigationItemsFromRuntime,
+    type NavigationItem,
+    type NavigationLocaleText,
+} from "@/config/runtimeStructuredData";
 import type { PostCategory, PostSeries } from "@/utils/content/local";
 import styles from "./Home.module.css";
 import HomeTabs from "@/components/Home/HomeTabs";
-import navigationData from "@/data/navigation.json";
 
 interface SearchPostItem {
     title: string;
@@ -28,24 +33,6 @@ interface SearchPostItem {
 
 type SearchStatus = "Idle" | "Loading" | "Error" | "Ready";
 type HomePageId = "profile" | "search";
-
-type NavigationLocaleText = {
-    zh: string;
-    en: string;
-};
-
-type NavigationFavicon = {
-    type: "auto" | "url" | "local";
-    value?: string;
-};
-
-type NavigationItem = {
-    id: string;
-    name: NavigationLocaleText;
-    desc: NavigationLocaleText;
-    url: string;
-    favicon?: NavigationFavicon;
-};
 
 const normalize = (value: string) => value.toLowerCase();
 
@@ -96,6 +83,7 @@ type SearchEngineId = (typeof searchEngines)[number]["id"];
 
 export default function Home() {
     const { t, locale } = useI18n();
+    const runtimeConfig = useRuntimePublicConfig();
     const [activePageId, setActivePageId] = useState<HomePageId>("profile");
     const [status, setStatus] = useState<SearchStatus>("Idle");
     const [posts, setPosts] = useState<SearchPostItem[]>([]);
@@ -111,7 +99,10 @@ export default function Home() {
 
     const isSearchPage = activePageId === "search";
     const isSiteEngine = engineId === "site";
-    const navigationItems = navigationData as NavigationItem[];
+    const navigationItems = useMemo<NavigationItem[]>(
+        () => parseNavigationItemsFromRuntime(runtimeConfig),
+        [runtimeConfig],
+    );
 
     useEffect(() => {
         if (!isSearchPage || !isSiteEngine) return;

@@ -146,7 +146,8 @@ pnpm lint
 
 ### 友链管理
 
-访问文件 `src\data\friendLinks.json` 修改 `json` 内容控制
+在后台设置中通过运行时配置键 `NEXT_PUBLIC_FRIEND_LINKS` 管理友链。
+如从旧版静态文件升级，可执行一次 `pnpm migrate:data:runtime` 完成迁移。
 
 json格式形如：( `subtitle` 可留空)
 
@@ -168,7 +169,8 @@ json格式形如：( `subtitle` 可留空)
 
 ### 个人社交链接管理
 
-访问文件 `src\data\socialLinks.json` 修改 `json` 内容控制
+在后台设置中通过运行时配置键 `NEXT_PUBLIC_PROFILE_SOCIAL_LINKS` 管理社交链接。
+如从旧版静态文件升级，可执行一次 `pnpm migrate:data:runtime` 完成迁移。
 
 json格式形如：
 

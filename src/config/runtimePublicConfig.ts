@@ -33,7 +33,19 @@ export interface RuntimePublicConfig {
   NEXT_PUBLIC_POLICE_LICENSE: string;
   NEXT_PUBLIC_SITE_NAME: string;
   NEXT_PUBLIC_SITE_START_YEAR: string;
+  NEXT_PUBLIC_NAVIGATION_ITEMS: string;
+  NEXT_PUBLIC_PROFILE_SOCIAL_LINKS: string;
+  NEXT_PUBLIC_FRIEND_LINKS: string;
+  NEXT_PUBLIC_SEO_DEFAULT_OG_IMAGE: string;
+  NEXT_PUBLIC_SEO_TWITTER_HANDLE: string;
+  NEXT_PUBLIC_SEO_TWITTER_SITE: string;
+  NEXT_PUBLIC_SEO_SITEMAP_CHANGE_FREQUENCY: string;
+  NEXT_PUBLIC_SEO_SITEMAP_PRIORITY: number;
 }
+
+const DEFAULT_NAVIGATION_ITEMS = JSON.stringify([]);
+const DEFAULT_PROFILE_SOCIAL_LINKS = JSON.stringify([]);
+const DEFAULT_FRIEND_LINKS = JSON.stringify([]);
 
 export const DEFAULT_RUNTIME_PUBLIC_CONFIG: RuntimePublicConfig = {
   NEXT_PUBLIC_SITE_TITLE: "YoSpace",
@@ -70,6 +82,14 @@ export const DEFAULT_RUNTIME_PUBLIC_CONFIG: RuntimePublicConfig = {
   NEXT_PUBLIC_POLICE_LICENSE: "",
   NEXT_PUBLIC_SITE_NAME: "WaveYo",
   NEXT_PUBLIC_SITE_START_YEAR: "",
+  NEXT_PUBLIC_NAVIGATION_ITEMS: DEFAULT_NAVIGATION_ITEMS,
+  NEXT_PUBLIC_PROFILE_SOCIAL_LINKS: DEFAULT_PROFILE_SOCIAL_LINKS,
+  NEXT_PUBLIC_FRIEND_LINKS: DEFAULT_FRIEND_LINKS,
+  NEXT_PUBLIC_SEO_DEFAULT_OG_IMAGE: "",
+  NEXT_PUBLIC_SEO_TWITTER_HANDLE: "",
+  NEXT_PUBLIC_SEO_TWITTER_SITE: "",
+  NEXT_PUBLIC_SEO_SITEMAP_CHANGE_FREQUENCY: "weekly",
+  NEXT_PUBLIC_SEO_SITEMAP_PRIORITY: 0.7,
 };
 
 const toStringValue = (value: unknown, fallback: string): string => {
@@ -95,10 +115,10 @@ const toBooleanValue = (value: unknown, fallback: boolean): boolean => {
 
 const toNumberValue = (value: unknown, fallback: number): number => {
   if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.floor(value);
+    return value;
   }
   if (typeof value === "string") {
-    const parsed = Number.parseInt(value, 10);
+    const parsed = Number.parseFloat(value);
     if (Number.isFinite(parsed)) {
       return parsed;
     }
@@ -107,7 +127,8 @@ const toNumberValue = (value: unknown, fallback: number): number => {
 };
 
 /**
- * 将输入配置规整为完整 Runtime Public Config。
+ * 将输入配置规范为完整 Runtime Public Config。
+ *
  * @param source 原始配置对象
  * @returns 标准化配置
  */
@@ -118,7 +139,10 @@ export function normalizeRuntimePublicConfig(source: unknown): RuntimePublicConf
     NEXT_PUBLIC_SITE_TITLE: toStringValue(input.NEXT_PUBLIC_SITE_TITLE, fallback.NEXT_PUBLIC_SITE_TITLE),
     NEXT_PUBLIC_SITE_TITLE_EN: toStringValue(input.NEXT_PUBLIC_SITE_TITLE_EN, fallback.NEXT_PUBLIC_SITE_TITLE_EN),
     NEXT_PUBLIC_SITE_DESCRIPTION: toStringValue(input.NEXT_PUBLIC_SITE_DESCRIPTION, fallback.NEXT_PUBLIC_SITE_DESCRIPTION),
-    NEXT_PUBLIC_SITE_DESCRIPTION_EN: toStringValue(input.NEXT_PUBLIC_SITE_DESCRIPTION_EN, fallback.NEXT_PUBLIC_SITE_DESCRIPTION_EN),
+    NEXT_PUBLIC_SITE_DESCRIPTION_EN: toStringValue(
+      input.NEXT_PUBLIC_SITE_DESCRIPTION_EN,
+      fallback.NEXT_PUBLIC_SITE_DESCRIPTION_EN,
+    ),
     NEXT_PUBLIC_SITE_URL: toStringValue(input.NEXT_PUBLIC_SITE_URL, fallback.NEXT_PUBLIC_SITE_URL),
     NEXT_PUBLIC_NAV_TITLE: toStringValue(input.NEXT_PUBLIC_NAV_TITLE, fallback.NEXT_PUBLIC_NAV_TITLE),
     NEXT_PUBLIC_NAV_TITLE_EN: toStringValue(input.NEXT_PUBLIC_NAV_TITLE_EN, fallback.NEXT_PUBLIC_NAV_TITLE_EN),
@@ -132,7 +156,10 @@ export function normalizeRuntimePublicConfig(source: unknown): RuntimePublicConf
       fallback.NEXT_PUBLIC_SUPPORTED_LOCALES,
     ),
     NEXT_PUBLIC_PROFILE_NAMES: toStringValue(input.NEXT_PUBLIC_PROFILE_NAMES, fallback.NEXT_PUBLIC_PROFILE_NAMES),
-    NEXT_PUBLIC_PROFILE_NAMES_EN: toStringValue(input.NEXT_PUBLIC_PROFILE_NAMES_EN, fallback.NEXT_PUBLIC_PROFILE_NAMES_EN),
+    NEXT_PUBLIC_PROFILE_NAMES_EN: toStringValue(
+      input.NEXT_PUBLIC_PROFILE_NAMES_EN,
+      fallback.NEXT_PUBLIC_PROFILE_NAMES_EN,
+    ),
     NEXT_PUBLIC_PROFILE_IMAGE: toStringValue(input.NEXT_PUBLIC_PROFILE_IMAGE, fallback.NEXT_PUBLIC_PROFILE_IMAGE),
     NEXT_PUBLIC_FAVICON_URL: toStringValue(input.NEXT_PUBLIC_FAVICON_URL, fallback.NEXT_PUBLIC_FAVICON_URL),
     NEXT_PUBLIC_BLOG_MODE:
@@ -140,9 +167,9 @@ export function normalizeRuntimePublicConfig(source: unknown): RuntimePublicConf
         ? "external"
         : "internal",
     NEXT_PUBLIC_BLOG_URL: toStringValue(input.NEXT_PUBLIC_BLOG_URL, fallback.NEXT_PUBLIC_BLOG_URL),
-    NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE: toNumberValue(
-      input.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE,
-      fallback.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE,
+    NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE: Math.max(
+      1,
+      Math.floor(toNumberValue(input.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE, fallback.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE)),
     ),
     NEXT_PUBLIC_BLOG_CATEGORY_ENABLED: toBooleanValue(
       input.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED,
@@ -164,16 +191,22 @@ export function normalizeRuntimePublicConfig(source: unknown): RuntimePublicConf
       input.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY,
       fallback.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY,
     ),
-    NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE: toNumberValue(
-      input.NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE,
-      fallback.NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE,
+    NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE: Math.max(
+      1,
+      Math.floor(toNumberValue(input.NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE, fallback.NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE)),
     ),
     NEXT_PUBLIC_BLOG_CATEGORY_POSITION: toStringValue(
       input.NEXT_PUBLIC_BLOG_CATEGORY_POSITION,
       fallback.NEXT_PUBLIC_BLOG_CATEGORY_POSITION,
     ),
-    NEXT_PUBLIC_BLOG_PINNED_STYLE: toStringValue(input.NEXT_PUBLIC_BLOG_PINNED_STYLE, fallback.NEXT_PUBLIC_BLOG_PINNED_STYLE),
-    NEXT_PUBLIC_BLOG_RELATED_LIMIT: toNumberValue(input.NEXT_PUBLIC_BLOG_RELATED_LIMIT, fallback.NEXT_PUBLIC_BLOG_RELATED_LIMIT),
+    NEXT_PUBLIC_BLOG_PINNED_STYLE: toStringValue(
+      input.NEXT_PUBLIC_BLOG_PINNED_STYLE,
+      fallback.NEXT_PUBLIC_BLOG_PINNED_STYLE,
+    ),
+    NEXT_PUBLIC_BLOG_RELATED_LIMIT: Math.max(
+      1,
+      Math.floor(toNumberValue(input.NEXT_PUBLIC_BLOG_RELATED_LIMIT, fallback.NEXT_PUBLIC_BLOG_RELATED_LIMIT)),
+    ),
     NEXT_PUBLIC_MUSIC_API_BASE: toStringValue(input.NEXT_PUBLIC_MUSIC_API_BASE, fallback.NEXT_PUBLIC_MUSIC_API_BASE),
     NEXT_PUBLIC_MUSIC_PLAYLIST_ID: toStringValue(
       input.NEXT_PUBLIC_MUSIC_PLAYLIST_ID,
@@ -185,11 +218,35 @@ export function normalizeRuntimePublicConfig(source: unknown): RuntimePublicConf
     NEXT_PUBLIC_POLICE_LICENSE: toStringValue(input.NEXT_PUBLIC_POLICE_LICENSE, fallback.NEXT_PUBLIC_POLICE_LICENSE),
     NEXT_PUBLIC_SITE_NAME: toStringValue(input.NEXT_PUBLIC_SITE_NAME, fallback.NEXT_PUBLIC_SITE_NAME),
     NEXT_PUBLIC_SITE_START_YEAR: toStringValue(input.NEXT_PUBLIC_SITE_START_YEAR, fallback.NEXT_PUBLIC_SITE_START_YEAR),
+    NEXT_PUBLIC_NAVIGATION_ITEMS: toStringValue(input.NEXT_PUBLIC_NAVIGATION_ITEMS, fallback.NEXT_PUBLIC_NAVIGATION_ITEMS),
+    NEXT_PUBLIC_PROFILE_SOCIAL_LINKS: toStringValue(
+      input.NEXT_PUBLIC_PROFILE_SOCIAL_LINKS,
+      fallback.NEXT_PUBLIC_PROFILE_SOCIAL_LINKS,
+    ),
+    NEXT_PUBLIC_FRIEND_LINKS: toStringValue(input.NEXT_PUBLIC_FRIEND_LINKS, fallback.NEXT_PUBLIC_FRIEND_LINKS),
+    NEXT_PUBLIC_SEO_DEFAULT_OG_IMAGE: toStringValue(
+      input.NEXT_PUBLIC_SEO_DEFAULT_OG_IMAGE,
+      fallback.NEXT_PUBLIC_SEO_DEFAULT_OG_IMAGE,
+    ),
+    NEXT_PUBLIC_SEO_TWITTER_HANDLE: toStringValue(
+      input.NEXT_PUBLIC_SEO_TWITTER_HANDLE,
+      fallback.NEXT_PUBLIC_SEO_TWITTER_HANDLE,
+    ),
+    NEXT_PUBLIC_SEO_TWITTER_SITE: toStringValue(input.NEXT_PUBLIC_SEO_TWITTER_SITE, fallback.NEXT_PUBLIC_SEO_TWITTER_SITE),
+    NEXT_PUBLIC_SEO_SITEMAP_CHANGE_FREQUENCY: toStringValue(
+      input.NEXT_PUBLIC_SEO_SITEMAP_CHANGE_FREQUENCY,
+      fallback.NEXT_PUBLIC_SEO_SITEMAP_CHANGE_FREQUENCY,
+    ),
+    NEXT_PUBLIC_SEO_SITEMAP_PRIORITY: Math.min(
+      1,
+      Math.max(0, toNumberValue(input.NEXT_PUBLIC_SEO_SITEMAP_PRIORITY, fallback.NEXT_PUBLIC_SEO_SITEMAP_PRIORITY)),
+    ),
   };
 }
 
 /**
  * 将逗号分隔语言字符串拆分为有序语言列表。
+ *
  * @param raw 原始语言字符串
  * @returns 语言列表
  */

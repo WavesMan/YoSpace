@@ -1,16 +1,13 @@
-import socialLinksData from './data/socialLinks.json';
-import friendLinksData from './data/friendLinks.json';
-
 export const profile: Profile = {
     sitename: "YoSpace",
     navTitle: "YoSpace",
     names: ["WaveYo", "Waves_Man"],
     description: "从群众出发，扎根群众。向前，无限进步",
     image: "/WaveYo.jpg",
-    socialLinks: socialLinksData
+    socialLinks: [],
 };
 
-export const links: LinkItem[] = friendLinksData;
+export const links: LinkItem[] = [];
 
 export interface SocialLink {
     name: string;

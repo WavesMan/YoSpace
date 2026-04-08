@@ -147,7 +147,8 @@ If `NEXT_PUBLIC_MUSIC_API_BASE` is set to `https://netmusic.waveyo.cn/`, the pla
 
 ### Friend Links
 
-Edit `src\data\friendLinks.json` to manage your friend links.
+Manage friend links in Admin Settings via runtime key `NEXT_PUBLIC_FRIEND_LINKS`.
+If you are upgrading from old static files, run `pnpm migrate:data:runtime` once.
 
 JSON format example (`subtitle` is optional):
 
@@ -169,7 +170,8 @@ JSON format example (`subtitle` is optional):
 
 ### Social Links
 
-Edit `src\data\socialLinks.json` to manage your social links.
+Manage social links in Admin Settings via runtime key `NEXT_PUBLIC_PROFILE_SOCIAL_LINKS`.
+If you are upgrading from old static files, run `pnpm migrate:data:runtime` once.
 
 JSON format example:
 

@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import Background from '../Common/Background/Background'
 import style from './Links.module.css'
 import LinksCard from './LinksCard'
-import { links } from '../../profile'
 import { useI18n } from '@/context/I18nContext'
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
+import { parseFriendLinksFromRuntime } from "@/config/runtimeStructuredData";
 
 /**
  * 友链列表展示组件
@@ -13,6 +15,8 @@ import { useI18n } from '@/context/I18nContext'
  */
 const Links = () => {
     const { t } = useI18n();
+    const runtimeConfig = useRuntimePublicConfig();
+    const links = useMemo(() => parseFriendLinksFromRuntime(runtimeConfig), [runtimeConfig]);
     return (
         <>
             <div className={style.links_wrapper}>

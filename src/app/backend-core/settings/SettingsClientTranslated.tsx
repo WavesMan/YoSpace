@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import styles from "./SettingsRefactor.module.css";
+import { StructuredConfigEditor, isStructuredConfigKey } from "./StructuredConfigEditors";
 
 type RuntimeConfigType = "string" | "number" | "boolean";
 type SettingsGroupKey = "site" | "blog" | "i18n" | "profile" | "system";
@@ -79,6 +80,8 @@ const CONFIG_TEXT_MAP: Record<string, ConfigTextMeta> = {
   NEXT_PUBLIC_POLICE_LICENSE: { label: "公安备案号", description: "页脚公安备案号" },
   NEXT_PUBLIC_SITE_NAME: { label: "站点名称", description: "页脚版权名称" },
   NEXT_PUBLIC_SITE_START_YEAR: { label: "站点起始年份", description: "页脚版权起始年份" },
+  NEXT_PUBLIC_NAVIGATION_ITEMS: { label: "首页导航数据", description: "可视化列表编辑，支持单项增删与多语言字段修改" },
+  NEXT_PUBLIC_FRIEND_LINKS: { label: "友链数据", description: "可视化列表编辑，支持友链增删与字段调整" },
   NEXT_PUBLIC_USE_DB_CONTENT: { label: "启用数据库内容源", description: "博客内容优先从数据库读取" },
   NEXT_PUBLIC_ADMIN_PATH: { label: "后台入口路径", description: "后台统一入口，修改后旧入口失效" },
 };
@@ -130,7 +133,7 @@ function parseInputValue(type: RuntimeConfigType, raw: string): string | number 
     return raw === "true";
   }
   if (type === "number") {
-    const parsed = Number.parseInt(raw, 10);
+    const parsed = Number.parseFloat(raw);
     return Number.isFinite(parsed) ? parsed : 0;
   }
   return raw;
@@ -153,7 +156,11 @@ function isSameValue(type: RuntimeConfigType, left: string, right: string | numb
  * @returns 分组键
  */
 function resolveGroupKey(item: RuntimeSettingItem): SettingsGroupKey {
-  if (item.key.startsWith("NEXT_PUBLIC_SITE_") || item.key.startsWith("NEXT_PUBLIC_NAV_")) {
+  if (
+    item.key.startsWith("NEXT_PUBLIC_SITE_") ||
+    item.key.startsWith("NEXT_PUBLIC_NAV_") ||
+    item.key === "NEXT_PUBLIC_NAVIGATION_ITEMS"
+  ) {
     return "site";
   }
   if (item.key.startsWith("NEXT_PUBLIC_BLOG_") || item.key === "NEXT_PUBLIC_USE_DB_CONTENT") {
@@ -168,6 +175,7 @@ function resolveGroupKey(item: RuntimeSettingItem): SettingsGroupKey {
   }
   if (
     item.key.startsWith("NEXT_PUBLIC_PROFILE_") ||
+    item.key === "NEXT_PUBLIC_FRIEND_LINKS" ||
     item.key === "NEXT_PUBLIC_FAVICON_URL" ||
     item.key === "NEXT_PUBLIC_ICP_CODE" ||
     item.key === "NEXT_PUBLIC_POLICE_LICENSE" ||
@@ -453,9 +461,10 @@ const SettingsClientTranslated: React.FC<SettingsClientProps> = ({ initialAdminP
             const changed = !isSameValue(item.type, draftValue, item.value);
             const selectOptions = resolveSelectOptions(item, draftValue);
             const useSelect = item.type === "boolean" || selectOptions.length > 0;
+            const useStructuredEditor = isStructuredConfigKey(item.key);
 
             return (
-              <label
+              <div
                 key={item.key}
                 className={`${styles.settingsConfigCard} ${changed ? styles.settingsConfigCardChanged : ""}`}
               >
@@ -466,7 +475,13 @@ const SettingsClientTranslated: React.FC<SettingsClientProps> = ({ initialAdminP
                   </span>
                 </div>
 
-                {useSelect ? (
+                {useStructuredEditor ? (
+                  <StructuredConfigEditor
+                    configKey={item.key}
+                    value={draftValue}
+                    onChange={(nextValue) => setDraftValue(item.key, nextValue)}
+                  />
+                ) : useSelect ? (
                   <select
                     className={styles.settingsConfigInput}
                     value={draftValue}
@@ -489,7 +504,7 @@ const SettingsClientTranslated: React.FC<SettingsClientProps> = ({ initialAdminP
 
                 <span className={styles.settingsConfigDesc}>{displayText.description}</span>
                 <span className={styles.settingsConfigKey}>{item.key}</span>
-              </label>
+              </div>
             );
           })}
         </div>

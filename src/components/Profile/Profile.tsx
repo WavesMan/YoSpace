@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import DynamicIcon from "../Common/Icon/DynamicIcon";
 import style from './Profile.module.css'
 import { profile } from '../../profile'
 import { useI18n } from "@/context/I18nContext";
 import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
+import { parseProfileSocialLinksFromRuntime } from "@/config/runtimeStructuredData";
 
 /**
  * 个人简介组件
@@ -16,6 +17,10 @@ import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 const Profile = () => {
     const { t, locale } = useI18n();
     const runtimeConfig = useRuntimePublicConfig();
+    const socialLinks = useMemo(
+        () => parseProfileSocialLinksFromRuntime(runtimeConfig),
+        [runtimeConfig],
+    );
 
     const [nameClicked, setNameClicked] = useState(0)
     const [isLoaded] = useState(true)
@@ -73,7 +78,7 @@ const Profile = () => {
                         <p className={style.profile_info_signature}>{description}</p>
                     </div>
                     <div className={style.profile_social_wrapper}>
-                        {profile.socialLinks.map((item, index) => (
+                        {socialLinks.map((item, index) => (
                             <a
                                 key={index}
                                 href={item.url}
