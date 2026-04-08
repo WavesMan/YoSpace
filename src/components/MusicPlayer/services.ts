@@ -1,7 +1,8 @@
 import { Track } from './types';
+import { getRuntimePublicConfigSnapshot } from "@/context/RuntimePublicConfigContext";
 
-const PLAYLIST_ID = process.env.NEXT_PUBLIC_MUSIC_PLAYLIST_ID || '12752948320';
-const ENV_BASE = process.env.NEXT_PUBLIC_MUSIC_API_BASE || 'https://netmusic.waveyo.cn/';
+const PLAYLIST_ID = getRuntimePublicConfigSnapshot().NEXT_PUBLIC_MUSIC_PLAYLIST_ID || '12752948320';
+const ENV_BASE = getRuntimePublicConfigSnapshot().NEXT_PUBLIC_MUSIC_API_BASE || 'https://netmusic.waveyo.cn/';
 const CLEAN_ENV_BASE = ENV_BASE.replace(/\/$/, '');
 
 // 当使用官方托管的 netmusic.waveyo.cn 时，优先通过站内代理路径，避免浏览器直接跨域请求导致 Failed to fetch

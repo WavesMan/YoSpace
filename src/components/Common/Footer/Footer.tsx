@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import style from "./Footer.module.css";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 
 /**
  * 底部页脚组件
@@ -16,6 +17,7 @@ import style from "./Footer.module.css";
  */
 const Footer = () => {
     const pathname = usePathname();
+    const runtimeConfig = useRuntimePublicConfig();
     const [footerLyric, setFooterLyric] = useState<{
         line: string;
         nextLine: string;
@@ -24,10 +26,10 @@ const Footer = () => {
     } | null>(null);
 
     // NOTE: 来自 Next.js 公共环境变量的站点配置
-    const icpCode: string | undefined = process.env.NEXT_PUBLIC_ICP_CODE;
-    const policeLicense: string | undefined = process.env.NEXT_PUBLIC_POLICE_LICENSE;
-    const siteNameRaw: string | undefined = process.env.NEXT_PUBLIC_SITE_NAME;
-    const siteStartYearRaw: string | undefined = process.env.NEXT_PUBLIC_SITE_START_YEAR;
+    const icpCode: string | undefined = runtimeConfig.NEXT_PUBLIC_ICP_CODE;
+    const policeLicense: string | undefined = runtimeConfig.NEXT_PUBLIC_POLICE_LICENSE;
+    const siteNameRaw: string | undefined = runtimeConfig.NEXT_PUBLIC_SITE_NAME;
+    const siteStartYearRaw: string | undefined = runtimeConfig.NEXT_PUBLIC_SITE_START_YEAR;
 
     const [currentYear] = useState<number>(new Date().getFullYear());
     const [shouldStaticOnMobile, setShouldStaticOnMobile] = useState(false);

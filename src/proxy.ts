@@ -91,7 +91,7 @@ function redirectToAdminEntry(request: NextRequest, adminPath: string): NextResp
   return NextResponse.redirect(new URL(targetPath + search, request.url));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const adminPath = await getAdminEntryPath(request);
   const requestHeaders = buildRequestHeadersWithPath(request, adminPath);

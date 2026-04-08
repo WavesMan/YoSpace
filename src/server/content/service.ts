@@ -2,6 +2,7 @@ import type { PostContentResponse, PostListResponse } from "@/utils/content/loca
 import { getAllLocalPostSlugs, getLocalPostContent, getLocalPostsList } from "@/utils/content/local";
 import { getAllDbPostSlugs, getDbPostContent, getDbPostsList, searchDbPosts } from "@/utils/content/db";
 import { getDbClient } from "@/server/db/client";
+import { getRuntimeConfigValue } from "@/server/runtime-config/service";
 import { resolveContentLocale } from "@/utils/i18n/runtime";
 
 interface PublicPostContentResult {
@@ -16,8 +17,14 @@ interface PublicPostContentResult {
  *
  * @returns 是否启用 PostgreSQL 作为博客内容源
  */
-export function shouldUseDatabaseContent(): boolean {
-  return process.env.NEXT_PUBLIC_USE_DB_CONTENT === "true";
+/**
+ * 判断当前是否启用数据库内容源。
+ * 该开关来自 Runtime Config，避免前台链路直接读取环境变量。
+ * @returns 是否启用 PostgreSQL 作为博客内容源
+ */
+export async function shouldUseDatabaseContent(): Promise<boolean> {
+  const value = await getRuntimeConfigValue("NEXT_PUBLIC_USE_DB_CONTENT");
+  return value === true;
 }
 
 /**
@@ -92,7 +99,7 @@ async function resolveDbSlug(slug: string, locale: string): Promise<string> {
  */
 export async function fetchPublicPostsList(offset: number, limit: number, locale: string): Promise<PostListResponse> {
   const resolvedLocale = resolveContentLocale(locale);
-  if (shouldUseDatabaseContent()) {
+  if (await shouldUseDatabaseContent()) {
     return getDbPostsList(offset, limit, resolvedLocale);
   }
   return getLocalPostsList(offset, limit, resolvedLocale);
@@ -107,7 +114,7 @@ export async function fetchPublicPostsList(offset: number, limit: number, locale
  */
 export async function fetchPublicPostContentBySlug(slug: string, locale: string): Promise<PublicPostContentResult> {
   const resolvedLocale = resolveContentLocale(locale);
-  if (!shouldUseDatabaseContent()) {
+  if (!(await shouldUseDatabaseContent())) {
     const content = await getLocalPostContent(slug, resolvedLocale);
     return {
       content,
@@ -129,7 +136,7 @@ export async function fetchPublicPostContentBySlug(slug: string, locale: string)
  * @returns slug 列表
  */
 export async function fetchPublicPostSlugs(): Promise<{ slug: string }[]> {
-  if (shouldUseDatabaseContent()) {
+  if (await shouldUseDatabaseContent()) {
     return getAllDbPostSlugs();
   }
   return getAllLocalPostSlugs();
@@ -160,7 +167,7 @@ export async function searchPublicPosts(
     };
   }
 
-  if (shouldUseDatabaseContent()) {
+  if (await shouldUseDatabaseContent()) {
     return searchDbPosts(trimmed, offset, limit, resolvedLocale);
   }
 

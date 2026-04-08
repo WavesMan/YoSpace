@@ -1,6 +1,6 @@
 import React from "react";
 import { getServerAdminPath } from "@/server/runtime-config/adminPath";
-import SettingsClientRefactor from "./SettingsClientRefactor";
+import SettingsClientTranslated from "./SettingsClientTranslated";
 
 /**
  * 后台设置页服务端入口
@@ -11,5 +11,5 @@ import SettingsClientRefactor from "./SettingsClientRefactor";
  */
 export default async function SettingsRuntimePage() {
   const initialAdminPath = await getServerAdminPath();
-  return <SettingsClientRefactor initialAdminPath={initialAdminPath} />;
+  return <SettingsClientTranslated initialAdminPath={initialAdminPath} />;
 }

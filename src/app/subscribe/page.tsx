@@ -1,10 +1,17 @@
 import { Metadata } from "next";
 import Subscribe from "@/components/Subscribe/Subscribe";
+import { getServerRuntimePublicConfig } from "@/server/runtime-config/public";
 
-export const metadata: Metadata = {
-  title: `Subscribe - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
-  description: "Subscribe to RSS and Atom feeds for the latest content updates",
-};
+/**
+ * 生成订阅页元信息。
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const runtimeConfig = await getServerRuntimePublicConfig();
+  return {
+    title: `Subscribe - ${runtimeConfig.NEXT_PUBLIC_SITE_TITLE}`,
+    description: "Subscribe to RSS and Atom feeds for the latest content updates",
+  };
+}
 
 export const revalidate = 3600;
 

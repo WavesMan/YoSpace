@@ -2,11 +2,11 @@ import socialLinksData from './data/socialLinks.json';
 import friendLinksData from './data/friendLinks.json';
 
 export const profile: Profile = {
-    sitename: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
-    navTitle: process.env.NEXT_PUBLIC_NAV_TITLE || "YoSpace",
-    names: process.env.NEXT_PUBLIC_PROFILE_NAMES?.split(',') || ["WaveYo", "Waves_Man"],
-    description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "从群众出发，扎根群众。向前，无限进步",
-    image: process.env.NEXT_PUBLIC_PROFILE_IMAGE || "/WaveYo.jpg",
+    sitename: "YoSpace",
+    navTitle: "YoSpace",
+    names: ["WaveYo", "Waves_Man"],
+    description: "从群众出发，扎根群众。向前，无限进步",
+    image: "/WaveYo.jpg",
     socialLinks: socialLinksData
 };
 

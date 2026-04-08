@@ -44,6 +44,7 @@ interface PostDraftDelegate {
 
 const DRAFT_PAGE_SIZE_OPTIONS = new Set([10, 20, 50]);
 const DRAFT_DEFAULT_PAGE_SIZE = 20;
+const ADMIN_POSTS_NOW_TIMESTAMP = Date.now();
 
 /**
  * 规范化状态筛选参数
@@ -241,7 +242,7 @@ const AdminPostsPage = async ({ searchParams }: AdminPostsPageProps) => {
   const draftRangeStart = draftsTotal === 0 ? 0 : (draftPage - 1) * draftPageQuery.pageSize + 1;
   const draftRangeEnd = draftsTotal === 0 ? 0 : Math.min(draftsTotal, draftRangeStart + draftPageQuery.pageSize - 1);
 
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const sevenDaysAgo = ADMIN_POSTS_NOW_TIMESTAMP - 7 * 24 * 60 * 60 * 1000;
   const recentUpdatedCount = posts.filter((post) => post.updatedAt.getTime() >= sevenDaysAgo).length;
   const latestUpdatedAt = posts.length > 0 ? posts[0].updatedAt.toISOString().slice(0, 10) : '暂无';
   const statusFilterText =

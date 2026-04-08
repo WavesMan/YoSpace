@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import type { Prisma } from "@prisma/client";
 import { getDbClient } from "@/server/db/client";
 import type { PostCategory, PostSeries } from "@/utils/content/local";
 
@@ -129,7 +130,7 @@ function extractMeta(frontmatter: FrontmatterShape): Record<string, unknown> {
  * - 使用幂等 upsert 策略，保证多次执行不会产生重复数据
  */
 async function migratePostsToDatabase(): Promise<void> {
-    const dbClient = getDbClient() as any;
+    const dbClient = getDbClient();
 
     if (!fs.existsSync(postsDirectory)) {
         console.warn("本地 posts 目录不存在，跳过迁移：", postsDirectory);
@@ -192,7 +193,7 @@ async function migratePostsToDatabase(): Promise<void> {
             ? rawTags.filter(tagItem => typeof tagItem === "string") as string[]
             : [];
 
-        const meta = extractMeta(frontmatter);
+        const meta = extractMeta(frontmatter) as Prisma.InputJsonValue;
 
         let categoryId: string | null = null;
         if (category) {
@@ -318,6 +319,6 @@ migratePostsToDatabase()
         process.exitCode = 1;
     })
     .finally(async () => {
-        const dbClient = getDbClient() as any;
+        const dbClient = getDbClient();
         await dbClient.$disconnect();
     });

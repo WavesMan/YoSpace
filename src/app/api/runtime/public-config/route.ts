@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeRuntimePublicConfig } from "@/config/runtimePublicConfig";
 import { getPublicRuntimeConfig } from "@/server/runtime-config/service";
 
 /**
@@ -7,6 +8,7 @@ import { getPublicRuntimeConfig } from "@/server/runtime-config/service";
  * @returns 可暴露给前端的配置项
  */
 export async function GET() {
-  const config = await getPublicRuntimeConfig();
+  const rawConfig = await getPublicRuntimeConfig();
+  const config = normalizeRuntimePublicConfig(rawConfig);
   return NextResponse.json({ config });
 }

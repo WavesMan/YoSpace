@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run generate-feeds",
+    "build": "next build && pnpm run generate-feeds",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",

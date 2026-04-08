@@ -10,6 +10,7 @@ import { MdTranslate } from "react-icons/md";
 import { profile } from "../../../profile";
 import style from "./Header.module.css";
 import { useI18n } from "@/context/I18nContext";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 
 type Theme = 'light' | 'dark';
 
@@ -72,11 +73,12 @@ const Header: React.FC = () => {
   const pathname = usePathname();
   const currentPath = pathname;
   const { t, locale, setLocale } = useI18n();
+  const runtimeConfig = useRuntimePublicConfig();
 
   // 博客外部链接配置
-  const blogMode = process.env.NEXT_PUBLIC_BLOG_MODE;
-  const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL;
-  const isI18nEnabled = process.env.NEXT_PUBLIC_I18N !== 'false';
+  const blogMode = runtimeConfig.NEXT_PUBLIC_BLOG_MODE;
+  const blogUrl = runtimeConfig.NEXT_PUBLIC_BLOG_URL;
+  const isI18nEnabled = runtimeConfig.NEXT_PUBLIC_I18N;
 
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
   const [isMenuOpenState, setIsMenuOpenState] = useState<{ isOpen: boolean; path: string }>(() => {
@@ -153,7 +155,7 @@ const Header: React.FC = () => {
 
   // 获取当前语言对应的导航标题
   const navTitle = locale === 'en-US'
-    ? (process.env.NEXT_PUBLIC_NAV_TITLE_EN || profile.navTitle)
+    ? (runtimeConfig.NEXT_PUBLIC_NAV_TITLE_EN || profile.navTitle)
     : profile.navTitle;
 
   return (

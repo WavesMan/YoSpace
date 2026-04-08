@@ -1,13 +1,17 @@
 import { MetadataRoute } from "next";
-import { buildUrl, seoConfig } from "@/utils/seo";
+import { buildUrl, getSeoConfig } from "@/utils/seo";
 
-export default function robots(): MetadataRoute.Robots {
-    return {
-        rules: {
-            userAgent: "*",
-            allow: "/",
-        },
-        sitemap: buildUrl("/sitemap.xml"),
-        host: seoConfig.siteUrl,
-    };
+/**
+ * 生成 robots 配置。
+ */
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const seoConfig = await getSeoConfig();
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+    },
+    sitemap: buildUrl(seoConfig.siteUrl, "/sitemap.xml"),
+    host: seoConfig.siteUrl,
+  };
 }

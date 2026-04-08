@@ -5,6 +5,7 @@ import blogStyle from "../Blog/Blog.module.css";
 import style from "./Subscribe.module.css";
 import Background from "../Common/Background/Background";
 import { useI18n } from "@/context/I18nContext";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 
 /**
  * 订阅页面内容组件
@@ -14,11 +15,12 @@ import { useI18n } from "@/context/I18nContext";
  */
 const Subscribe: React.FC = () => {
   const { t } = useI18n();
+  const runtimeConfig = useRuntimePublicConfig();
   const [copyStatus, setCopyStatus] = useState<{ [key: string]: boolean }>({});
 
-  const envBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://yospace.waveyo.cn";
-  const rssFeedPath = process.env.NEXT_PUBLIC_RSS_FEED_PATH || "/feeds/rss.xml";
-  const atomFeedPath = process.env.NEXT_PUBLIC_ATOM_FEED_PATH || "/feeds/atom.xml";
+  const envBaseUrl = runtimeConfig.NEXT_PUBLIC_SITE_URL;
+  const rssFeedPath = runtimeConfig.NEXT_PUBLIC_RSS_FEED_PATH;
+  const atomFeedPath = runtimeConfig.NEXT_PUBLIC_ATOM_FEED_PATH;
 
   const normalizedBase = envBaseUrl.replace(/\/+$/, "");
   const feedUrls = {

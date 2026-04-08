@@ -4,6 +4,9 @@ import "./globals.css";
 import Header from "@/components/Common/Header/Header";
 import ClientShell from "@/components/Common/ClientShell";
 import { I18nProvider } from "@/context/I18nContext";
+import { RuntimePublicConfigProvider } from "@/context/RuntimePublicConfigContext";
+import { getServerRuntimePublicConfig } from "@/server/runtime-config/public";
+import { DEFAULT_RUNTIME_PUBLIC_CONFIG } from "@/config/runtimePublicConfig";
 
 const themeInitScript = `
   (() => {
@@ -24,13 +27,17 @@ const themeInitScript = `
   })();
 `;
 
-const localeInitScript = `
+function buildLocaleInitScript(config: {
+  NEXT_PUBLIC_I18N: boolean;
+  NEXT_PUBLIC_SITE_TITLE: string;
+  NEXT_PUBLIC_SITE_TITLE_EN: string;
+}) {
+  return `
   (() => {
     try {
-      const flag = ${JSON.stringify(process.env.NEXT_PUBLIC_I18N ?? "")};
-      const isEnabled = !flag || flag === 'true';
+      const isEnabled = ${JSON.stringify(config.NEXT_PUBLIC_I18N)};
       if (!isEnabled) {
-        const titleZh = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
+        const titleZh = ${JSON.stringify(config.NEXT_PUBLIC_SITE_TITLE)};
         if (titleZh) {
           document.title = titleZh;
         }
@@ -51,8 +58,8 @@ const localeInitScript = `
       document.cookie = 'locale=' + locale + '; path=/; max-age=31536000; samesite=lax';
       document.documentElement.lang = locale;
 
-      const titleZh = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
-      const titleEn = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE_EN || process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
+      const titleZh = ${JSON.stringify(config.NEXT_PUBLIC_SITE_TITLE)};
+      const titleEn = ${JSON.stringify(config.NEXT_PUBLIC_SITE_TITLE_EN || config.NEXT_PUBLIC_SITE_TITLE)};
 
       if (locale === 'en-US' && titleEn) {
         document.title = titleEn;
@@ -63,10 +70,11 @@ const localeInitScript = `
     }
   })();
 `;
+}
 
-export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
-  description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "从群众出发，扎根群众。向前，无限进步",
+const baseMetadata: Metadata = {
+  title: DEFAULT_RUNTIME_PUBLIC_CONFIG.NEXT_PUBLIC_SITE_TITLE,
+  description: DEFAULT_RUNTIME_PUBLIC_CONFIG.NEXT_PUBLIC_SITE_DESCRIPTION,
   icons: {
     icon: [
       {
@@ -110,13 +118,22 @@ export const metadata: Metadata = {
   },
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const runtimeConfig = await getServerRuntimePublicConfig();
+  return {
+    ...baseMetadata,
+    title: runtimeConfig.NEXT_PUBLIC_SITE_TITLE,
+    description: runtimeConfig.NEXT_PUBLIC_SITE_DESCRIPTION,
+  };
+}
+
 /**
  * 获取后台入口路径前缀
  *
  * @returns 标准化后的后台入口路径
  */
 function getAdminEntryPath(injectedPath: string): string {
-  const raw = injectedPath || process.env.NEXT_PUBLIC_ADMIN_PATH || "/admin";
+  const raw = injectedPath || "/admin";
   if (!raw.startsWith("/")) {
     return `/${raw}`;
   }
@@ -152,6 +169,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const runtimeConfig = await getServerRuntimePublicConfig();
   const cookieStore = await cookies();
   const savedLocale = cookieStore.get('locale')?.value;
   const requestHeaders = await headers();
@@ -166,8 +184,9 @@ export default async function RootLayout({
       : acceptLang.startsWith('en')
         ? 'en-US'
         : 'zh-CN';
-  const rssFeedPath = process.env.NEXT_PUBLIC_RSS_FEED_PATH || "/feeds/rss.xml";
-  const atomFeedPath = process.env.NEXT_PUBLIC_ATOM_FEED_PATH || "/feeds/atom.xml";
+  const rssFeedPath = runtimeConfig.NEXT_PUBLIC_RSS_FEED_PATH;
+  const atomFeedPath = runtimeConfig.NEXT_PUBLIC_ATOM_FEED_PATH;
+  const localeInitScript = buildLocaleInitScript(runtimeConfig);
 
   return (
     <html lang={htmlLang}>
@@ -178,13 +197,15 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <I18nProvider>
-          {shouldRenderPublicShell && <Header />}
-          <main style={{ minHeight: '100vh' }}>
-            {children}
-          </main>
-          {shouldRenderPublicShell && <ClientShell />}
-        </I18nProvider>
+        <RuntimePublicConfigProvider initialConfig={runtimeConfig}>
+          <I18nProvider>
+            {shouldRenderPublicShell && <Header />}
+            <main style={{ minHeight: '100vh' }}>
+              {children}
+            </main>
+            {shouldRenderPublicShell && <ClientShell />}
+          </I18nProvider>
+        </RuntimePublicConfigProvider>
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getDbClient } from "@/server/db/client";
 import { resolveContentLocale, resolveI18nRuntimeConfig } from "@/utils/i18n/runtime";
 import type {
@@ -347,7 +348,6 @@ export async function getDbPostContent(slug: string, locale: string = "en"): Pro
     for (const candidate of candidates) {
         let record: any | null = null;
         try {
-            // eslint-disable-next-line no-await-in-loop
             record = await dbClient.post.findFirst({
                 where: {
                     slug: candidate.slug,
@@ -368,7 +368,6 @@ export async function getDbPostContent(slug: string, locale: string = "en"): Pro
             if (!isStatusFieldUnavailableError(error)) {
                 throw error;
             }
-            // eslint-disable-next-line no-await-in-loop
             record = await dbClient.post.findFirst({
                 where: {
                     slug: candidate.slug,
@@ -568,7 +567,8 @@ export async function searchDbPosts(
         if (!isStatusFieldUnavailableError(error)) {
             throw error;
         }
-        const { status: _removedStatus, ...legacyWhereClause } = whereClause;
+        const legacyWhereClause: typeof whereClause = { ...whereClause };
+        delete (legacyWhereClause as { status?: unknown }).status;
         [total, posts] = await Promise.all([
             dbClient.post.count({
                 where: legacyWhereClause,

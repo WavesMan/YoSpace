@@ -4,6 +4,7 @@ import { AiFillCalendar } from "react-icons/ai";
 import { FaAngleRight, FaTag } from "react-icons/fa";
 import style from "./BlogCard.module.css";
 import type { PostCategory } from "@/utils/content/local";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 
 /**
  * BlogCard 组件 Props 接口
@@ -35,6 +36,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
     tags,
     currentLocale,
 }) => {
+    const runtimeConfig = useRuntimePublicConfig();
     /**
      * 触发全局过渡页展示，避免点击跳转时的视觉断层。
      *
@@ -57,16 +59,16 @@ const BlogCard: React.FC<BlogCardProps> = ({
         })
         : "Unknown Date";
 
-    const showCategory = process.env.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED !== "false";
-    const showTags = process.env.NEXT_PUBLIC_BLOG_TAGS_ENABLED !== "false";
+    const showCategory = runtimeConfig.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED;
+    const showTags = runtimeConfig.NEXT_PUBLIC_BLOG_TAGS_ENABLED;
 
-    const categoryPosition = process.env.NEXT_PUBLIC_BLOG_CATEGORY_POSITION || "above-title";
-    const tagsMaxVisible = Number.parseInt(process.env.NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE || "3", 10) || 3;
+    const categoryPosition = runtimeConfig.NEXT_PUBLIC_BLOG_CATEGORY_POSITION || "above-title";
+    const tagsMaxVisible = runtimeConfig.NEXT_PUBLIC_BLOG_TAGS_MAX_VISIBLE || 3;
 
     const visibleTags = Array.isArray(tags) ? tags.slice(0, tagsMaxVisible) : [];
     const hiddenTagsCount = Array.isArray(tags) && tags.length > tagsMaxVisible ? tags.length - tagsMaxVisible : 0;
 
-    const labelStrategy = process.env.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY || "i18n-first";
+    const labelStrategy = runtimeConfig.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY || "i18n-first";
 
     const resolvedLocale = currentLocale === "en-US" ? "en-US" : "zh-CN";
 

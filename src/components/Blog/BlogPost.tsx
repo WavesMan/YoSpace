@@ -6,6 +6,7 @@ import Link from 'next/link';
 import style from './BlogPost.module.css';
 import Background from '../Common/Background/Background';
 import { useI18n } from '@/context/I18nContext';
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 import type { PostContentResponse, PostItem } from '@/utils/content/local';
 import { BlogPostMarkdown } from './Post/BlogPostMarkdown';
 import { extractTocFromMarkdown, type TocItem } from './Post/markdownUtils';
@@ -28,6 +29,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     const params = useParams();
     const slug = params?.slug as string;
     const { t, locale } = useI18n();
+    const runtimeConfig = useRuntimePublicConfig();
 
     const [status, setStatus] = useState<"Loading" | "Error" | "Done">(
         initialContent ? "Done" : "Loading"
@@ -225,11 +227,11 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         window.scrollTo({ top: restoreScrollYRef.current, behavior: "auto" });
     }, [isDeferredReady, status]);
 
-    const showCategory = process.env.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED !== 'false';
-    const showTags = process.env.NEXT_PUBLIC_BLOG_TAGS_ENABLED !== 'false';
-    const showSeries = process.env.NEXT_PUBLIC_BLOG_SERIES_ENABLED !== 'false';
+    const showCategory = runtimeConfig.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED;
+    const showTags = runtimeConfig.NEXT_PUBLIC_BLOG_TAGS_ENABLED;
+    const showSeries = runtimeConfig.NEXT_PUBLIC_BLOG_SERIES_ENABLED;
 
-    const labelStrategy = process.env.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY || 'i18n-first';
+    const labelStrategy = runtimeConfig.NEXT_PUBLIC_BLOG_CATEGORY_LABEL_STRATEGY || 'i18n-first';
 
     const resolvedLocale = locale === 'en-US' ? 'en-US' : 'zh-CN';
 
@@ -274,7 +276,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
 
         const loadRelated = async () => {
             const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
-            const limit = Number.parseInt(process.env.NEXT_PUBLIC_BLOG_RELATED_LIMIT || '50', 10) || 50;
+            const limit = runtimeConfig.NEXT_PUBLIC_BLOG_RELATED_LIMIT || 50;
             try {
                 const response = await fetch(`/api/blog/list?offset=0&limit=${encodeURIComponent(String(limit))}&locale=${encodeURIComponent(queryLocale)}`);
                 if (!response.ok) {
@@ -291,7 +293,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     setSeriesPosts([]);
                 }
 
-                if (process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false') {
+                if (runtimeConfig.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED) {
                     const filteredRecommend = items
                         .filter(item => item.isRecommended && item.slug !== slug);
 
@@ -318,7 +320,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         };
 
         loadRelated();
-    }, [status, articleContent, locale, slug, showSeries, isDeferredReady]);
+    }, [status, articleContent, locale, slug, showSeries, isDeferredReady, runtimeConfig.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED, runtimeConfig.NEXT_PUBLIC_BLOG_RELATED_LIMIT]);
 
     useEffect(() => {
         if (!isDeferredReady) {
@@ -512,7 +514,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         </ul>
                     </section>
                 )}
-                {isDeferredReady && process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false' && recommendPosts.length > 0 && (
+                {isDeferredReady && runtimeConfig.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED && recommendPosts.length > 0 && (
                     <section className={style.post_recommend_section}>
                         <h2 className={style.post_recommend_title}>{t('Blog.Recommend')}</h2>
                         <ul className={style.post_recommend_list}>

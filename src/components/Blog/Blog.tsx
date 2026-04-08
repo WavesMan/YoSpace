@@ -7,6 +7,7 @@ import Background from "../Common/Background/Background";
 import Pagination from "../Common/Pagination/Pagination";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 import type { PostCategory, PostSeries } from "@/utils/content/local";
 
 /**
@@ -42,8 +43,9 @@ interface BlogProps {
  */
 const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }) => {
     const { t, locale } = useI18n();
+    const runtimeConfig = useRuntimePublicConfig();
     const pathname = usePathname();
-    const itemsLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10') || 10;
+    const itemsLimit = runtimeConfig.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE;
 
     const [totalItems, setTotalItems] = useState<number>(initialTotal || 0);
     const totalPages = Math.max(1, Math.ceil(totalItems / itemsLimit));
@@ -271,7 +273,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         }
     }, [currentPage, totalPages]);
 
-    const pinnedStyle = process.env.NEXT_PUBLIC_BLOG_PINNED_STYLE || 'separate-section';
+    const pinnedStyle = runtimeConfig.NEXT_PUBLIC_BLOG_PINNED_STYLE || 'separate-section';
 
     const getEffectiveRank = (post: PostsListShape) => {
         if (typeof post.recommendRank === "number" && Number.isFinite(post.recommendRank)) {

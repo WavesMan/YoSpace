@@ -32,8 +32,6 @@ type SearchStatus = "Idle" | "Loading" | "Error" | "Ready";
  * @param value 原始输入内容
  * @returns 归一化后的文本
  */
-const normalize = (value: string) => value.toLowerCase();
-
 const SearchPage: React.FC = () => {
     const { t, locale } = useI18n();
     const [status, setStatus] = useState<SearchStatus>("Idle");
@@ -140,4 +138,3 @@ const SearchPage: React.FC = () => {
 };
 
 export default SearchPage;
-

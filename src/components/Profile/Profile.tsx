@@ -6,6 +6,7 @@ import DynamicIcon from "../Common/Icon/DynamicIcon";
 import style from './Profile.module.css'
 import { profile } from '../../profile'
 import { useI18n } from "@/context/I18nContext";
+import { useRuntimePublicConfig } from "@/context/RuntimePublicConfigContext";
 
 /**
  * 个人简介组件
@@ -14,6 +15,7 @@ import { useI18n } from "@/context/I18nContext";
  */
 const Profile = () => {
     const { t, locale } = useI18n();
+    const runtimeConfig = useRuntimePublicConfig();
 
     const [nameClicked, setNameClicked] = useState(0)
     const [isLoaded] = useState(true)
@@ -21,13 +23,13 @@ const Profile = () => {
 
     const isEn = locale === 'en-US';
 
-    const profileNames = isEn && process.env.NEXT_PUBLIC_PROFILE_NAMES_EN
-        ? process.env.NEXT_PUBLIC_PROFILE_NAMES_EN.split(',')
-        : profile.names;
+    const profileNames = isEn && runtimeConfig.NEXT_PUBLIC_PROFILE_NAMES_EN
+        ? runtimeConfig.NEXT_PUBLIC_PROFILE_NAMES_EN.split(',')
+        : runtimeConfig.NEXT_PUBLIC_PROFILE_NAMES.split(',');
 
     const description = isEn
-        ? (process.env.NEXT_PUBLIC_SITE_DESCRIPTION_EN || profile.description)
-        : profile.description;
+        ? (runtimeConfig.NEXT_PUBLIC_SITE_DESCRIPTION_EN || runtimeConfig.NEXT_PUBLIC_SITE_DESCRIPTION)
+        : runtimeConfig.NEXT_PUBLIC_SITE_DESCRIPTION;
 
     const handleNameClick = () => {
         const nextIndex = (nameClicked + 1) % profileNames.length;
@@ -37,7 +39,7 @@ const Profile = () => {
     }
 
     // 获取头像 URL，优先使用环境变量，否则回退到 profile.ts 中的配置
-    const rawProfileImage = process.env.NEXT_PUBLIC_PROFILE_IMAGE || profile.image;
+    const rawProfileImage = runtimeConfig.NEXT_PUBLIC_PROFILE_IMAGE || profile.image;
     const profileImage = rawProfileImage.replace(/(?<!:)\/\//g, '/');
 
     return (
