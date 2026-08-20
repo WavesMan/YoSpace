@@ -146,7 +146,7 @@ async function getLocalPostsList(offset, limit, locale = 'en') {
     const fileContents = fs.readFileSync(fullPath, 'utf8');
     const { data } = matter(fileContents);
     
-    const slug = fileName.replace(/\.md$/, '').replace(new RegExp(`\.${locale}$`), '');
+    const slug = fileName.replace(/\.md$/, '').replace(new RegExp(`\\.${locale}$`), '');
     
     return {
       slug,

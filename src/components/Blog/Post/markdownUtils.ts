@@ -10,7 +10,7 @@ export const slugifyHeading = (value: string) => {
     return value
         .trim()
         .toLowerCase()
-        .replace(/[`~!@#$%^&*()\-=+\[\]{}|;:'",.<>/?\\]/g, '')
+        .replace(/[`~!@#$%^&*()\-=+[\]{}|;:'",.<>/?\\]/g, '')
         .replace(/\s+/g, '-');
 };
 
