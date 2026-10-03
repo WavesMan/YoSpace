@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { renderToString } from 'react-dom/server';
 import { BlogPostMarkdown } from './BlogPostMarkdown';
 
 const mermaidMock = vi.hoisted(() => ({
@@ -13,6 +14,39 @@ const mermaidMock = vi.hoisted(() => ({
 vi.mock('mermaid', () => ({
     default: mermaidMock,
 }));
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    mermaidMock.initialize.mockClear();
+    mermaidMock.render.mockClear();
+});
+
+describe('正文代码渲染', () => {
+    it('服务端直接输出代码高亮和复制按钮', () => {
+        const html = renderToString(<BlogPostMarkdown content={'```javascript\nconst answer = 42;\n```'} locale="zh-CN" />);
+        expect(html).toContain('Copy code');
+        expect(html).toContain('javascript');
+        expect(html).not.toContain('<pre><div');
+    });
+
+    it('空闲回调不执行时仍渲染代码和 Mermaid', async () => {
+        vi.stubGlobal('requestIdleCallback', vi.fn(() => 1));
+        render(<BlogPostMarkdown content={'```javascript\nconst answer = 42;\n```\n\n```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
+        await screen.findByRole('img', { name: 'Mermaid diagram' });
+        expect(screen.getByRole('button', { name: 'Copy code' })).toBeInTheDocument();
+        expect(window.requestIdleCallback).not.toHaveBeenCalled();
+    });
+
+    it('Mermaid 失败时给出状态并保留代码块', async () => {
+        mermaidMock.render.mockRejectedValueOnce(new Error('图表模块加载失败'));
+        const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+        render(<BlogPostMarkdown content={'```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
+        expect(await screen.findByText('图表加载失败，以下为源代码。')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Copy code' })).toBeInTheDocument();
+        expect(log).toHaveBeenCalled();
+    });
+});
 
 vi.mock('next/image', () => ({
     default: React.forwardRef<

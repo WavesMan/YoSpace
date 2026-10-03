@@ -10,6 +10,7 @@ import { MdTranslate } from "react-icons/md";
 import { profile } from "../../../profile";
 import style from "./Header.module.css";
 import { useI18n } from "@/context/I18nContext";
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 
 type Theme = 'light' | 'dark';
 
@@ -19,7 +20,7 @@ const themeListeners = new Set<() => void>();
 
 const readPreferredTheme = (): Theme => {
   if (typeof window === 'undefined') return DEFAULT_THEME;
-  const saved = window.localStorage.getItem('theme');
+  const saved = readBrowserStorage('localStorage', 'theme');
   if (saved === 'light' || saved === 'dark') return saved;
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   return prefersDark ? 'dark' : 'light';
@@ -34,7 +35,7 @@ const setThemeSnapshot = (nextTheme: Theme) => {
   themeSnapshot = nextTheme;
 
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem('theme', nextTheme);
+    writeBrowserStorage('localStorage', 'theme', nextTheme);
   }
 
   emitThemeChange();
@@ -220,12 +221,17 @@ const Header: React.FC = () => {
         <button 
             className={style.hamburger} 
             onClick={toggleMenu}
+            type="button"
             aria-label="Toggle menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-navigation"
         >
             {isMenuOpen ? <FiX /> : <FaBars />}
         </button>
 
         <div 
+            id="mobile-navigation"
+            aria-hidden={!isMenuOpen}
             className={`${style.mobile_menu} ${isMenuOpen ? style.mobile_menu_open : ''}`}
             onClick={closeMenu}
         >

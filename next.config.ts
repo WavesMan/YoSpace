@@ -31,6 +31,7 @@ const musicApiBase = (process.env.NEXT_PUBLIC_MUSIC_API_BASE || 'https://netmusi
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  allowedDevOrigins: parseAllowedOrigins(process.env.ALLOWED_DEV_ORIGINS ?? '192.168.1.3'),
   images: {
     remotePatterns: imageHostnames.map((hostname) => ({
       protocol: 'https',

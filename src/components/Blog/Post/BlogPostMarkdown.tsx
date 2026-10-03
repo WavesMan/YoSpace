@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState, Suspense } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -8,7 +8,7 @@ import rehypeRaw from 'rehype-raw';
 import style from '../BlogPost.module.css';
 import ImageSharpenFilter from './ImageSharpenFilter';
 import MarkdownImageLightbox from './MarkdownImageLightbox';
-const LazyCodeBlock = React.lazy(() => import('../CodeBlock'));
+import CodeBlock from '../CodeBlock';
 import {
     slugifyHeading,
     transformTabsSyntax,
@@ -25,7 +25,6 @@ interface MarkdownTabsProps {
 interface BlogPostMarkdownProps {
     content: string;
     locale: string;
-    deferHeavy?: boolean;
 }
 
 interface MermaidBlockProps {
@@ -167,8 +166,9 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
                 if (!isActive) return;
                 setSvg(svg);
                 setHasError(false);
-            } catch {
+            } catch (error) {
                 if (!isActive) return;
+                console.error('Mermaid 图表渲染失败：', error);
                 setHasError(true);
             }
         };
@@ -198,13 +198,10 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
 
     if (hasError || !svg) {
         return (
-            <Suspense fallback={(
-                <code className={style.md_code_plain}>
-                    {code}
-                </code>
-            )}>
-                <LazyCodeBlock language="mermaid" value={code} />
-            </Suspense>
+            <div aria-busy={!hasError}>
+                <p role="status">{hasError ? '图表加载失败，以下为源代码。' : '正在加载图表…'}</p>
+                <CodeBlock language="mermaid" value={code} />
+            </div>
         );
     }
 
@@ -433,30 +430,20 @@ type MarkdownComponents = Components & {
     tabs?: React.ComponentType<{ children?: React.ReactNode }>;
 };
 
-export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, locale, deferHeavy = false }) => {
-    const [isHeavyReady, setIsHeavyReady] = useState(!deferHeavy);
-
-    useEffect(() => {
-        if (!deferHeavy) {
-            const timer = window.setTimeout(() => setIsHeavyReady(true), 0);
-            return () => window.clearTimeout(timer);
-        }
-        let cleanup: (() => void) | undefined;
-        const schedule = () => {
-            if (typeof window.requestIdleCallback === 'function') {
-                const idleId = window.requestIdleCallback(() => setIsHeavyReady(true), { timeout: 1200 });
-                cleanup = () => window.cancelIdleCallback(idleId);
-                return;
-            }
-            const timer = window.setTimeout(() => setIsHeavyReady(true), 200);
-            cleanup = () => window.clearTimeout(timer);
-        };
-        schedule();
-        return () => {
-            if (cleanup) cleanup();
-        };
-    }, [deferHeavy]);
+export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, locale }) => {
     const components: MarkdownComponents = {
+        pre({ children }) {
+            // 自定义图表和高亮组件已提供块级容器，避免生成 pre > div > pre。
+            const child = React.Children.toArray(children)[0];
+            if (React.isValidElement(child)) {
+                const codeProps = child.props as { className?: string; children?: React.ReactNode };
+                const value = String(codeProps.children ?? '').trim();
+                if (/language-([^\s]+)/i.test(codeProps.className || '') || looksLikeMermaid(value)) {
+                    return <>{children}</>;
+                }
+            }
+            return <pre>{children}</pre>;
+        },
         p({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
             if (hasVercelButtonChild(children)) {
                 const items = React.Children.toArray(children);
@@ -566,20 +553,6 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
             const trimmedValue = value.trim();
             const language = (match?.[1] || '').trim().toLowerCase();
             const isMermaid = !inline && (language === 'mermaid' || (!language && looksLikeMermaid(trimmedValue)));
-            if (!isHeavyReady) {
-                if (inline) {
-                    return (
-                        <code className={className} {...props}>
-                            {children}
-                        </code>
-                    );
-                }
-                return (
-                    <code className={`${style.md_code_plain} ${className || ''}`}>
-                        {value}
-                    </code>
-                );
-            }
             if (!match && !isMermaid) {
                 return (
                     <code className={className} {...props}>
@@ -590,15 +563,7 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
             if (isMermaid) {
                 return <MermaidBlock code={trimmedValue} />;
             }
-            return (
-                <Suspense fallback={(
-                    <code className={`${style.md_code_plain} ${className || ''}`}>
-                        {value}
-                    </code>
-                )}>
-                    <LazyCodeBlock language={language || 'text'} value={value} />
-                </Suspense>
-            );
+            return <CodeBlock language={language || 'text'} value={value} />;
         },
         h1(props: React.HTMLAttributes<HTMLHeadingElement> & { children?: React.ReactNode }) {
             return renderHeading('h1', props);
