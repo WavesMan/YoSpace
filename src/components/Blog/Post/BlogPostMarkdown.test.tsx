@@ -1,7 +1,18 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BlogPostMarkdown } from './BlogPostMarkdown';
+
+const mermaidMock = vi.hoisted(() => ({
+    initialize: vi.fn(),
+    render: vi.fn(async (id: string) => ({
+        svg: `<svg data-mermaid-id="${id}"><text>diagram</text></svg>`,
+    })),
+}));
+
+vi.mock('mermaid', () => ({
+    default: mermaidMock,
+}));
 
 vi.mock('next/image', () => ({
     default: React.forwardRef<
@@ -33,5 +44,59 @@ describe('BlogPostMarkdown images', () => {
         const image = screen.getByAltText('测试徽章');
         expect(image).toHaveAttribute('src', src);
         expect(image).toHaveAttribute('data-unoptimized', 'true');
+    });
+});
+
+describe('BlogPostMarkdown Mermaid', () => {
+    it('根据暗色主题初始化 Mermaid 并渲染图表', async () => {
+        document.body.setAttribute('data-theme', 'dark');
+
+        render(<BlogPostMarkdown content={'```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
+
+        await waitFor(() => expect(screen.getByRole('img', { name: 'Mermaid diagram' })).toBeInTheDocument());
+
+        expect(mermaidMock.initialize).toHaveBeenCalledWith(expect.objectContaining({
+            theme: 'dark',
+            themeVariables: expect.objectContaining({
+                lineColor: '#f2f2f2',
+                nodeTextColor: '#f5f5f5',
+            }),
+        }));
+    });
+
+    it('主题切换时重新渲染 Mermaid', async () => {
+        document.body.setAttribute('data-theme', 'light');
+
+        render(<BlogPostMarkdown content={'```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
+
+        await waitFor(() => expect(mermaidMock.initialize).toHaveBeenCalledWith(expect.objectContaining({
+            theme: 'default',
+        })));
+
+        document.body.setAttribute('data-theme', 'dark');
+
+        await waitFor(() => expect(mermaidMock.initialize).toHaveBeenLastCalledWith(expect.objectContaining({
+            theme: 'dark',
+        })));
+    });
+
+    it('双指触屏缩放不会启动单指拖动', async () => {
+        document.body.setAttribute('data-theme', 'light');
+
+        render(<BlogPostMarkdown content={'```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
+
+        const canvas = await screen.findByRole('img', { name: 'Mermaid diagram' });
+        const content = canvas.firstElementChild as HTMLElement;
+
+        fireEvent.pointerDown(canvas, { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
+        fireEvent.pointerDown(canvas, { pointerId: 2, pointerType: 'touch', clientX: 200, clientY: 100 });
+        fireEvent.pointerMove(canvas, { pointerId: 2, pointerType: 'touch', clientX: 300, clientY: 100 });
+
+        expect(content.style.transform).toBe('translate(0px, 0px) scale(2)');
+
+        fireEvent.pointerUp(canvas, { pointerId: 2, pointerType: 'touch' });
+        fireEvent.pointerMove(canvas, { pointerId: 1, pointerType: 'touch', clientX: 180, clientY: 180 });
+
+        expect(content.style.transform).toBe('translate(0px, 0px) scale(2)');
     });
 });

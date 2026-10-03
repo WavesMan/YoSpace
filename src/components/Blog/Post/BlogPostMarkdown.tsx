@@ -32,6 +32,13 @@ interface MermaidBlockProps {
     code: string;
 }
 
+type MermaidTheme = 'light' | 'dark';
+
+const getMermaidTheme = (): MermaidTheme => {
+    if (typeof document === 'undefined') return 'light';
+    return document.body.dataset.theme === 'dark' ? 'dark' : 'light';
+};
+
 const MarkdownTabs: React.FC<MarkdownTabsProps> = ({ children }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const childArray = React.Children.toArray(children)
@@ -72,6 +79,7 @@ const MarkdownTabs: React.FC<MarkdownTabsProps> = ({ children }) => {
 const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     const [svg, setSvg] = useState('');
     const [hasError, setHasError] = useState(false);
+    const [theme, setTheme] = useState<MermaidTheme>(getMermaidTheme);
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -85,6 +93,12 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
         originX: 0,
         originY: 0,
         pointerId: -1,
+    });
+    const touchPointersRef = React.useRef(new Map<number, { x: number; y: number }>());
+    const pinchStateRef = React.useRef({
+        active: false,
+        startDistance: 0,
+        startScale: 1,
     });
     const offsetRef = React.useRef(offset);
     offsetRef.current = offset;
@@ -111,14 +125,43 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     };
 
     useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setTheme(getMermaidTheme());
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
         let isActive = true;
         const render = async () => {
             try {
                 const mermaidModule = await import('mermaid');
                 const mermaid = mermaidModule.default ?? mermaidModule;
+                const isDark = theme === 'dark';
                 mermaid.initialize({
                     startOnLoad: false,
                     securityLevel: 'strict',
+                    theme: isDark ? 'dark' : 'default',
+                    themeVariables: isDark ? {
+                        background: '#2e2e2e',
+                        primaryColor: '#454545',
+                        primaryTextColor: '#f5f5f5',
+                        primaryBorderColor: '#d28484',
+                        lineColor: '#f2f2f2',
+                        textColor: '#f5f5f5',
+                        nodeTextColor: '#f5f5f5',
+                        edgeLabelBackground: '#3b3b3b',
+                    } : {
+                        background: '#ffffff',
+                        primaryColor: '#ececff',
+                        primaryTextColor: '#333333',
+                        primaryBorderColor: '#9370db',
+                        lineColor: '#333333',
+                        textColor: '#333333',
+                        nodeTextColor: '#333333',
+                        edgeLabelBackground: '#ffffff',
+                    },
                 });
                 const { svg } = await mermaid.render(`mermaid-${reactId}`, code);
                 if (!isActive) return;
@@ -137,7 +180,7 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
         return () => {
             isActive = false;
         };
-    }, [code, reactId]);
+    }, [code, reactId, theme]);
 
     useEffect(() => {
         const handleChange = () => {
@@ -166,10 +209,34 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     }
 
     const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-        if (!panEnabled && !isFullscreen) return;
         if (event.pointerType === 'mouse' && event.button !== 0) return;
         const target = event.currentTarget;
-        target.setPointerCapture(event.pointerId);
+        if (typeof target.setPointerCapture === 'function') {
+            target.setPointerCapture(event.pointerId);
+        }
+
+        if (event.pointerType === 'touch') {
+            const pointers = touchPointersRef.current;
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+            if (pointers.size === 2) {
+                const [{ x: firstX, y: firstY }, { x: secondX, y: secondY }] = [...pointers.values()];
+                const deltaX = secondX - firstX;
+                const deltaY = secondY - firstY;
+                pinchStateRef.current = {
+                    active: true,
+                    startDistance: Math.hypot(deltaX, deltaY),
+                    startScale: scale,
+                };
+                setIsDragging(false);
+                return;
+            }
+
+            // A single touch is allowed to start panning only when panning is enabled.
+            // The pointer is still tracked so a second touch can promote the gesture to pinch zoom.
+            if (!panEnabled && !isFullscreen) return;
+        }
+
         dragStateRef.current = {
             startX: event.clientX,
             startY: event.clientY,
@@ -181,6 +248,30 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     };
 
     const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (event.pointerType === 'touch') {
+            const pointers = touchPointersRef.current;
+            const currentPointer = pointers.get(event.pointerId);
+            if (currentPointer) {
+                pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            }
+
+            if (pinchStateRef.current.active && pointers.size >= 2) {
+                const [{ x: firstX, y: firstY }, { x: secondX, y: secondY }] = [...pointers.values()];
+                const deltaX = secondX - firstX;
+                const deltaY = secondY - firstY;
+                const distance = Math.hypot(deltaX, deltaY);
+                const { startDistance, startScale } = pinchStateRef.current;
+                if (startDistance > 0) {
+                    event.preventDefault();
+                    setScale(clampScale(startScale * (distance / startDistance)));
+                }
+                return;
+            }
+
+            // Never let a touch that belongs to a pinch gesture fall through to single-finger panning.
+            if (pinchStateRef.current.active) return;
+        }
+
         if (!isDragging) return;
         if (dragStateRef.current.pointerId !== event.pointerId) return;
         const deltaX = event.clientX - dragStateRef.current.startX;
@@ -200,8 +291,29 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     };
 
     const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (event.pointerType === 'touch') {
+            touchPointersRef.current.delete(event.pointerId);
+            if (pinchStateRef.current.active) {
+                if (typeof event.currentTarget.hasPointerCapture === 'function'
+                    && event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    event.currentTarget.releasePointerCapture(event.pointerId);
+                }
+                // Do not promote the remaining finger to a drag. A fresh touch is required,
+                // which prevents an accidental jump when pinch zoom ends.
+                if (touchPointersRef.current.size < 2) {
+                    pinchStateRef.current = { active: false, startDistance: 0, startScale: scale };
+                    dragStateRef.current.pointerId = -1;
+                    setIsDragging(false);
+                }
+                return;
+            }
+        }
+
         if (dragStateRef.current.pointerId !== event.pointerId) return;
-        event.currentTarget.releasePointerCapture(event.pointerId);
+        if (typeof event.currentTarget.hasPointerCapture === 'function'
+            && event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         setIsDragging(false);
     };
 
