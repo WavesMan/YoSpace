@@ -15,6 +15,11 @@ const musicApiBase = (process.env.NEXT_PUBLIC_MUSIC_API_BASE || 'https://netmusi
 
 const nextConfig = {
   reactStrictMode: true,
+  // 真机通过局域网访问开发服务器时，必须允许地址栏中的主机名。
+  allowedDevOrigins: (process.env.ALLOWED_DEV_ORIGINS ?? '192.168.1.3')
+    .split(',')
+    .map(hostname => hostname.trim())
+    .filter(Boolean),
   images: {
     // 动态生成 remotePatterns
     remotePatterns: imageHostnames.map(hostname => ({

@@ -107,6 +107,11 @@ nav.scrolled {
 
 /* Hamburger Menu Button */
 .hamburger {
+    position: relative;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    touch-action: manipulation;
     display: none;
     background: none;
     border: none;
@@ -119,6 +124,8 @@ nav.scrolled {
 
 /* Mobile Menu Overlay */
 .mobile_menu {
+    visibility: hidden;
+    pointer-events: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -136,6 +143,8 @@ nav.scrolled {
 }
 
 .mobile_menu_open {
+    visibility: visible;
+    pointer-events: auto;
     height: 100vh;
 }
 

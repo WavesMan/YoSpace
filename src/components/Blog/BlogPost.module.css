@@ -390,7 +390,7 @@
     padding: 1rem;
     border-radius: 0.75rem;
     border: 1px solid var(--color-accent-stroke);
-    background: var(--color-bg-secondary);
+    background: var(--color-bg-card);
     position: relative;
 }
 
@@ -432,7 +432,7 @@
 
 .md_mermaid_btn_active {
     background: var(--color-accent-solid);
-    color: var(--color-bg-primary);
+    color: var(--color-bg);
     border-color: transparent;
 }
 
@@ -461,11 +461,16 @@
 
 .md_mermaid_canvas_pannable {
     cursor: grab;
-    touch-action: none;
 }
 
 .md_mermaid_canvas_dragging {
     cursor: grabbing;
+}
+
+@media (pointer: coarse) {
+    .md_mermaid_canvas {
+        touch-action: none;
+    }
 }
 
 .md_mermaid_content {
@@ -500,6 +505,10 @@
     stroke: #ffffff;
 }
 
+[data-theme='dark'] .md_mermaid_content svg .arrowheadPath {
+    fill: #ffffff;
+}
+
 [data-theme='dark'] .md_mermaid_content svg .edgeLabel,
 [data-theme='dark'] .md_mermaid_content svg .edgeLabel text,
 [data-theme='dark'] .md_mermaid_content svg .label,
@@ -507,6 +516,44 @@
 [data-theme='dark'] .md_mermaid_content svg text {
     fill: rgba(255, 255, 255, 0.9);
     color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='dark'] .md_mermaid_content svg .edgeLabel rect,
+[data-theme='dark'] .md_mermaid_content svg .labelBkg,
+[data-theme='dark'] .md_mermaid_content svg .label-container {
+    fill: #3b3b3b;
+    background-color: #3b3b3b;
+}
+
+[data-theme='dark'] .md_mermaid_content svg .messageLine0,
+[data-theme='dark'] .md_mermaid_content svg .messageLine1,
+[data-theme='dark'] .md_mermaid_content svg .actor-line,
+[data-theme='dark'] .md_mermaid_content svg .relationshipLine,
+[data-theme='dark'] .md_mermaid_content svg .transition {
+    stroke: #ffffff;
+}
+
+[data-theme='dark'] .md_mermaid_content svg .messageLine0,
+[data-theme='dark'] .md_mermaid_content svg .messageLine1 {
+    fill: none;
+}
+
+[data-theme='dark'] .md_mermaid_content svg .actor,
+[data-theme='dark'] .md_mermaid_content svg .actor rect,
+[data-theme='dark'] .md_mermaid_content svg .note,
+[data-theme='dark'] .md_mermaid_content svg .section,
+[data-theme='dark'] .md_mermaid_content svg .task,
+[data-theme='dark'] .md_mermaid_content svg .stateGroup rect {
+    stroke: rgba(255, 255, 255, 0.65);
+}
+
+[data-theme='dark'] .md_mermaid_content svg .taskText,
+[data-theme='dark'] .md_mermaid_content svg .sectionTitle,
+[data-theme='dark'] .md_mermaid_content svg .titleText,
+[data-theme='dark'] .md_mermaid_content svg .pieTitleText,
+[data-theme='dark'] .md_mermaid_content svg .legend text,
+[data-theme='dark'] .md_mermaid_content svg .tick text {
+    fill: rgba(255, 255, 255, 0.9);
 }
 
 [data-theme='dark'] .md_mermaid_content svg .node rect,
@@ -525,7 +572,7 @@
     right: 1rem;
     border: none;
     background: var(--color-accent-solid);
-    color: var(--color-bg-primary);
+    color: var(--color-bg);
     padding: 0.5rem 1rem;
     border-radius: 9999px;
     font-size: 0.9rem;

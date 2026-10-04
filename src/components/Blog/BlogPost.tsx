@@ -8,6 +8,7 @@ import Background from '../Common/Background/Background';
 import { useI18n } from '@/context/I18nContext';
 import type { PostContentResponse, PostItem } from '@/utils/content/local';
 import { BlogPostMarkdown } from './Post/BlogPostMarkdown';
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 import { extractTocFromMarkdown, type TocItem } from './Post/markdownUtils';
 
 interface BlogPostProps {
@@ -165,7 +166,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
      */
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        const raw = window.sessionStorage.getItem(scrollStorageKey);
+        const raw = readBrowserStorage('sessionStorage', scrollStorageKey);
         if (!raw) return;
         try {
             const parsed = JSON.parse(raw) as { scrollY?: number };
@@ -200,7 +201,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
             window.requestAnimationFrame(() => {
                 ticking = false;
                 const payload = { scrollY: window.scrollY };
-                window.sessionStorage.setItem(scrollStorageKey, JSON.stringify(payload));
+                writeBrowserStorage('sessionStorage', scrollStorageKey, JSON.stringify(payload));
             });
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
@@ -475,7 +476,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     )}
                     <div className={style.post_content}>
                         {status === "Done" && articleContent ? (
-                            <BlogPostMarkdown content={articleContent.content} locale={locale} deferHeavy={!isDeferredReady} />
+                            <BlogPostMarkdown content={articleContent.content} locale={locale} />
                         ) : status === "Error" ? (
                             <>
                                 <div className={style.tip_error}>{t('Status.Error')}</div>

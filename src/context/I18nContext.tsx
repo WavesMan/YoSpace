@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, ReactNode, useSyncExternalStore } from 'react';
 import zhCN from '../locales/zh_CN.json';
 import enUS from '../locales/en_US.json';
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 
 // 定义支持的语言
 type Locale = 'zh-CN' | 'en-US';
@@ -41,7 +42,7 @@ const readPreferredLocale = (): Locale => {
   if (!isI18nEnabled()) return DEFAULT_LOCALE;
   if (typeof window === 'undefined') return DEFAULT_LOCALE;
 
-  const savedLocale = window.localStorage.getItem('locale');
+  const savedLocale = readBrowserStorage('localStorage', 'locale');
   if (savedLocale === 'zh-CN' || savedLocale === 'en-US') {
     return savedLocale;
   }
@@ -63,7 +64,7 @@ const setLocaleSnapshot = (nextLocale: Locale) => {
   localeSnapshot = nextLocale;
 
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem('locale', nextLocale);
+    writeBrowserStorage('localStorage', 'locale', nextLocale);
     document.cookie = `locale=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
   }
 
