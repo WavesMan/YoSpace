@@ -41,7 +41,7 @@ process.on('exit', cleanup);
                 releaseImage();
                 await page.waitForFunction(() => document.querySelector('[data-image-state]')?.dataset.imageState === 'entering');
                 const animation = await image.evaluate(node => { const style = getComputedStyle(node); return { duration: style.animationDuration, name: style.animationName }; });
-                assert.equal(animation.duration, '0.8s');
+                assert.equal(animation.duration, '0.2s');
                 await page.waitForFunction(() => document.querySelector('[data-image-state]')?.dataset.imageState === 'done');
                 await image.click();
                 await page.getByRole('dialog').waitFor();

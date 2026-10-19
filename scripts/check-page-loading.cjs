@@ -21,12 +21,12 @@ function writeFixture(slug, body) {
 }
 writeFixture(readingSlug, [
   '首屏应当先显示正文与目录，后续段落和图形随阅读位置逐步呈现。'.repeat(6),
-  ...Array.from({ length: 13 }, (_, index) => `## ${index + 1}. 图表验证\n\n${'这一段保留完整排版，进入视口后逐字揭示，回看无需重新播放。'.repeat(8)}\n\n\`\`\`mermaid\nflowchart LR\n A[步骤 ${index + 1}] --> B[就绪]\n\`\`\`\n\n\`\`\`text\n图表 ${index + 1} 的配套代码\n\`\`\``),
+  ...Array.from({ length: 13 }, (_, index) => `## ${index + 1}. 图表验证\n\n${'这一段保留完整排版，进入视口后直接阅读，回看无需重新播放。'.repeat(8)}\n\n\`\`\`mermaid\nflowchart LR\n A[步骤 ${index + 1}] --> B[就绪]\n\`\`\`\n\n\`\`\`text\n图表 ${index + 1} 的配套代码\n\`\`\``),
   '全部验证完成后，末尾段落也应随滚动正常显示。',
 ].join('\n\n'));
 writeFixture(codeSlug, [
   '## 代码渐进显示',
-  '先阅读这段说明，再向下滚动查看长命令的逐字输出与高亮衔接。'.repeat(30),
+  '先阅读这段说明，再向下滚动查看长命令的完整输出与高亮衔接。'.repeat(30),
   '```powershell\ndism /online /get-features /format:table | Select-String "VirtualMachinePlatform|Microsoft-Windows-Subsystem-Linux|HypervisorPlatform"\n```',
   '## 无语言标记代码',
   '```\n第一行\n\n第三行\n```',
@@ -71,7 +71,7 @@ writeFixture(codeSlug, [
         const title = document.querySelector('h1');
         const sample = {
           t: Math.round(performance.now() - start),
-          title: !!title && getComputedStyle(title).visibility !== 'hidden',
+          title: !!title && gate?.getAttribute('data-page-ready') === 'true',
           toc: !!document.querySelector('button[aria-label="切换目录"], nav[aria-label="文章目录"]'),
           diagrams: document.querySelectorAll('[aria-label="Mermaid diagram"]').length,
           pendingDiagrams: document.querySelectorAll('[data-diagram-pending="true"]').length,
@@ -106,20 +106,20 @@ writeFixture(codeSlug, [
     assert(samples.filter(sample => sample.title).every(sample => sample.ready === 'true' && sample.toc), '正文可见时目录和基础布局应已就绪');
     assert.equal(await page.locator('[data-lazy-diagram]').count(), 13);
     assert(await page.locator('[data-lazy-diagram="idle"]').count() > 0, '屏外图表不能一次性渲染');
-    const firstParagraph = page.locator('[data-stream-state]').first();
-    await page.waitForFunction(() => document.querySelector('[data-stream-state]')?.dataset.streamState === 'done');
+    const firstParagraph = page.locator('[data-post-content] p').first();
+
     const paragraphHeight = await firstParagraph.evaluate(node => node.getBoundingClientRect().height);
-    const lastParagraph = page.locator('[data-stream-state]').last();
-    assert.equal(await lastParagraph.getAttribute('data-stream-state'), 'pending', '屏外段落应等待滚动后揭示');
+    const lastParagraph = page.locator('[data-post-content] p').last();
+    assert.equal(await firstParagraph.getAttribute('data-stream-state'), null, '正文不再挂载逐字裁切组件');
     const lastDiagram = page.locator('[data-lazy-diagram]').last();
     await lastDiagram.scrollIntoViewIfNeeded();
     await page.waitForFunction(() => [...document.querySelectorAll('[data-lazy-diagram]')].at(-1)?.dataset.lazyDiagram === 'ready', null, { timeout: 30000 });
     if (process.env.SCREENSHOT_DIR && mobile) await page.screenshot({ path: require('node:path').join(process.env.SCREENSHOT_DIR, 'progressive-diagram.png') });
     await page.waitForFunction(() => [...document.querySelectorAll('[data-lazy-diagram]')].at(-1)?.querySelector('[data-stream-variant="diagram"]')?.dataset.streamState === 'done');
     await lastParagraph.scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-stream-state]')].at(-1)?.dataset.streamState === 'done');
+
     await firstParagraph.scrollIntoViewIfNeeded();
-    assert.equal(await firstParagraph.getAttribute('data-stream-state'), 'done', '回看不应重播打字动画');
+    assert.equal(await firstParagraph.getAttribute('data-stream-state'), null, '回看正文不会重播打字动画');
     assert.equal(await firstParagraph.evaluate(node => node.getBoundingClientRect().height), paragraphHeight, '动画不能改变段落高度');
     if (mobile) {
       const firstDiagram = page.locator('[data-lazy-diagram="ready"]').first();
@@ -154,13 +154,13 @@ writeFixture(codeSlug, [
       if (Math.abs(afterHeight - beforeHeight) >= 2) console.log(JSON.stringify({ beforeLayout, afterLayout: await code.evaluate(node => [...node.querySelectorAll('pre,code')].map(item => { const s = getComputedStyle(item); return { tag: item.tagName, width: item.getBoundingClientRect().width, height: item.getBoundingClientRect().height, font: s.font, whiteSpace: s.whiteSpace, wordBreak: s.wordBreak, padding: s.padding, margin: s.margin }; })) }));
       assert(Math.abs(afterHeight - beforeHeight) < 2, `代码高亮前后应保持高度：${beforeHeight} / ${afterHeight}`);
       await code.getByRole('button', { name: 'Copy code' }).click();
-      assert.equal(await codePage.evaluate(() => window.__copiedCode), plainValue, '打字与高亮不能影响复制全文');
-      assert(await codePage.evaluate(() => window.__codeReveals.some(item => item.state === 'playing' && item.clip)), '代码应有逐字揭示过程');
+      assert.equal(await codePage.evaluate(() => window.__copiedCode), plainValue, '淡入与高亮不能影响复制全文');
+      assert(await codePage.evaluate(() => window.__codeReveals.every(item => !item.clip)), '代码不再逐帧裁切');
       await codePage.emulateMedia({ reducedMotion: 'reduce' });
       await codePage.reload({ waitUntil: 'domcontentloaded' });
       await codePage.locator('[data-page-ready="true"]').waitFor();
-      await codePage.waitForFunction(() => [...document.querySelectorAll('[data-stream-variant="code"]')].every(node => node.dataset.streamState === 'done'));
-      console.log(JSON.stringify({ mobile, 检查: '长命令打字、高亮高度、复制全文、减少动态效果通过' }));
+      await codePage.waitForFunction(() => [...document.querySelectorAll('[data-stream-variant="code"]')].filter(node => node.getBoundingClientRect().top < innerHeight && node.getBoundingClientRect().bottom > 0).every(node => node.dataset.streamState === 'done'));
+      console.log(JSON.stringify({ mobile, 检查: '长命令淡入、高亮高度、复制全文、减少动态效果通过' }));
       await codePage.close();
       await page.getByText('< Back to blog list', { exact: true }).first().click();
       await page.waitForURL(`${baseURL}/blog`);
