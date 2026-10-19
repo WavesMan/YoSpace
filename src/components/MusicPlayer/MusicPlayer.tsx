@@ -12,6 +12,7 @@ import { useAudio } from './hooks/useAudio';
 import { usePlaylist } from './hooks/usePlaylist';
 import { fetchLyricData } from './services';
 import { parseLrcLines, parseYrcLines, type LyricLine } from './utils';
+import { writeBrowserStorage } from '@/utils/browserStorage';
 
 // 子组件
 import PlayerHeader from './components/PlayerHeader';
@@ -91,7 +92,7 @@ export default function MusicPlayer() {
 
     // 更新索引
     setCurrentTrackIndex(index);
-    localStorage.setItem('music_player_index', index.toString());
+    writeBrowserStorage('localStorage', 'music_player_index', index.toString());
     
     setIsLoading(true);
     setAudioError(null);

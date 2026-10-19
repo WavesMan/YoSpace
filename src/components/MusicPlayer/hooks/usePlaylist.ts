@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Track, PlayMode } from '../types';
 import { fetchPlaylistData, checkSongAvailability, getSongUrl } from '../services';
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 
 interface UsePlaylistReturn {
   playlist: Track[];
@@ -54,7 +55,7 @@ export const usePlaylist = (): UsePlaylistReturn => {
         setPlaylist(data.songs);
         
         // 恢复上次播放索引
-        const savedIndex = localStorage.getItem('music_player_index');
+        const savedIndex = readBrowserStorage('localStorage', 'music_player_index');
         let initialIndex = -1;
         
         if (savedIndex) {
@@ -116,7 +117,7 @@ export const usePlaylist = (): UsePlaylistReturn => {
       
       if (newIndex !== -1 && newIndex !== currentTrackIndex) {
         setCurrentTrackIndex(newIndex);
-        localStorage.setItem('music_player_index', newIndex.toString());
+        writeBrowserStorage('localStorage', 'music_player_index', newIndex.toString());
       }
     }
     setPlaylist(newPlaylist);

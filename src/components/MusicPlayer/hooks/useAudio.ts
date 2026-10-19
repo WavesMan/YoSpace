@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, useSyncExternalStore } from 'react';
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 
 interface AudioState {
   isPlaying: boolean;
@@ -43,7 +44,7 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
 
     const readFromStorage = () => {
       if (typeof window === 'undefined') return snapshot.value;
-      const saved = window.localStorage.getItem(key);
+      const saved = readBrowserStorage('localStorage', key);
       if (!saved) return snapshot.value;
       const parsed = Number.parseFloat(saved);
       if (!Number.isFinite(parsed)) return snapshot.value;
@@ -71,7 +72,7 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
         if (clamped === snapshot.value) return;
         snapshot.value = clamped;
         if (typeof window !== 'undefined') {
-          window.localStorage.setItem(key, clamped.toString());
+          writeBrowserStorage('localStorage', key, clamped.toString());
         }
         emitChange();
       },
@@ -91,7 +92,7 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const saved = window.localStorage.getItem('music_player_volume');
+    const saved = readBrowserStorage('localStorage', 'music_player_volume');
     if (!saved) return;
     const parsed = Number.parseFloat(saved);
     if (!Number.isFinite(parsed)) return;
@@ -192,7 +193,7 @@ export const useAudio = (initialVolume: number = 0.7): UseAudioReturn => {
 
     const handleTimeUpdate = () => {
       setProgress(audio.currentTime);
-      localStorage.setItem('music_player_progress', audio.currentTime.toString());
+      writeBrowserStorage('localStorage', 'music_player_progress', audio.currentTime.toString());
     };
 
     const handleLoadedMetadata = () => {
