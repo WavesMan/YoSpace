@@ -22,7 +22,7 @@ process.on('exit', cleanup);
         }
         const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_BROWSER || 'msedge', headless: true });
         try {
-            for (const [width, height, mobile] of [[1440, 900, false], [1440, 320, false], [1024, 600, false], [771, 1340, true], [390, 844, true], [320, 568, true], [844, 390, true]]) {
+            for (const [width, height, mobile] of [[1440, 900, false], [1440, 320, false], [1114, 897, false], [1024, 600, false], [771, 1340, true], [516, 897, true], [390, 844, true], [320, 568, true], [844, 390, true]]) {
                 const context = await browser.newContext({ ...(mobile ? devices['iPhone 13'] : {}), viewport: { width, height }, locale: 'zh-CN', colorScheme: width === 771 ? 'dark' : 'light' });
                 const page = await context.newPage();
                 const errors = [];
@@ -55,15 +55,50 @@ process.on('exit', cleanup);
                 const compact = await toggle.count() > 0;
                 if (compact) await toggle.click();
                 const nav = page.getByRole('navigation', { name: '文章目录' });
+                await page.locator('[data-site-footer]').waitFor();
+                await page.waitForTimeout(100);
                 const geometry = await nav.evaluate(node => {
                     const body = node.querySelector('[class*="post_toc_body"]');
                     const box = node.getBoundingClientRect();
                     const scroll = body.getBoundingClientRect();
                     body.scrollTop = body.scrollHeight;
-                    return { top: box.top, bottom: box.bottom, bodyBottom: scroll.bottom, viewport: window.innerHeight, client: body.clientHeight, total: body.scrollHeight };
+                    return { top: box.top, bottom: box.bottom, left: box.left, right: box.right, bodyBottom: scroll.bottom, viewport: window.innerHeight, viewportWidth: window.innerWidth, client: body.clientHeight, total: body.scrollHeight };
                 });
                 assert(geometry.top >= 0 && geometry.bottom <= height + 1, `目录溢出视口：${JSON.stringify(geometry)}`);
+                assert(geometry.left >= 0 && geometry.right <= geometry.viewportWidth + 1, `目录溢出视口宽度：${JSON.stringify(geometry)}`);
                 assert(geometry.bodyBottom <= geometry.bottom + 1 && geometry.client > 0 && geometry.total > geometry.client, '长目录必须在面板内部滚动');
+                const verifyVisibleArea = async () => {
+                    await page.waitForTimeout(150);
+                    const actual = await nav.evaluate(node => {
+                        const box = node.getBoundingClientRect();
+                        const viewport = window.visualViewport;
+                        const top = viewport?.offsetTop || 0;
+                        let bottom = top + (viewport?.height || innerHeight);
+                        const footer = document.querySelector('[data-site-footer]');
+                        if (footer && getComputedStyle(footer).position === 'fixed') bottom = Math.min(bottom, footer.getBoundingClientRect().top);
+                        const body = node.querySelector('[class*="post_toc_body"]');
+                        body.scrollTop = body.scrollHeight;
+                        const last = body.querySelector('li:last-child').getBoundingClientRect();
+                        const scroll = body.getBoundingClientRect();
+                        return { top: box.top, bottom: box.bottom, visibleTop: top, limit: bottom - 16, lastBottom: last.bottom, bodyBottom: scroll.bottom };
+                    });
+                    assert(actual.top >= actual.visibleTop - 1 && actual.bottom <= actual.limit + 1, `目录被页脚或可视视口遮挡：${JSON.stringify(actual)}`);
+                    assert(actual.lastBottom <= actual.bodyBottom + 2, `最后一项目录不可达：${JSON.stringify(actual)}`);
+                };
+                await verifyVisibleArea();
+                // 软键盘/窗口高度变化后，同一个已打开目录必须重新收缩、恢复。
+                await page.setViewportSize({ width, height: Math.max(280, Math.round(height * 0.65)) });
+                await verifyVisibleArea();
+                await page.setViewportSize({ width, height });
+                await verifyVisibleArea();
+                if (mobile) {
+                    const session = await context.newCDPSession(page);
+                    await session.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1.75 });
+                    await verifyVisibleArea();
+                    await session.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
+                    await verifyVisibleArea();
+                    await session.detach();
+                }
                 if (compact) await page.getByRole('button', { name: '关闭目录' }).click();
                 await page.goto(`${baseURL}/archive`, { waitUntil: 'domcontentloaded' });
                 await page.locator('[class*="blog_card_container"]').first().waitFor();

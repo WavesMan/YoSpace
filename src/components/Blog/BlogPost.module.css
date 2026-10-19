@@ -668,22 +668,35 @@
 }
 
 .post_toc_container {
-    --toc-top: max(6rem, env(safe-area-inset-top, 0px));
+    --toc-safe-bottom: env(safe-area-inset-bottom, 0px);
     position: fixed;
-    top: var(--toc-top);
+    /* NOTE: 先声明 vh 回退，再声明 dvh；不支持 dvh 的旧版 Chromium / 应用内 WebView 会使用前一条 */
+    top: 6rem;
+    top: max(6rem, env(safe-area-inset-top, 0px));
+    top: var(--toc-measured-top, max(6rem, env(safe-area-inset-top, 0px)));
     left: 1.5rem;
     z-index: 52;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    /* NOTE: 使用 grid 的 minmax(0, 1fr) 约束第二行，长目录时面板收缩而不是撑出屏幕 */
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: start;
+    justify-items: start;
     gap: 0.5rem;
     max-width: calc(100% - 3rem);
-    max-height: max(0px, calc(100dvh - var(--toc-top) - max(1rem, env(safe-area-inset-bottom, 0px))));
+    max-height: calc(100vh - 6rem - 1rem);
+    max-height: calc(100dvh - max(6rem, env(safe-area-inset-top, 0px)) - max(1rem, env(safe-area-inset-bottom, 0px)));
+    max-height: var(--toc-available-height, calc(100vh - 6rem - 1rem));
     min-height: 0;
+    /* NOTE: 容器只负责定位；目录关闭时保留的网格间距不拦截页面点击 */
+    pointer-events: none;
+}
+
+.post_toc_toggle,
+.post_toc_panel {
+    pointer-events: auto;
 }
 
 .post_toc_toggle {
-    flex: 0 0 3.5rem;
     width: 3.5rem;
     height: 3.5rem;
     border-radius: 9999px;
@@ -710,10 +723,8 @@
     background-color: var(--color-text-primary);
 }
 
-@media (prefers-color-scheme: dark) {
-    .post_toc_toggle_open {
-        color: #000000;
-    }
+[data-theme='dark'] .post_toc_toggle_open {
+    color: #000000;
 }
 
 .post_toc_toggle_icon {
@@ -730,10 +741,10 @@
     box-sizing: border-box;
     min-height: 0;
     max-width: 100%;
-    flex: 0 1 auto;
+    max-height: var(--toc-panel-height, 100%);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
 }
 
 .md_code_plain {
@@ -858,17 +869,20 @@
 }
 
 .post_toc {
-    --toc-top: max(120px, env(safe-area-inset-top, 0px));
+    --toc-safe-bottom: env(safe-area-inset-bottom, 0px);
     width: 280px;
+    max-width: calc(100vw - 2rem);
     min-height: 0;
     box-sizing: border-box;
     overflow: hidden;
-    max-width: 280px;
     font-family: var(--font-family-main);
     font-size: var(--font-size-small);
     color: var(--color-article-text-secondary);
     position: fixed;
-    top: var(--toc-top);
+    /* NOTE: 先声明 vh 回退，再声明 dvh，避免旧浏览器因不识别 dvh 导致 max-height 失效 */
+    top: 120px;
+    top: max(120px, env(safe-area-inset-top, 0px));
+    top: var(--toc-measured-top, max(120px, env(safe-area-inset-top, 0px)));
     right: max(1.5rem, calc(50% - 600px));
     align-self: flex-start;
     background-color: var(--color-bg-secondary);
@@ -876,14 +890,22 @@
     border: 1px solid var(--color-accent-stroke);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
     padding: 0.75rem 0.75rem 0.85rem;
-    max-height: max(0px, calc(100dvh - var(--toc-top) - max(1rem, env(safe-area-inset-bottom, 0px))));
-    display: flex;
-    flex-direction: column;
+    max-height: calc(100vh - 120px - 1rem);
+    max-height: calc(100dvh - max(120px, env(safe-area-inset-top, 0px)) - max(1rem, env(safe-area-inset-bottom, 0px)));
+    max-height: var(--toc-available-height, calc(100vh - 120px - 1rem));
+    /* NOTE: grid + minmax(0, 1fr) 保证正文区在受限高度内收缩并滚动 */
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
 }
 
 @media (max-width: 1100px) {
     .post_main {
         padding: 0 1.5rem;
+    }
+
+    /* NOTE: 该断点下右侧 320px 的目录预留区被移除，桌面目录改为悬浮按钮，避免与正文重叠 */
+    .post_toc {
+        display: none;
     }
 
     .post_backlink,
@@ -896,13 +918,12 @@
 }
 
 .post_toc_title {
-    flex: 0 0 auto;
+    min-width: 0;
     font-weight: var(--font-weight-bold);
     color: var(--color-accent-title);
 }
 
 .post_toc_body {
-    flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
     overflow-y: auto;

@@ -163,7 +163,7 @@ const Footer = () => {
 
     // NOTE: 桌面端始终贴底展示，移动端按 shouldStaticOnMobile 控制是否固定
     return (
-        <div className={`${style.footer_wrapper} ${shouldStaticOnMobile ? style.footer_wrapper_mobile_static : ''} ${shouldShowLyric ? style.lyric_mode : style.normal_mode}`}>
+        <div data-site-footer className={`${style.footer_wrapper} ${shouldStaticOnMobile ? style.footer_wrapper_mobile_static : ''} ${shouldShowLyric ? style.lyric_mode : style.normal_mode}`}>
             <div className={style.footer_container}>
                 {shouldShowLyric ? (
                     <div className={style.footer_lyric}>

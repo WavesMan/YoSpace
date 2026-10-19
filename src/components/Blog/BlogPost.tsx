@@ -11,6 +11,7 @@ import { BlogPostMarkdown } from './Post/BlogPostMarkdown';
 import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 import { extractTocFromMarkdown } from './Post/markdownUtils';
 import { usePageReadyTask, usePageVisible } from '@/components/Common/PageReadiness';
+import { useTocViewport } from './Post/useTocViewport';
 
 interface BlogPostProps {
     initialContent?: PostContentResponse;
@@ -47,6 +48,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
     const [isCompactToc, setIsCompactToc] = useState(false);
     const postMainRef = useRef<HTMLDivElement | null>(null);
     const tocRef = useRef<HTMLElement | null>(null);
+    const floatingTocRef = useRef<HTMLDivElement | null>(null);
+    useTocViewport(tocRef, !isCompactToc && tocItems.length > 0);
+    useTocViewport(floatingTocRef, isCompactToc && tocItems.length > 0);
     const restoredScrollRef = useRef(false);
     const restoreScrollYRef = useRef<number | null>(null);
     const scrollStorageKey = slug
@@ -335,8 +339,11 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
             const gap = Number.parseFloat(gapValue) || 0;
             const tocWidth = tocRef.current?.getBoundingClientRect().width || 280;
             const minContentWidth = 760;
+            // NOTE: 1100px 以下右侧目录预留区被移除（见 CSS 媒体查询），统一使用悬浮目录；
+            //       更宽的视口再按剩余可用宽度判断，避免桌面目录与正文重叠。
+            const compactByViewport = window.innerWidth <= 1100;
             const available = rect.width - tocWidth - gap;
-            setIsCompactToc(available < minContentWidth);
+            setIsCompactToc(compactByViewport || available < minContentWidth);
         };
         const scheduleUpdate = () => {
             if (rafId) {
@@ -503,7 +510,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                 )}
             </div>
             {tocItems.length > 0 && isCompactToc && (
-                <div className={style.post_toc_container}>
+                <div ref={floatingTocRef} className={style.post_toc_container}>
                     <button
                         type="button"
                         className={`${style.post_toc_toggle} ${isTocOpen ? style.post_toc_toggle_open : ''}`}
@@ -511,6 +518,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                         aria-label={locale === 'zh-CN' ? '切换目录' : 'Toggle table of contents'}
                         aria-expanded={isTocOpen}
                         aria-controls="post-toc-panel"
+                        data-toc-toggle
                     >
                         <span className={style.post_toc_toggle_icon}>
                             {isTocOpen ? '×' : '☰'}
