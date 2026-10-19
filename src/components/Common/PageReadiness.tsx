@@ -88,7 +88,7 @@ export default function PageReadiness({ children }: { children: React.ReactNode 
                     </div>
                 </div>
             )}
-            <noscript><style>{'[data-page-ready] { visibility: visible !important; } [data-stream-state] { clip-path: none !important; opacity: 1 !important; } .page_readiness { display: none; }'}</style></noscript>
+            <noscript><style>{'[data-page-ready] { visibility: visible !important; } [data-stream-state] { clip-path: none !important; opacity: 1 !important; } [data-image-state] { opacity: 1 !important; transform: none !important; animation: none !important; } .page_readiness { display: none; }'}</style></noscript>
           </PageVisibleContext.Provider>
         </ReadinessContext.Provider>
     );

@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import PostImage from './PostImage';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -575,7 +575,7 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = React.memo(func
                 title,
             };
 
-            return <Image {...imageProps} alt={imageAlt} unoptimized />;
+            return <PostImage {...imageProps} alt={imageAlt} unoptimized />;
         },
         code({ inline, className, children, ...props }: { inline?: boolean; node?: unknown; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
             const match = /language-([^\s]+)/i.exec(className || '');

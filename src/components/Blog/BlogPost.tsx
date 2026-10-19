@@ -450,7 +450,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                             </div>
                         </nav>
                     )}
-                    <div className={style.post_content}>
+                    <div className={style.post_content} data-post-content>
                         {status === "Done" && articleContent ? (
                             <BlogPostMarkdown content={articleContent.content} locale={locale} />
                         ) : status === "Error" ? (

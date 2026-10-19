@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
 import styles from './MarkdownImageLightbox.module.css';
 import { resolveImageSharpenConfig } from './imageSharpenConfig';
+import PostImage from './PostImage';
 
 interface MarkdownImageLightboxProps {
     src: string;
@@ -419,7 +420,7 @@ const MarkdownImageLightbox: React.FC<MarkdownImageLightboxProps> = ({
 
     return (
         <>
-            <Image
+            <PostImage
                 ref={triggerRef}
                 src={src}
                 alt={alt}
