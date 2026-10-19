@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run generate-feeds",
+    "build": "npm run cache-friend-favicons && next build && npm run generate-feeds",
+    "cache-friend-favicons": "node scripts/cache-friend-favicons.mjs",
+    "test:friend-favicons": "node --test scripts/friend-favicons.test.mjs",
     "start": "next start",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",

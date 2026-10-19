@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import style from "./LinksCard.module.css"
 
 interface LinksCardProps {
@@ -16,6 +16,7 @@ interface LinksCardProps {
  * 点击卡片会在新标签页打开链接。
  */
 const LinksCard: React.FC<LinksCardProps> = ({ title, subtitle, link, avatar }) => {
+    const [failedSource, setFailedSource] = useState<string | null>(null);
     return (
         <div className={style.links_card_wrapper}>
             <div 
@@ -29,7 +30,7 @@ const LinksCard: React.FC<LinksCardProps> = ({ title, subtitle, link, avatar }) 
                     }
                 }}
             >
-                <Image className={style.links_card_avatar} src={avatar} alt={`${title}'s avatar`} width={48} height={48} unoptimized />
+                <Image className={style.links_card_avatar} src={failedSource === avatar ? '/friend-favicons/default.svg' : avatar} alt={`${title} 的图标`} width={48} height={48} unoptimized onError={() => setFailedSource(avatar)} />
                 <div className={style.links_card_content}>
                     <h1 className={style.links_card_title}>{title}</h1>
                     {subtitle && <p className={style.links_card_subtitle}>{subtitle}</p>}

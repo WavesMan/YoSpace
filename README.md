@@ -198,6 +198,8 @@ json格式形如：( `subtitle` 可留空)
 ]
 ```
 
+友链图标在 `pnpm build` 的首个步骤自动缓存，浏览器只读取本站静态资源。修改友链后，本地开发可运行 `pnpm cache-friend-favicons`；强制更新使用 `pnpm cache-friend-favicons --refresh`。缓存规则与失败回退见[友链图标缓存说明](docs/friend-favicons.zh-CN.md)。
+
 ### 个人社交链接管理
 
 访问文件 `src\data\socialLinks.json` 修改 `json` 内容控制

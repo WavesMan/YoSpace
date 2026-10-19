@@ -1,5 +1,6 @@
 import socialLinksData from './data/socialLinks.json';
 import friendLinksData from './data/friendLinks.json';
+import friendFavicons from './data/friendFavicons.json';
 
 export const profile: Profile = {
     sitename: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
@@ -10,7 +11,12 @@ export const profile: Profile = {
     socialLinks: socialLinksData
 };
 
-export const links: LinkItem[] = friendLinksData;
+const faviconManifest = friendFavicons as Record<string, { path: string }>;
+const friendSources: Array<Omit<LinkItem, 'avatar'> & { avatar?: string }> = friendLinksData;
+export const links: LinkItem[] = friendSources.map(item => ({
+    ...item,
+    avatar: faviconManifest[item.avatar || item.link]?.path || '/friend-favicons/default.svg',
+}));
 
 export interface SocialLink {
     name: string;
