@@ -107,16 +107,14 @@ const getLocaleSnapshot = () => {
 
   return localeSnapshot;
 };
-const getLocaleServerSnapshot = () => DEFAULT_LOCALE;
-
-export const I18nProvider = ({ children }: { children: ReactNode }) => {
+export const I18nProvider = ({ children, initialLocale = DEFAULT_LOCALE }: { children: ReactNode; initialLocale?: Locale }) => {
   // 默认语言逻辑
   // 1. 检查环境变量 NEXT_PUBLIC_I18N
   // 2. 如果开启，检查 localStorage
   // 3. 检查 navigator.language
   // 4. 默认 zh-CN
 
-  const locale = useSyncExternalStore(subscribeLocale, getLocaleSnapshot, getLocaleServerSnapshot);
+  const locale = useSyncExternalStore(subscribeLocale, getLocaleSnapshot, () => isI18nEnabled() ? initialLocale : DEFAULT_LOCALE);
   const translations = useMemo(() => (locale === 'en-US' ? enUS : zhCN), [locale]);
   const flattenedTranslations = useMemo(() => {
     return flattenObject(translations as unknown as Record<string, unknown>);

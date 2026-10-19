@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/Common/Header/Header";
 import ClientShell from "@/components/Common/ClientShell";
 import { I18nProvider } from "@/context/I18nContext";
+import PageReadiness from "@/components/Common/PageReadiness";
+import { resolveRequestLocale } from '@/utils/requestLocale';
 
 const themeInitScript = `
   (() => {
@@ -129,13 +131,7 @@ export default async function RootLayout({
   const savedLocale = cookieStore.get('locale')?.value;
   const requestHeaders = await headers();
   const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-  const htmlLang = savedLocale === 'en-US'
-    ? 'en-US'
-    : savedLocale === 'zh-CN'
-      ? 'zh-CN'
-      : acceptLang.startsWith('en')
-        ? 'en-US'
-        : 'zh-CN';
+  const htmlLang = resolveRequestLocale(savedLocale, acceptLang);
   const rssFeedPath = process.env.NEXT_PUBLIC_RSS_FEED_PATH || "/feeds/rss.xml";
   const atomFeedPath = process.env.NEXT_PUBLIC_ATOM_FEED_PATH || "/feeds/atom.xml";
 
@@ -148,12 +144,14 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <I18nProvider>
+        <I18nProvider initialLocale={htmlLang}>
+          <PageReadiness>
           <Header />
           <main style={{ minHeight: '100vh' }}>
             {children}
           </main>
           <ClientShell />
+          </PageReadiness>
         </I18nProvider>
       </body>
     </html>

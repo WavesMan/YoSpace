@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-
-const Footer = dynamic(() => import("@/components/Common/Footer/Footer"), {
-  ssr: false,
-  loading: () => null,
-});
+import Footer from "@/components/Common/Footer/Footer";
 
 const MusicPlayer = dynamic(() => import("@/components/MusicPlayer/MusicPlayer"), {
   ssr: false,
@@ -161,6 +157,11 @@ const ClientShell = () => {
      * @returns void
      */
     pendingCountRef.current = 0;
+    // 文章页由真实组件就绪状态控制展示，不能用固定的 620ms 判断完成。
+    if (/^\/blog\/[^/]+\/?$/.test(pathname)) {
+      window.dispatchEvent(new CustomEvent("app-transition-end"));
+      return;
+    }
     window.dispatchEvent(new CustomEvent("app-transition-start"));
     if (routeEndTimerRef.current) {
       window.clearTimeout(routeEndTimerRef.current);

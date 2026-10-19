@@ -1,8 +1,9 @@
 import BlogPost from '@/components/Blog/BlogPost';
 import { Metadata } from 'next';
-import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
+import { getLocalPostContent, getAllLocalPostSlugs, getLocalPostsList } from '@/utils/content/local';
 import { buildUrl, seoConfig } from '@/utils/seo';
 import { cookies, headers } from 'next/headers';
+import { resolveRequestLocale } from '@/utils/requestLocale';
 
 // ISR: 每小时重新验证一次
 export const revalidate = 3600;
@@ -36,11 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const savedLocale = cookieStore.get('locale')?.value;
     const requestHeaders = await headers();
     const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
-        ? savedLocale
-        : acceptLang.startsWith('en')
-            ? 'en-US'
-            : 'zh-CN';
+    const uiLocale = resolveRequestLocale(savedLocale, acceptLang);
     const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
     const canonical = buildUrl(`/blog/${encodeURIComponent(slug)}`);
     const ogImages = seoConfig.defaultOgImage ? [buildUrl(seoConfig.defaultOgImage)] : undefined;
@@ -121,13 +118,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     const savedLocale = cookieStore.get('locale')?.value;
     const requestHeaders = await headers();
     const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
-        ? savedLocale
-        : acceptLang.startsWith('en')
-            ? 'en-US'
-            : 'zh-CN';
+    const uiLocale = resolveRequestLocale(savedLocale, acceptLang);
     const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
     let initialContent;
+    const relatedEnabled = process.env.NEXT_PUBLIC_BLOG_SERIES_ENABLED !== 'false' || process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false';
+    const relatedLimit = Number.parseInt(process.env.NEXT_PUBLIC_BLOG_RELATED_LIMIT || '50', 10) || 50;
+    const relatedPromise = relatedEnabled
+        ? getLocalPostsList(0, relatedLimit, locale).then(data => data.items).catch(() => [])
+        : Promise.resolve([]);
     
     try {
         initialContent = await getLocalPostContent(slug, locale);
@@ -139,8 +137,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     // 渲染博客文章组件
     return (
         <BlogPost 
+            key={`${slug}:${locale}`}
             initialContent={initialContent} 
             initialLocale={locale} 
+            initialRelatedPosts={await relatedPromise}
         />
     );
 }

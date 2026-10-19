@@ -1,4 +1,4 @@
-@import url('https://fonts.loli.net/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+/* 优先使用本机等宽字体，避免外部字体 CSS 阻塞样式与首屏绘制。 */
 
 :root {
 
@@ -50,7 +50,7 @@
 
     /* 字体变量 */
     --font-family-main: "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", sans-serif;
-    --font-family-mono: "Roboto Mono", "Courier New", "Courier", monospace;
+    --font-family-mono: "Roboto Mono", "Cascadia Code", "Consolas", "Courier New", monospace;
     --font-size-page-title: 58px;
     --font-size-large: 32px;
     --font-size-medium: 24px;
@@ -176,6 +176,16 @@ body {
 a {
     text-decoration: none;
     color: inherit;
+}
+
+.page_readiness {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg);
 }
 
 .app_transition {

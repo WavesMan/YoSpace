@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import style from "./Footer.module.css";
+import { usePageVisible } from '../PageReadiness';
 
 /**
  * 底部页脚组件
@@ -16,6 +17,7 @@ import style from "./Footer.module.css";
  */
 const Footer = () => {
     const pathname = usePathname();
+    const pageVisible = usePageVisible();
     const [footerLyric, setFooterLyric] = useState<{
         line: string;
         nextLine: string;
@@ -50,7 +52,7 @@ const Footer = () => {
         return () => {
             window.removeEventListener('resize', measure);
         };
-    }, [pathname]);
+    }, [pathname, pageVisible]);
 
     /**
      * 监听播放器歌词事件，同步页脚显示

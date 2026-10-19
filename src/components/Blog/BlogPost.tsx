@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import style from './BlogPost.module.css';
@@ -9,11 +9,13 @@ import { useI18n } from '@/context/I18nContext';
 import type { PostContentResponse, PostItem } from '@/utils/content/local';
 import { BlogPostMarkdown } from './Post/BlogPostMarkdown';
 import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
-import { extractTocFromMarkdown, type TocItem } from './Post/markdownUtils';
+import { extractTocFromMarkdown } from './Post/markdownUtils';
+import { usePageReadyTask, usePageVisible } from '@/components/Common/PageReadiness';
 
 interface BlogPostProps {
     initialContent?: PostContentResponse;
     initialLocale?: string;
+    initialRelatedPosts?: PostItem[];
 }
 
 /**
@@ -24,26 +26,27 @@ interface BlogPostProps {
  * 支持服务端预渲染注入的初始内容，避免首屏重复请求。
  * 使用 ReactMarkdown 渲染 Markdown，并对链接、图片与代码块做安全与样式增强。
  */
-const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) => {
+const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, initialRelatedPosts }) => {
     // 获取路由参数
     const params = useParams();
     const slug = params?.slug as string;
     const { t, locale } = useI18n();
+    const pageVisible = usePageVisible();
 
     const [status, setStatus] = useState<"Loading" | "Error" | "Done">(
         initialContent ? "Done" : "Loading"
     );
     const [articleContent, setArticleContent] = useState<PostContentResponse | null>(initialContent || null);
     const [errorMsg, setErrorMsg] = useState<string>("");
-    const [seriesPosts, setSeriesPosts] = useState<PostItem[]>([]);
-    const [recommendPosts, setRecommendPosts] = useState<PostItem[]>([]);
-    const [tocItems, setTocItems] = useState<TocItem[]>([]);
+    const [seriesPosts, setSeriesPosts] = useState<PostItem[]>(() => initialRelatedPosts?.filter(item => item.series && item.series.id === initialContent?.series?.id) || []);
+    const [recommendPosts, setRecommendPosts] = useState<PostItem[]>(() => initialRelatedPosts?.filter(item => item.isRecommended && item.slug !== slug).slice(0, 4) || []);
+    const tocItems = useMemo(() => extractTocFromMarkdown(articleContent?.content || ''), [articleContent?.content]);
     const [isTocOpen, setIsTocOpen] = useState(false);
-    const [isDeferredReady, setIsDeferredReady] = useState(false);
+    const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
+    usePageReadyTask(status === 'Loading');
     const [isCompactToc, setIsCompactToc] = useState(false);
     const postMainRef = useRef<HTMLDivElement | null>(null);
     const tocRef = useRef<HTMLElement | null>(null);
-    const loadingStateRef = useRef(false);
     const restoredScrollRef = useRef(false);
     const restoreScrollYRef = useRef<number | null>(null);
     const scrollStorageKey = slug
@@ -62,9 +65,6 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         if (typeof window === 'undefined') return;
         window.dispatchEvent(new CustomEvent("app-transition-start"));
     };
-
-    // NOTE: 通过标记首渲染，在有服务端初始内容时避免重复请求
-    const isFirstRender = useRef(true);
 
     /**
      * NOTE: 将 ISO 时间字符串转换为本地化日期文案
@@ -86,18 +86,15 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     };
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchData = async () => {
             // NOTE: 将上下文中的语言映射为内容文件使用的语言标识
             const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
 
-            if (isFirstRender.current) {
-                isFirstRender.current = false;
-                // 如果有初始内容，且语言匹配，则跳过
-                if (initialContent) {
-                    if (initialLocale === queryLocale || (initialLocale === 'en' && queryLocale === 'en')) {
-                        return;
-                    }
-                }
+            if (initialContent && initialLocale === queryLocale) {
+                setArticleContent(initialContent);
+                setStatus('Done');
+                return;
             }
 
             try {
@@ -110,14 +107,16 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                 
                 setStatus("Loading");
                 // NOTE: 通过 API Route 访问本地 Markdown 文章内容
-                const response = await fetch(`/api/blog/post?slug=${encodeURIComponent(slug)}&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/post?slug=${encodeURIComponent(slug)}&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch post: ${response.status}`);
                 }
                 const res = await response.json();
+                if (controller.signal.aborted) return;
                 setArticleContent(res as PostContentResponse);
                 setStatus("Done");
             } catch (error) {
+                if (controller.signal.aborted) return;
                 console.error('Error fetching blog post:', error);
                 setStatus("Error");
                 // NOTE: 对用户只展示统一错误提示，隐藏服务端具体异常信息，防止后端信息泄露
@@ -126,22 +125,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
         };
         
         fetchData();
+        return () => controller.abort();
     }, [slug, locale, initialContent, initialLocale, t]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (status === "Loading") {
-            if (!loadingStateRef.current) {
-                loadingStateRef.current = true;
-                window.dispatchEvent(new CustomEvent("app-transition-start"));
-            }
-            return;
-        }
-        if (loadingStateRef.current) {
-            loadingStateRef.current = false;
-        }
-        window.dispatchEvent(new CustomEvent("app-transition-end"));
-    }, [status]);
 
     /**
      * 重置详情页滚动恢复状态，避免跨文章误恢复。
@@ -219,12 +204,12 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (status !== "Done") return;
-        if (!isDeferredReady) return;
+        if (!pageVisible) return;
         if (restoredScrollRef.current) return;
         if (restoreScrollYRef.current === null) return;
         restoredScrollRef.current = true;
         window.scrollTo({ top: restoreScrollYRef.current, behavior: "auto" });
-    }, [isDeferredReady, status]);
+    }, [status, pageVisible]);
 
     const showCategory = process.env.NEXT_PUBLIC_BLOG_CATEGORY_ENABLED !== 'false';
     const showTags = process.env.NEXT_PUBLIC_BLOG_TAGS_ENABLED !== 'false';
@@ -268,20 +253,30 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
     };
 
     useEffect(() => {
-        const shouldLoadRelated = status === 'Done' && articleContent && isDeferredReady;
+        const shouldLoadRelated = status === 'Done' && articleContent;
         if (!shouldLoadRelated) {
             return;
         }
+
+        if (initialRelatedPosts && initialLocale === queryLocale) {
+            setSeriesPosts(initialRelatedPosts.filter(item => item.series && item.series.id === articleContent.series?.id));
+            setRecommendPosts(initialRelatedPosts.filter(item => item.isRecommended && item.slug !== slug).slice(0, 4));
+            return;
+        }
+        const controller = new AbortController();
+        let active = true;
+        const timeout = window.setTimeout(() => controller.abort(), 8000);
 
         const loadRelated = async () => {
             const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
             const limit = Number.parseInt(process.env.NEXT_PUBLIC_BLOG_RELATED_LIMIT || '50', 10) || 50;
             try {
-                const response = await fetch(`/api/blog/list?offset=0&limit=${encodeURIComponent(String(limit))}&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/list?offset=0&limit=${encodeURIComponent(String(limit))}&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     return;
                 }
                 const data = await response.json() as { items?: PostItem[] };
+                if (!active) return;
                 const items = Array.isArray(data.items) ? data.items : [];
 
                 if (showSeries && articleContent.series) {
@@ -315,36 +310,17 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     setRecommendPosts([]);
                 }
             } catch {
+                if (!active) return;
+                setSeriesPosts([]);
+                setRecommendPosts([]);
+            } finally {
+                clearTimeout(timeout);
             }
         };
 
         loadRelated();
-    }, [status, articleContent, locale, slug, showSeries, isDeferredReady]);
-
-    useEffect(() => {
-        if (!isDeferredReady) {
-            setTocItems([]);
-            return;
-        }
-        if (articleContent?.content) {
-            setTocItems(extractTocFromMarkdown(articleContent.content));
-        } else {
-            setTocItems([]);
-        }
-    }, [articleContent, isDeferredReady]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const schedule = (callback: () => void) => {
-            if (typeof window.requestIdleCallback === 'function') {
-                const idleId = window.requestIdleCallback(() => callback(), { timeout: 1200 });
-                return () => window.cancelIdleCallback(idleId);
-            }
-            const timer = window.setTimeout(callback, 200);
-            return () => window.clearTimeout(timer);
-        };
-        return schedule(() => setIsDeferredReady(true));
-    }, []);
+        return () => { active = false; controller.abort(); clearTimeout(timeout); };
+    }, [status, articleContent, locale, slug, showSeries, initialRelatedPosts, initialLocale, queryLocale]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -445,7 +421,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     </div>
                 )}
                 <div className={style.post_main} ref={postMainRef}>
-                    {isDeferredReady && tocItems.length > 0 && !isCompactToc && (
+                    {tocItems.length > 0 && !isCompactToc && (
                         <nav
                             ref={tocRef}
                             className={style.post_toc}
@@ -501,7 +477,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         }
                     </div>
                 </div>
-                {isDeferredReady && showSeries && articleContent?.series && seriesPosts.length > 1 && (
+                {showSeries && articleContent?.series && seriesPosts.length > 1 && (
                     <section className={style.post_series_section}>
                         <h2 className={style.post_series_title}>{t('Blog.Series')}</h2>
                         <ul className={style.post_series_list}>
@@ -513,7 +489,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                         </ul>
                     </section>
                 )}
-                {isDeferredReady && process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false' && recommendPosts.length > 0 && (
+                {process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false' && recommendPosts.length > 0 && (
                     <section className={style.post_recommend_section}>
                         <h2 className={style.post_recommend_title}>{t('Blog.Recommend')}</h2>
                         <ul className={style.post_recommend_list}>
@@ -526,7 +502,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale }) =>
                     </section>
                 )}
             </div>
-            {isDeferredReady && tocItems.length > 0 && isCompactToc && (
+            {tocItems.length > 0 && isCompactToc && (
                 <div className={style.post_toc_container}>
                     <button
                         type="button"
