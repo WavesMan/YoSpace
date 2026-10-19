@@ -54,7 +54,8 @@ export interface PostContentResponse {
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
 const CACHE_TTL_MS = 30000;
-const listCache = new Map<string, { data: PostListResponse; expiresAt: number }>();
+const listCache = new Map<string, { data: PostListResponse; expiresAt: number; signature: string }>();
+const metadataCache = new Map<string, { signature: string; data: ReturnType<typeof matter>['data'] }>();
 const postCache = new Map<string, { data: PostContentResponse; expiresAt: number }>();
 
 // NOTE: 从文件名中解析 slug 与语言，默认语言为 en
@@ -74,13 +75,8 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
 
     const safeOffset = Math.max(0, Math.floor(offset));
     const safeLimit = Math.max(1, Math.floor(limit));
-    const dirMtimeMs = fs.statSync(postsDirectory).mtimeMs;
-    const cacheKey = `${locale}|${safeOffset}|${safeLimit}|${dirMtimeMs}`;
     const now = Date.now();
-    const cached = listCache.get(cacheKey);
-    if (cached && cached.expiresAt > now) {
-        return cached.data;
-    }
+    const paginate = (data: PostListResponse) => ({ ...data, items: data.items.slice(safeOffset, safeOffset + safeLimit) });
 
     const fileNames = fs.readdirSync(postsDirectory);
 
@@ -101,10 +97,26 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
         }
     });
 
+    const signatures = new Map(filteredFiles.map(fileName => {
+        const stat = fs.statSync(path.join(postsDirectory, fileName));
+        return [fileName, `${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}`];
+    }));
+    const signature = JSON.stringify([...signatures]);
+    const cached = listCache.get(locale);
+    if (cached && cached.expiresAt > now && cached.signature === signature) return paginate(cached.data);
+    for (const cachedPath of metadataCache.keys()) {
+        if (!fs.existsSync(cachedPath)) metadataCache.delete(cachedPath);
+    }
     const allPostsData = filteredFiles.map(fileName => {
         const fullPath = path.join(postsDirectory, fileName);
-        const fileContents = fs.readFileSync(fullPath, 'utf8');
-        const { data } = matter(fileContents);
+        const fileSignature = signatures.get(fileName)!;
+        let entry = metadataCache.get(fullPath);
+        if (!entry || entry.signature !== fileSignature) {
+            const { data } = matter(fs.readFileSync(fullPath, 'utf8'));
+            entry = { signature: fileSignature, data };
+            metadataCache.set(fullPath, entry);
+        }
+        const { data } = entry;
         
         const { slug } = parseFileMetadata(fileName);
 
@@ -178,28 +190,21 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
     });
 
     // NOTE: offset 使用条目偏移量，避免将 offset 误当页码导致分页错位
-    const paginatedPosts = sortedPosts.slice(safeOffset, safeOffset + safeLimit);
 
     const response = {
-        items: paginatedPosts.map(({ dateObj, ...rest }) => {
+        items: sortedPosts.map(({ dateObj, ...rest }) => {
             void dateObj;
             return rest;
         }),
         total: sortedPosts.length,
         locale
     };
-    listCache.set(cacheKey, { data: response, expiresAt: now + CACHE_TTL_MS });
-    return response;
+    listCache.set(locale, { data: response, expiresAt: now + CACHE_TTL_MS, signature });
+    return paginate(response);
 };
 
 export const getLocalPostContent = async (slug: string, locale: string = 'en'): Promise<PostContentResponse> => {
-    const dirMtimeMs = fs.existsSync(postsDirectory) ? fs.statSync(postsDirectory).mtimeMs : 0;
-    const cacheKey = `${slug}|${locale}|${dirMtimeMs}`;
     const now = Date.now();
-    const cached = postCache.get(cacheKey);
-    if (cached && cached.expiresAt > now) {
-        return cached.data;
-    }
     const candidates: { fileName: string; locale: string }[] = [];
 
     if (locale === 'en') {
@@ -233,6 +238,11 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
     if (!selectedPath) {
         throw new Error(`Post not found: ${slug} (${locale})`);
     }
+
+    const stat = fs.statSync(selectedPath);
+    const cacheKey = `${slug}|${locale}|${stat.mtimeMs}|${stat.ctimeMs}|${stat.size}`;
+    const cached = postCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) return cached.data;
 
     const fileContents = fs.readFileSync(selectedPath, 'utf8');
     const { data, content } = matter(fileContents);
@@ -298,6 +308,7 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
         tags,
         series: fm.series as PostSeries | undefined
     };
+    if (postCache.size >= 64) postCache.clear();
     postCache.set(cacheKey, { data: response, expiresAt: now + CACHE_TTL_MS });
     return response;
 };

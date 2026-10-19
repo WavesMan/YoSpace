@@ -1,3 +1,4 @@
+import { getInitialPosts } from '@/utils/content/initialPosts';
 import { Metadata } from "next";
 import Archive from "@/components/Blog/Archive";
 
@@ -8,7 +9,8 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
-export default function ArchivePage() {
-    return <Archive />;
+export default async function ArchivePage() {
+    const initial = await getInitialPosts();
+    return <Archive {...initial} />;
 }
 

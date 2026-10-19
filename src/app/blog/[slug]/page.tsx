@@ -1,6 +1,8 @@
 import BlogPost from '@/components/Blog/BlogPost';
 import { Metadata } from 'next';
-import { getLocalPostContent, getAllLocalPostSlugs, getLocalPostsList } from '@/utils/content/local';
+import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
+import { Suspense } from 'react';
+import RelatedPosts from '@/components/Blog/Post/RelatedPosts';
 import { buildUrl, seoConfig } from '@/utils/seo';
 import { cookies, headers } from 'next/headers';
 import { resolveRequestLocale } from '@/utils/requestLocale';
@@ -122,10 +124,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
     let initialContent;
     const relatedEnabled = process.env.NEXT_PUBLIC_BLOG_SERIES_ENABLED !== 'false' || process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false';
-    const relatedLimit = Number.parseInt(process.env.NEXT_PUBLIC_BLOG_RELATED_LIMIT || '50', 10) || 50;
-    const relatedPromise = relatedEnabled
-        ? getLocalPostsList(0, relatedLimit, locale).then(data => data.items).catch(() => [])
-        : Promise.resolve([]);
     
     try {
         initialContent = await getLocalPostContent(slug, locale);
@@ -140,7 +138,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             key={`${slug}:${locale}`}
             initialContent={initialContent} 
             initialLocale={locale} 
-            initialRelatedPosts={await relatedPromise}
+            relatedSlot={relatedEnabled && initialContent ? <Suspense fallback={null}><RelatedPosts slug={slug} locale={locale} seriesId={initialContent.series?.id} /></Suspense> : undefined}
         />
     );
 }

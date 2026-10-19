@@ -1,3 +1,4 @@
+import { getInitialPosts } from '@/utils/content/initialPosts';
 import { Metadata } from "next";
 import CategoriesPage from "@/components/Blog/CategoriesPage";
 
@@ -8,7 +9,8 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
-export default function CategoriesRoutePage() {
-    return <CategoriesPage />;
+export default async function CategoriesRoutePage() {
+    const initial = await getInitialPosts();
+    return <CategoriesPage {...initial} />;
 }
 
