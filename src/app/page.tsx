@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from '@/components/Common/TransitionLink';
+import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Profile from "@/components/Profile/Profile";
 import BlogCard from "@/components/Blog/BlogCard";
 import profileStyles from "@/components/Profile/Profile.module.css";
@@ -111,6 +112,7 @@ export default function Home() {
 
     const isSearchPage = activePageId === "search";
     const isSiteEngine = engineId === "site";
+    usePageReadyTask(isSearchPage && isSiteEngine && status === "Loading");
     const navigationItems = navigationData as NavigationItem[];
 
     useEffect(() => {
@@ -211,7 +213,7 @@ export default function Home() {
         }
         transitionTimerRef.current = window.setTimeout(() => {
             transitionLockRef.current = false;
-        }, 600);
+        }, 200);
     }, [activePageId]);
 
     useEffect(() => {
@@ -372,7 +374,7 @@ export default function Home() {
                                     />
                                 </form>
                                 {isSiteEngine && status === "Loading" && (
-                                    <div className={`${styles.home_tip_loading} ${styles.home_search_status_animated}`}>{t("Status.Loading")}</div>
+                                    null
                                 )}
                                 {isSiteEngine && status === "Error" && (
                                     <div className={`${styles.home_tip_error} ${styles.home_search_status_animated}`}>{t("Status.Error")}</div>

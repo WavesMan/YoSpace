@@ -40,7 +40,7 @@ const PostImage = forwardRef<HTMLImageElement, ImageProps>(function PostImage({ 
             });
             const index = Math.max(0, visible.indexOf(element));
             // 只对同时进入视口的图片轻微错峰，不累计整篇文章的等待时间。
-            element.style.setProperty('--image-enter-delay', `${Math.min(index, 3) * 80}ms`);
+            element.style.setProperty('--image-enter-delay', `${Math.min(index, 3) * 20}ms`);
             setState(previous => previous.source === source ? { ...previous, entered: true } : previous);
         }, '0px');
     }, [source, pageVisible]);

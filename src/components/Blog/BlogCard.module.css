@@ -11,27 +11,16 @@
 
 .blog_card_container {
     composes: interactive from '../Common/CardSurface.module.css';
-    opacity: 0;
+    opacity: 1;
     padding: 1rem 2.5rem;
     background-color: var(--color-bg-card);
     max-width: 960px;
     width: 100%;
     min-width: 0;
     overflow-wrap: anywhere;
-    animation: blog_card_fadeIn 0.5s ease forwards;
+
 }
 
-@keyframes blog_card_fadeIn {
-    0% {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
 .blog_card_title {
     font-size: var(--font-size-medium);

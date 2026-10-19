@@ -1,41 +1,12 @@
-.streaming_text {
-    position: relative;
-}
-
 .streaming_text[data-stream-variant='code'],
 .streaming_text[data-stream-variant='diagram'] {
-    min-width: 0;
-    max-width: 100%;
+    opacity: 1;
+    transition: opacity 0.2s ease;
 }
 
-.streaming_text[data-stream-variant='diagram'] {
-    width: 100%;
-    transition: opacity 200ms ease;
-}
-
-.streaming_text[data-stream-variant='diagram'][data-stream-state='pending'] { opacity: 0; }
-
-/* 裁切只影响绘制，完整文本和排版高度始终保留，复制与读屏无需逐字等待。 */
-.streaming_text[data-stream-state='pending'] {
-    clip-path: inset(0 0 100% 0);
-}
-
-.streaming_text:not([data-stream-variant='diagram'])[data-stream-state='playing']::after {
-    content: '';
-    position: absolute;
-    left: var(--stream-x, 0px);
-    top: var(--stream-y, 0px);
-    height: var(--stream-caret-height, 1em);
-    width: 2px;
-    background: var(--color-accent-solid);
-    pointer-events: none;
-}
+.streaming_text[data-stream-state='pending'][data-stream-variant='code'],
+.streaming_text[data-stream-state='pending'][data-stream-variant='diagram'] { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce), print {
-    .streaming_text[data-stream-state] {
-        clip-path: none !important;
-        opacity: 1 !important;
-        transition: none !important;
-    }
-    .streaming_text::after { display: none; }
+    .streaming_text[data-stream-state] { opacity: 1; transition: none; }
 }

@@ -1,6 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { FaGithub, FaBilibili, FaBluesky } from 'react-icons/fa6';
+import { BsTwitterX } from 'react-icons/bs';
+import { MdEmail } from 'react-icons/md';
+
+// 默认社交图标静态按名称引入，避免首屏下载整个动态图标集合。
+const commonIcons: Record<string, React.ElementType> = {
+    'fa6:FaGithub': FaGithub, 'fa6:FaBilibili': FaBilibili, 'fa6:FaBluesky': FaBluesky,
+    'bs:BsTwitterX': BsTwitterX, 'md:MdEmail': MdEmail,
+};
 
 interface DynamicIconProps extends React.ComponentProps<'svg'> {
     packageName: string;
@@ -9,9 +18,10 @@ interface DynamicIconProps extends React.ComponentProps<'svg'> {
 
 const DynamicIcon: React.FC<DynamicIconProps> = ({ packageName, iconName, ...props }) => {
     const [Icon, setIcon] = useState<React.ElementType | null>(null);
+    const StaticIcon = commonIcons[`${packageName}:${iconName}`];
 
     useEffect(() => {
-        if (!packageName || !iconName) return;
+        if (StaticIcon || !packageName || !iconName) return;
 
         let isMounted = true;
 
@@ -75,13 +85,14 @@ const DynamicIcon: React.FC<DynamicIconProps> = ({ packageName, iconName, ...pro
         return () => {
             isMounted = false;
         };
-    }, [packageName, iconName]);
+    }, [packageName, iconName, StaticIcon]);
 
-    if (!Icon) {
-        return null;
+    const ResolvedIcon = StaticIcon || Icon;
+    if (!ResolvedIcon) {
+        return <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" {...props}><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="2" /></svg>;
     }
 
-    return <Icon {...props} />;
+    return <ResolvedIcon {...props} />;
 };
 
 export default DynamicIcon;

@@ -1,16 +1,15 @@
 .image[data-image-state='pending'] {
     opacity: 0;
-    transform: translateX(-16px);
 }
 
 .image[data-image-state='entering'] {
-    animation: postImageEnter 0.8s ease-out both;
+    animation: postImageEnter 0.2s ease-out both;
     animation-delay: var(--image-enter-delay, 0ms);
 }
 
 @keyframes postImageEnter {
-    from { opacity: 0; transform: translateX(-16px); }
-    to { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce), print {

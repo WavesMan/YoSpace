@@ -16,7 +16,6 @@ const Profile = () => {
     const { t, locale } = useI18n();
 
     const [nameClicked, setNameClicked] = useState(0)
-    const [isLoaded] = useState(true)
     const profileName = useRef<HTMLHeadingElement | null>(null)
 
     const isEn = locale === 'en-US';
@@ -59,7 +58,7 @@ const Profile = () => {
                     />
                 </div>
                 <div className={style.profile_content_wrapper}>
-                    <div className={`${style.profile_info_wrapper} ${isLoaded ? style.profile_info_wrapper_animated : ""}`}>
+                    <div className={style.profile_info_wrapper}>
                         <h1 
                             className={style.profile_info_name} 
                             ref={profileName} 
@@ -77,8 +76,7 @@ const Profile = () => {
                                 href={item.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`${style.profile_social_item} ${isLoaded ? style.profile_social_item_animated : ""}`}
-                                style={isLoaded ? { animationDelay: `${0.6 + index * 0.08}s` } : undefined}
+                                className={style.profile_social_item}
                                 aria-label={item.name}
                             >
                                 {item.iconUrl ? (

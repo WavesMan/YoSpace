@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/Common/TransitionLink';
 import PostImage from './PostImage';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
@@ -217,7 +217,8 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
             <div ref={setWrapperRef} className={style.md_mermaid_placeholder}
                 aria-busy={entered && !hasError} data-diagram-pending={entered && !hasError}
                 data-lazy-diagram={hasError ? 'error' : entered ? 'loading' : 'idle'}>
-                <p role="status">{hasError ? '图表加载失败，以下为源代码。' : entered ? '正在加载图表…' : '图表将在接近阅读位置时加载'}</p>
+                {hasError ? <p role="alert">图表加载失败，以下为源代码。</p>
+                    : <span className="page_transition_mark" role="status" aria-label="正在准备图表" style={{ display: 'block', margin: '1.5rem auto' }} />}
                 <details open={hasError}>
                     <summary>查看图表源码</summary>
                     <PlainCodeBlock language="mermaid" value={code} />
@@ -471,7 +472,7 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = React.memo(func
             }
             return <pre>{children}</pre>;
         },
-        p({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
+        p({ children, node: _node, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { node?: unknown }) {
             if (hasVercelButtonChild(children)) {
                 const items = React.Children.toArray(children);
                 const buttonIndex = items.findIndex((child) => {
@@ -482,26 +483,26 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = React.memo(func
 
                 if (buttonIndex >= 0) {
                     return (
-                        <StreamingText {...props}>
+                        <p {...props}>
                             {items.slice(0, buttonIndex)}
                             <br />
                             <span className={style.md_inline_indent}>
                                 {items[buttonIndex]}
                             </span>
                             {items.slice(buttonIndex + 1)}
-                        </StreamingText>
+                        </p>
                     );
                 }
             }
 
             return (
-                <StreamingText {...props}>
+                <p {...props}>
                     {children}
-                </StreamingText>
+                </p>
             );
         },
-        li({ children, ...props }) {
-            return <StreamingText as="li" {...props}>{children}</StreamingText>;
+        li({ children, node: _node, ...props }) {
+            return <li {...props}>{children}</li>;
         },
         a({ href, children, target, rel, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) {
             const nextHref = href || '';
