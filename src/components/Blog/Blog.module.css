@@ -114,7 +114,7 @@
     width: 100%;
     max-width: 960px;
     position: relative;
-    padding-left: 1.5rem;
+    padding-inline: 1.5rem;
     box-sizing: border-box;
 }
 
@@ -145,8 +145,25 @@
 }
 
 .blog_archive_year_body {
-    border-left: 1px solid rgba(148, 163, 184, 0.35);
-    padding-left: 1.5rem;
+    position: relative;
+    padding-inline: 1rem;
+    min-width: 0;
+}
+
+.blog_archive_year_body::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 1px;
+    background: rgba(148, 163, 184, 0.35);
+    pointer-events: none;
+}
+
+.blog_card_wrapper {
+    width: 100%;
+    max-width: 992px;
+    min-width: 0;
+    margin-inline: auto;
 }
 
 .blog_archive_month_block {
@@ -335,6 +352,12 @@
 }
 
 @media (max-width: 768px) {
+    .blog_archive_timeline,
+    .blog_archive_year_body {
+        padding-inline: 0;
+    }
+
+    .blog_archive_month_header { padding-left: 1.5rem; }
     .blog_container {
         margin-top: 40px;
         margin-bottom: 6rem;
