@@ -1,33 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from '@/components/Common/TransitionLink';
-import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Profile from "@/components/Profile/Profile";
 import BlogCard from "@/components/Blog/BlogCard";
 import profileStyles from "@/components/Profile/Profile.module.css";
 import { useI18n } from "@/context/I18nContext";
-import type { PostCategory, PostSeries } from "@/utils/content/local";
+import { useHomeSearchIndex } from "@/components/Home/useHomeSearchIndex";
 import styles from "./Home.module.css";
 import HomeTabs from "@/components/Home/HomeTabs";
 import navigationData from "@/data/navigation.json";
 
-interface SearchPostItem {
-    title: string;
-    description: string;
-    slug: string;
-    publishedTime: string;
-    isPinned?: boolean;
-    isRecommended?: boolean;
-    recommendRank?: number;
-    pinnedRank?: number;
-    category?: PostCategory;
-    tags?: string[];
-    series?: PostSeries;
-}
-
-type SearchStatus = "Idle" | "Loading" | "Error" | "Ready";
 type HomePageId = "profile" | "search";
 
 type NavigationLocaleText = {
@@ -98,8 +83,6 @@ type SearchEngineId = (typeof searchEngines)[number]["id"];
 export default function Home() {
     const { t, locale } = useI18n();
     const [activePageId, setActivePageId] = useState<HomePageId>("profile");
-    const [status, setStatus] = useState<SearchStatus>("Idle");
-    const [posts, setPosts] = useState<SearchPostItem[]>([]);
     const [query, setQuery] = useState("");
     const [engineId, setEngineId] = useState<SearchEngineId>("bing");
     const [isTabsExpanded, setIsTabsExpanded] = useState(true);
@@ -112,40 +95,17 @@ export default function Home() {
 
     const isSearchPage = activePageId === "search";
     const isSiteEngine = engineId === "site";
-    usePageReadyTask(isSearchPage && isSiteEngine && status === "Loading");
+    const { status, posts, retry } = useHomeSearchIndex(isSearchPage, locale === "zh-CN" ? "zh-CN" : "en");
+    const reduceMotion = useReducedMotion();
+    const transition = { duration: reduceMotion ? 0 : 0.18 };
+    const [committedQuery, setCommittedQuery] = useState("");
+    const composing = useRef(false);
     const navigationItems = navigationData as NavigationItem[];
 
-    useEffect(() => {
-        if (!isSearchPage || !isSiteEngine) return;
-        const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
-        let isActive = true;
-        const fetchAll = async () => {
-            try {
-                setStatus("Loading");
-                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch posts: ${response.status}`);
-                }
-                const data = await response.json();
-                if (!isActive) return;
-                setPosts(Array.isArray(data.items) ? data.items : []);
-                setStatus("Ready");
-            } catch (error) {
-                if (!isActive) return;
-                console.error("Search index fetch error:", error);
-                setStatus("Error");
-            }
-        };
-        fetchAll();
-        return () => {
-            isActive = false;
-        };
-    }, [isSearchPage, isSiteEngine, locale]);
-
     const results = useMemo(() => {
-        const trimmed = query.trim();
+        const trimmed = committedQuery.trim();
         if (!trimmed || !isSiteEngine) {
-            return [] as SearchPostItem[];
+            return [];
         }
         const keyword = normalize(trimmed);
         return posts.filter(item => {
@@ -157,7 +117,7 @@ export default function Home() {
             if (tagsText.includes(keyword)) return true;
             return false;
         });
-    }, [posts, query, isSiteEngine]);
+    }, [posts, committedQuery, isSiteEngine]);
 
     const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -219,7 +179,7 @@ export default function Home() {
     useEffect(() => {
         const handleWheel = (event: WheelEvent) => {
             const target = event.target as HTMLElement | null;
-            if (target?.closest(`.${styles.home_navigation_panel}`)) {
+            if (target?.closest(`.${styles.home_search_body}`)) {
                 return;
             }
             if (target?.closest('[data-player-root="true"]')) {
@@ -242,7 +202,7 @@ export default function Home() {
         const handleTouchStart = (event: TouchEvent) => {
             const target = event.target as HTMLElement | null;
             touchIgnoreRef.current = Boolean(
-                target?.closest(`.${styles.home_navigation_panel}`)
+                target?.closest(`.${styles.home_search_body}`)
                 || target?.closest('[data-player-root="true"]')
                 || (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable))
             );
@@ -290,6 +250,7 @@ export default function Home() {
 
         const handleKeyDown = (event: KeyboardEvent) => {
             const target = event.target as HTMLElement | null;
+            if (target?.closest(`.${styles.home_search_body}`)) return;
             if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
                 return;
             }
@@ -344,10 +305,11 @@ export default function Home() {
                     )}
 
                     {activePageId === "search" && (
-                        <div className={`${styles.home_page} ${styles.home_page_animate}`} key="search">
+                        <div className={`${styles.home_page} ${styles.home_page_search} ${styles.home_page_animate}`} key="search">
                             <div className={styles.home_search_section}>
                                 <h1 className={`${styles.home_title} ${styles.home_search_title_animated}`}>{t("Search.Title")}</h1>
                                 <form className={`${styles.home_search_bar} ${styles.home_search_bar_animated}`} aria-label={t("Search.InputLabel")} onSubmit={handleSearchSubmit}>
+                                    <LayoutGroup id="home-search-engines">
                                     <div className={styles.home_search_engine_group} role="radiogroup" aria-label={t("Search.Engine.Label")}>
                                         {searchEngines.map(engine => {
                                             const isActive = engineId === engine.id;
@@ -360,33 +322,54 @@ export default function Home() {
                                                     className={isActive ? styles.home_search_engine_button_active : styles.home_search_engine_button}
                                                     onClick={() => setEngineId(engine.id)}
                                                 >
-                                                    {"labelKey" in engine ? t(engine.labelKey) : engine.label}
+                                                    {isActive && <motion.span aria-hidden="true" className={styles.home_search_engine_indicator} layoutId="selected-engine" transition={transition} />}
+                                                    <span className={styles.home_search_engine_label}>{"labelKey" in engine ? t(engine.labelKey) : engine.label}</span>
                                                 </button>
                                             );
                                         })}
                                     </div>
+                                    </LayoutGroup>
                                     <input
                                         className={styles.home_search_input}
                                         type="search"
                                         value={query}
-                                        onChange={event => setQuery(event.target.value)}
+                                        onChange={event => {
+                                            setQuery(event.target.value);
+                                            if (!composing.current) setCommittedQuery(event.target.value);
+                                        }}
+                                        onCompositionStart={() => { composing.current = true; }}
+                                        onCompositionEnd={event => {
+                                            composing.current = false;
+                                            setCommittedQuery(event.currentTarget.value);
+                                        }}
                                         placeholder={t("Search.Placeholder")}
                                     />
                                 </form>
-                                {isSiteEngine && status === "Loading" && (
-                                    null
-                                )}
-                                {isSiteEngine && status === "Error" && (
-                                    <div className={`${styles.home_tip_error} ${styles.home_search_status_animated}`}>{t("Status.Error")}</div>
-                                )}
-                                {isSiteEngine && status === "Ready" && query.trim().length > 0 && results.length === 0 && (
-                                    <div className={`${styles.home_tip_empty} ${styles.home_search_status_animated}`}>{t("Search.NoResult")}</div>
-                                )}
-                                {isSiteEngine && status === "Ready" && results.length > 0 && (
-                                    <div className={`${styles.home_results} ${styles.home_results_animated}`}>
-                                        {results.map((post, index) => (
+                                <div className={styles.home_search_body}>
+                                <AnimatePresence initial={false} mode="wait">
+                                {isSiteEngine ? (
+                                    <motion.section key="site" className={styles.home_site_panel} aria-label={t("Search.Engine.Site")}
+                                        initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }} animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }} transition={transition}>
+                                    <div className={styles.home_search_summary} role="status" aria-live="polite" aria-atomic="true">
+                                        <AnimatePresence initial={false} mode="wait">
+                                            <motion.p key={`${status}:${committedQuery.trim() ? results.length : "empty"}`}
+                                                initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }} animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.1 }}>
+                                                {status === "Loading" ? t("Status.Loading") : status === "Error" ? t("Status.Error") :
+                                                    !committedQuery.trim() ? t("Search.Hint") : results.length === 0 ? t("Search.NoResult") :
+                                                        t("Search.ResultCount").replace("{count}", String(results.length))}
+                                            </motion.p>
+                                        </AnimatePresence>
+                                        {status === "Error" && <button type="button" onClick={retry}>{t("Search.Retry")}</button>}
+                                    </div>
+                                    <motion.div className={styles.home_results} layoutScroll aria-busy={status === "Loading"}>
+                                        <AnimatePresence initial={false} mode="popLayout">
+                                        {status === "Ready" && results.map(post => (
+                                            <motion.div key={post.slug} layout={reduceMotion ? false : "position"} data-search-result={post.slug}
+                                                initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }} animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0 }} transition={transition}>
                                             <BlogCard
-                                                key={post.slug}
                                                 articleId={post.slug}
                                                 articleTitle={post.title}
                                                 articleDescription={post.description}
@@ -394,13 +377,16 @@ export default function Home() {
                                                 category={post.category}
                                                 tags={post.tags}
                                                 currentLocale={locale}
-                                                cardStyle={{ animationDelay: `${index * 0.05}s` }}
                                             />
+                                            </motion.div>
                                         ))}
-                                    </div>
-                                )}
-                                {!isSiteEngine && (
-                                    <div className={`${styles.home_navigation_panel} ${styles.home_search_nav_animated}`}>
+                                        </AnimatePresence>
+                                    </motion.div>
+                                    </motion.section>
+                                ) : (
+                                    <motion.div key="external" className={`${styles.home_navigation_panel} ${styles.home_search_nav_animated}`}
+                                        initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }} animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }} transition={transition}>
                                         <div className={styles.home_navigation_list}>
                                             {navigationItems.map(item => {
                                                 const name = resolveNavigationText(item.name);
@@ -455,8 +441,10 @@ export default function Home() {
                                                 );
                                             })}
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )}
+                                </AnimatePresence>
+                                </div>
                             </div>
                             <p className={profileStyles.profile_background}>{`<NAVIGATION/>`}</p>
                         </div>

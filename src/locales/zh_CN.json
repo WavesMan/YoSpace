@@ -127,6 +127,9 @@
         },
         "Placeholder": "搜索标题或描述...",
         "NoResult": "没有找到匹配的文章",
+        "Hint": "输入关键词搜索站内文章",
+        "ResultCount": "找到 {count} 篇文章",
+        "Retry": "重试",
         "InputLabel": "搜索"
     },
     "Subscribe": {

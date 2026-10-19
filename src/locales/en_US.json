@@ -81,6 +81,9 @@
         },
         "Placeholder": "Search by title or description...",
         "NoResult": "No matching posts found",
+        "Hint": "Enter keywords to search posts",
+        "ResultCount": "{count} posts found",
+        "Retry": "Retry",
         "InputLabel": "Search"
     },
     "Subscribe": {
