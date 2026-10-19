@@ -138,7 +138,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             key={`${slug}:${locale}`}
             initialContent={initialContent} 
             initialLocale={locale} 
-            relatedSlot={relatedEnabled && initialContent ? <Suspense fallback={null}><RelatedPosts slug={slug} locale={locale} seriesId={initialContent.series?.id} /></Suspense> : undefined}
+            relatedSlot={relatedEnabled && initialContent ? (
+                <Suspense key={`related:${slug}:${locale}`} fallback={null}>
+                    <RelatedPosts slug={slug} locale={locale} seriesId={initialContent.series?.id} />
+                </Suspense>
+            ) : undefined}
         />
     );
 }
