@@ -247,7 +247,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
 
     useEffect(() => {
         const shouldLoadRelated = status === 'Done' && articleContent;
-        if (!shouldLoadRelated) {
+        if (!shouldLoadRelated || (!showSeries && process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED === 'false')) {
             return;
         }
 
