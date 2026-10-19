@@ -1,18 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/context/I18nContext';
 
-type Readiness = { pending: Set<symbol>; register: () => () => void };
+type Readiness = { pending: Set<symbol>; listeners: Set<() => void>; register: () => () => void };
 const ReadinessContext = createContext<Readiness | null>(null);
 const PageVisibleContext = createContext(true);
 export const usePageVisible = () => useContext(PageVisibleContext);
 
-/** 组件挂载时登记，完成渲染（或已渲染错误回退）后释放。 */
+/** 只登记阻塞当前内容区域的任务，媒体和播放器不参与。 */
 export function usePageReadyTask(pending: boolean) {
     const readiness = useContext(ReadinessContext);
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!pending || !readiness) return;
         return readiness.register();
     }, [pending, readiness]);
@@ -21,75 +21,79 @@ export function usePageReadyTask(pending: boolean) {
 export default function PageReadiness({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { locale } = useI18n();
-    const enabled = /^\/blog\/[^/]+\/?$/.test(pathname || '');
     const routeKey = `${pathname}:${locale}`;
-    const [result, setResult] = useState({ key: routeKey, status: 'loading' });
-    // 每次导航都重置，包含离开后返回同一文章的情况；在提交 DOM 前完成重置。
+    const [result, setResult] = useState<{ key: string; status: 'loading' | 'ready' | 'error'; target?: string }>({ key: routeKey, status: 'loading' });
     if (result.key !== routeKey) setResult({ key: routeKey, status: 'loading' });
     const readiness = useMemo<Readiness>(() => {
         const pending = new Set<symbol>();
-        return { pending, register: () => {
+        const listeners = new Set<() => void>();
+        const emit = () => listeners.forEach(listener => listener());
+        return { pending, listeners, register: () => {
             const token = Symbol();
             pending.add(token);
-            return () => { pending.delete(token); };
+            emit();
+            return () => { pending.delete(token); emit(); };
         } };
     }, [routeKey]);
-    const ready = !enabled || (result.key === routeKey && result.status === 'ready');
-    const failed = !ready && result.key === routeKey && result.status === 'error';
+    const ready = result.key === routeKey && result.status === 'ready';
+    const failed = result.key === routeKey && result.status === 'error';
+    const contentRef = useRef<HTMLElement | null>(null);
+    // SSR 不输出 inert，保证禁用脚本时链接仍可使用。
+    useLayoutEffect(() => { if (contentRef.current) contentRef.current.inert = !ready; }, [ready]);
 
     useEffect(() => {
-        if (!enabled) return;
+        const start = (event: Event) => {
+            const target = (event as CustomEvent<string>).detail;
+            if (!target) return;
+            setResult(previous => target === pathname
+                ? previous.target ? { key: routeKey, status: 'loading' } : previous
+                : { key: routeKey, status: 'loading', target });
+        };
+        window.addEventListener('app-navigation-start', start);
+        return () => window.removeEventListener('app-navigation-start', start);
+    }, [pathname, routeKey]);
+
+    useEffect(() => {
         let cancelled = false;
         let frame = 0;
-        let stableFrames = 0;
-        const timeout = window.setTimeout(() => {
-            cancelled = true;
-            cancelAnimationFrame(frame);
-            // 超时显示可重试的错误界面，不把未完成的页面当成加载成功。
-            setResult({ key: routeKey, status: 'error' });
-        }, 15000);
-
+        let timeout: number | undefined;
+        const waitingForRoute = Boolean(result.key === routeKey && result.target);
+        const stop = () => { cancelAnimationFrame(frame); clearTimeout(timeout); };
         const check = () => {
+            stop();
             if (cancelled) return;
-            if (readiness.pending.size) {
-                stableFrames = 0;
-            } else if (++stableFrames >= 2) {
-                // 只等待正文数据与基础布局；图片、图表和高亮由阅读位置驱动。
-                clearTimeout(timeout);
-                setResult({ key: routeKey, status: 'ready' });
+            if (waitingForRoute || readiness.pending.size) {
+                setResult(previous => previous.key === routeKey && previous.status !== 'error' ? { ...previous, status: 'loading' } : previous);
+                timeout = window.setTimeout(() => {
+                    cancelled = true;
+                    setResult(previous => previous.key === routeKey ? { ...previous, status: 'error' } : previous);
+                }, 15000);
                 return;
             }
-            frame = requestAnimationFrame(check);
+            // 任务完成后给 React 和浏览器提交布局的机会，不循环轮询、不设最低等待。
+            frame = requestAnimationFrame(() => {
+                frame = requestAnimationFrame(() => {
+                    if (!cancelled && readiness.pending.size === 0) setResult({ key: routeKey, status: 'ready' });
+                });
+            });
         };
-        frame = requestAnimationFrame(check);
-        return () => {
-            cancelled = true;
-            clearTimeout(timeout);
-            cancelAnimationFrame(frame);
-        };
-    }, [enabled, routeKey, readiness]);
+        readiness.listeners.add(check);
+        check();
+        return () => { cancelled = true; stop(); readiness.listeners.delete(check); };
+    }, [routeKey, readiness, result.target]);
 
-    return (
-        <ReadinessContext.Provider value={enabled ? readiness : null}>
-          <PageVisibleContext.Provider value={ready}>
-            <div data-page-ready={ready} aria-busy={!ready}
-                style={{ visibility: ready ? 'visible' : 'hidden' }}>
-                {children}
-            </div>
-            {!ready && (
-                <div className="page_readiness" role={failed ? 'alert' : 'status'} aria-live="polite">
-                    <div className="app_transition_card">
-                        {!failed && <div className="app_transition_spinner" />}
-                        <div className="app_transition_content">
-                            <div className="app_transition_title">{failed ? '页面加载未完成' : '正在准备页面'}</div>
-                            <div className="app_transition_text">{failed ? '请检查网络连接后重新加载。' : '首屏就绪后开始阅读'}</div>
-                            {failed && <button type="button" onClick={() => window.location.reload()}>重新加载</button>}
-                        </div>
-                    </div>
-                </div>
-            )}
-            <noscript><style>{'[data-page-ready] { visibility: visible !important; } [data-stream-state] { clip-path: none !important; opacity: 1 !important; } [data-image-state] { opacity: 1 !important; transform: none !important; animation: none !important; } .page_readiness { display: none; }'}</style></noscript>
-          </PageVisibleContext.Provider>
-        </ReadinessContext.Provider>
-    );
+    return <ReadinessContext.Provider value={readiness}>
+        <PageVisibleContext.Provider value={ready}>
+            <section className="page_stage" data-page-stage data-page-status={failed ? 'error' : ready ? 'ready' : 'loading'}>
+                <section ref={contentRef} data-page-ready={ready} aria-busy={!ready} className="page_content">
+                    {children}
+                </section>
+                <section className="page_transition" data-page-overlay role={failed ? 'alert' : 'status'} aria-live="polite" aria-hidden={ready}>
+                    {failed ? <p>页面加载未完成。<button type="button" onClick={() => window.location.reload()}>重新加载</button></p>
+                        : <><span className="page_transition_mark" aria-hidden="true" /><span className="visually_hidden">正在加载内容</span></>}
+                </section>
+            </section>
+            <noscript><style>{'[data-page-ready] { opacity: 1 !important; visibility: visible !important; } [data-page-overlay] { display: none !important; } [data-stream-state], [data-image-state] { opacity: 1 !important; transform: none !important; animation: none !important; clip-path: none !important; }'}</style></noscript>
+        </PageVisibleContext.Provider>
+    </ReadinessContext.Provider>;
 }

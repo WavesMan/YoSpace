@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import Link from '@/components/Common/TransitionLink';
 import { AiFillCalendar } from "react-icons/ai";
 import { FaAngleRight, FaTag } from "react-icons/fa";
 import style from "./BlogCard.module.css";
@@ -43,10 +43,6 @@ const BlogCard: React.FC<BlogCardProps> = ({
      *
      * @returns void
      */
-    const triggerTransition = () => {
-        if (typeof window === "undefined") return;
-        window.dispatchEvent(new CustomEvent("app-transition-start"));
-    };
 
     // 格式化日期
     const formattedDate = articleDate
@@ -124,7 +120,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
                             <div className={getCategoryClassName(categoryLabel, false)}>{categoryLabel}</div>
                         )
                 )}
-                <Link className={style.blog_card_title} href={`/blog/${articleId}`} onClick={triggerTransition}>
+                <Link className={style.blog_card_title} href={`/blog/${articleId}`}>
                     {categoryPosition === "inline-title" && showCategory && category && categoryLabel && (
                         <span className={getCategoryClassName(categoryLabel, true)}>{categoryLabel}</span>
                     )}
@@ -151,7 +147,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
                         <AiFillCalendar aria-hidden="true" /> 
                         {formattedDate} 
                     </p>
-                    <Link className={style.blog_card_link} href={`/blog/${articleId}`} aria-label={`阅读更多关于 ${articleTitle}`} onClick={triggerTransition}>
+                    <Link className={style.blog_card_link} href={`/blog/${articleId}`} aria-label={`阅读更多关于 ${articleTitle}`}>
                         Read More <FaAngleRight aria-hidden="true" />
                     </Link>
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
+import Link from '@/components/Common/TransitionLink';
 import { useI18n } from '@/context/I18nContext';
 import styles from './StatusPage.module.css';
 import { StatusIcon } from './StatusIcon';

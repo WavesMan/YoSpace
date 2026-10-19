@@ -3,10 +3,12 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import style from "./Blog.module.css";
+import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
-import type { PostCategory, PostSeries } from "@/utils/content/local";
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
+import type { PostCategory, PostSeries, PostItem } from "@/utils/content/local";
 
 interface ArchivePostItem {
     title: string;
@@ -91,11 +93,12 @@ const groupByYearMonth = (posts: ArchivePostItem[]): YearMonthGroup[] => {
     });
 };
 
-const Archive: React.FC = () => {
+const Archive: React.FC<{ initialPosts?: PostItem[]; initialLocale?: string }> = ({ initialPosts, initialLocale }) => {
     const { t, locale } = useI18n();
     const pathname = usePathname();
-    const [status, setStatus] = useState<ArchiveStatus>("Loading");
-    const [posts, setPosts] = useState<ArchivePostItem[]>([]);
+    const [status, setStatus] = useState<ArchiveStatus>(initialPosts ? "Done" : "Loading");
+    usePageReadyTask(status === 'Loading');
+    const [posts, setPosts] = useState<ArchivePostItem[]>(initialPosts || []);
     const restoredScrollRef = useRef(false);
     const restoreScrollYRef = useRef<number | null>(null);
 
@@ -106,7 +109,7 @@ const Archive: React.FC = () => {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const raw = window.sessionStorage.getItem(storageKey);
+        const raw = readBrowserStorage('sessionStorage', storageKey);
         if (!raw) return;
         try {
             const parsed = JSON.parse(raw) as { scrollY?: number };
@@ -117,25 +120,34 @@ const Archive: React.FC = () => {
     }, [storageKey]);
 
     useEffect(() => {
+        if (initialPosts && initialLocale === locale) {
+            setPosts(initialPosts);
+            setStatus("Done");
+            return;
+        }
+        const controller = new AbortController();
         const fetchAll = async () => {
             const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
             try {
                 setStatus("Loading");
-                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch posts: ${response.status}`);
                 }
                 const data = await response.json();
+                if (controller.signal.aborted) return;
                 setPosts(Array.isArray(data.items) ? data.items : []);
                 setStatus("Done");
             } catch (error) {
+                if (controller.signal.aborted) return;
                 console.error("Archive fetch error:", error);
                 setStatus("Error");
             }
         };
 
         fetchAll();
-    }, [locale]);
+        return () => controller.abort();
+    }, [locale, initialLocale, initialPosts]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -146,7 +158,7 @@ const Archive: React.FC = () => {
             window.requestAnimationFrame(() => {
                 ticking = false;
                 const payload = { scrollY: window.scrollY };
-                window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+                writeBrowserStorage('sessionStorage', storageKey, JSON.stringify(payload));
             });
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
@@ -184,7 +196,7 @@ const Archive: React.FC = () => {
                 <div className={style.blog_container}>
                     <h1 className={style.blog_title}>{t("Archive.Title")}</h1>
                     {status === "Loading" && (
-                        <div className={style.blog_tip_loading}>{t("Status.Loading")}</div>
+                        null
                     )}
                     {status === "Error" && (
                         <>

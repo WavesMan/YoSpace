@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import style from "./Blog.module.css";
+import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Background from "../Common/Background/Background";
 import Pagination from "../Common/Pagination/Pagination";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
+import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 import type { PostCategory, PostSeries } from "@/utils/content/local";
 
 /**
@@ -53,18 +55,16 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     
     // 如果有初始数据且在第一页，状态默认为 Done，否则为 Loading
     const [status, setStatus] = useState<"Loading" | "Error" | "Done">(
-        initialPosts && initialPosts.length > 0 ? "Done" : "Loading"
+        initialPosts ? "Done" : "Loading"
     );
+    usePageReadyTask(status === 'Loading');
     const [errorMsg, setErrorMsg] = useState<string>("");
 
-    const isFirstRender = useRef(true);
     const hasRestoredRef = useRef(false);
     const restoredScrollRef = useRef(false);
     const restoreStateRef = useRef<{ scrollY: number; page: number; sortMode: "recommend" | "date-desc" | "date-asc" } | null>(null);
     const restoreTargetPageRef = useRef<number | null>(null);
     const skipScrollToTopRef = useRef(false);
-    const loadingStateRef = useRef(false);
-    const skipTransitionOnceRef = useRef(false);
 
     const storageKey = useMemo(() => {
         if (!pathname) return "blog:list:unknown";
@@ -90,14 +90,14 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
      * 读取列表页记忆状态，恢复分页与滚动位置。
      *
      * 使用示例：
-     * window.sessionStorage.getItem(storageKey);
+     * readBrowserStorage('sessionStorage', storageKey);
      *
      * @returns void
      */
     useEffect(() => {
         if (typeof window === "undefined") return;
         if (hasRestoredRef.current) return;
-        const raw = window.sessionStorage.getItem(storageKey);
+        const raw = readBrowserStorage('sessionStorage', storageKey);
         if (!raw) return;
         try {
             const parsed = JSON.parse(raw) as { scrollY?: number; page?: number; sortMode?: "recommend" | "date-desc" | "date-asc" };
@@ -112,7 +112,6 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
             restoreTargetPageRef.current = restoreStateRef.current.page;
             if (restoreStateRef.current.page !== currentPage) {
                 skipScrollToTopRef.current = true;
-                skipTransitionOnceRef.current = true;
                 setCurrentPage(restoreStateRef.current.page);
             }
             if (restoreStateRef.current.sortMode !== sortMode) {
@@ -124,34 +123,35 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
     }, [storageKey, currentPage, sortMode]);
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchPosts = async () => {
             // NOTE: 将上下文中的语言映射为内容文件使用的语言标识
             const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
 
             // NOTE: 如果是首渲染且已有与当前语言匹配的服务端初始数据，并且停留在第一页
             //       则跳过客户端请求，直接使用注入的列表，减少一次无意义的网络请求
-            if (isFirstRender.current) {
-                isFirstRender.current = false;
-                if (initialPosts && initialPosts.length > 0 && currentPage === 1) {
-                    if (initialLocale === queryLocale || (initialLocale === 'en' && queryLocale === 'en')) {
-                        return;
-                    }
-                }
+            if (initialPosts && currentPage === 1 && initialLocale === queryLocale) {
+                setPosts(initialPosts);
+                setTotalItems(initialTotal || 0);
+                setStatus("Done");
+                return;
             }
 
             try {
                 setStatus("Loading");
                 // NOTE: 通过 API Route 访问本地 Markdown 列表，offset 从 0 开始，因此这里减 1
                 const offset = (currentPage - 1) * itemsLimit;
-                const response = await fetch(`/api/blog/list?offset=${offset}&limit=${itemsLimit}&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/list?offset=${offset}&limit=${itemsLimit}&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch posts: ${response.status}`);
                 }
                 const res = await response.json();
+                if (controller.signal.aborted) return;
                 setTotalItems(res.total);
                 setPosts(res.items);
                 setStatus("Done");
             } catch (err) {
+                if (controller.signal.aborted) return;
                 console.error("Blog fetch error:", err);
                 setStatus("Error");
                 // NOTE: 对用户只展示统一错误提示，隐藏服务端具体异常信息，防止后端信息泄露
@@ -159,7 +159,8 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
             }
         };
         fetchPosts();
-    }, [currentPage, locale, initialPosts, initialLocale, itemsLimit, t]); // 依赖项包含 locale，切换语言时会自动重新获取
+        return () => controller.abort();
+    }, [currentPage, locale, initialPosts, initialLocale, initialTotal, itemsLimit, t]); // 依赖项包含 locale，切换语言时会自动重新获取
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -169,7 +170,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                 sortMode,
                 scrollY: typeof nextScrollY === "number" ? nextScrollY : window.scrollY,
             };
-            window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+            writeBrowserStorage('sessionStorage', storageKey, JSON.stringify(payload));
         };
         saveState();
     }, [currentPage, sortMode, storageKey]);
@@ -187,7 +188,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                     sortMode,
                     scrollY: window.scrollY,
                 };
-                window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+                writeBrowserStorage('sessionStorage', storageKey, JSON.stringify(payload));
             });
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
@@ -212,43 +213,6 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
         restoreTargetPageRef.current = null;
         window.scrollTo({ top: restoreStateRef.current.scrollY, behavior: "auto" });
     }, [status, currentPage]);
-
-    /**
-     * 触发全局过渡事件，确保列表加载与跳转有视觉承接。
-     *
-     * 使用示例：
-     * dispatchTransition("app-transition-start");
-     *
-     * @param eventName 过渡事件名称
-     * @returns void
-     */
-    const dispatchTransition = useCallback((eventName: "app-transition-start" | "app-transition-end") => {
-        if (typeof window === "undefined") return;
-        window.dispatchEvent(new CustomEvent(eventName));
-    }, []);
-
-    useEffect(() => {
-        if (status === "Loading") {
-            if (skipTransitionOnceRef.current) {
-                loadingStateRef.current = true;
-                return;
-            }
-            if (!loadingStateRef.current) {
-                loadingStateRef.current = true;
-                dispatchTransition("app-transition-start");
-            }
-            return;
-        }
-        if (skipTransitionOnceRef.current) {
-            skipTransitionOnceRef.current = false;
-            loadingStateRef.current = false;
-            return;
-        }
-        if (loadingStateRef.current) {
-            loadingStateRef.current = false;
-            dispatchTransition("app-transition-end");
-        }
-    }, [dispatchTransition, status]);
 
     /**
      * 处理分页切换
@@ -406,7 +370,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                                     <div className={style.blog_tip_error_details} id="error_details">No Posts Yet</div>
                                 </>
                             ) : status === "Loading" ? (
-                                <div className={style.blog_tip_loading}>{t('Status.Loading')}</div>
+                                null
                             ) :
                                 status === "Done" ? (
                                     <>
@@ -440,7 +404,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                                         <div className={style.blog_tip_error_details} id="error_details">{errorMsg}</div>
                                     </>
                                 ) : (
-                                    <div className={style.blog_tip_loading}>{t('Status.Loading')}</div>
+                                    null
                                 )
                         }
                     </div>

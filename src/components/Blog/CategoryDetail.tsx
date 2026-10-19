@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import style from "./Blog.module.css";
+import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
@@ -29,35 +30,37 @@ const resolveCategoryLabel = (category: PostCategory | undefined, locale: string
 const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug, initialPosts, initialLocale }) => {
     const { t, locale } = useI18n();
     const [status, setStatus] = useState<CategoryDetailStatus>(initialPosts ? "Done" : "Loading");
+    usePageReadyTask(status === 'Loading');
     const [posts, setPosts] = useState<PostItem[]>(initialPosts || []);
-    const isFirstRender = useRef(true);
 
     useEffect(() => {
         const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
+        if (initialPosts && initialLocale === queryLocale) {
+            setPosts(initialPosts);
+            setStatus("Done");
+            return;
+        }
+        const controller = new AbortController();
         const fetchAll = async () => {
             try {
                 setStatus("Loading");
-                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch posts: ${response.status}`);
                 }
                 const data = await response.json();
+                if (controller.signal.aborted) return;
                 setPosts(Array.isArray(data.items) ? data.items : []);
                 setStatus("Done");
             } catch (error) {
+                if (controller.signal.aborted) return;
                 console.error("Category detail fetch error:", error);
                 setStatus("Error");
             }
         };
 
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            if (initialPosts && initialLocale && (initialLocale === queryLocale || (initialLocale === "en" && queryLocale === "en"))) {
-                return;
-            }
-        }
-
         fetchAll();
+        return () => controller.abort();
     }, [initialLocale, initialPosts, locale]);
 
     const decodedId = useMemo(() => {
@@ -103,7 +106,7 @@ const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug, initialPosts, ini
                 <div className={style.blog_container}>
                     <h1 className={style.blog_title}>{titleLabel}</h1>
                     {status === "Loading" && (
-                        <div className={style.blog_tip_loading}>{t("Status.Loading")}</div>
+                        null
                     )}
                     {status === "Error" && (
                         <>

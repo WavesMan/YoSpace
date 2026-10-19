@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import Link from '@/components/Common/TransitionLink';
 import { usePathname } from "next/navigation";
 import { AiFillSun, AiFillMoon, AiFillHome } from "react-icons/ai";
 import { FaLink, FaBook, FaBars, FaTags, FaFolderOpen, FaArchive, FaRss } from "react-icons/fa";

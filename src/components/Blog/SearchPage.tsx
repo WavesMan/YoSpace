@@ -2,10 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import style from "./Blog.module.css";
+import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Background from "../Common/Background/Background";
 import BlogCard from "./BlogCard";
 import { useI18n } from "@/context/I18nContext";
-import type { PostCategory, PostSeries } from "@/utils/content/local";
+import type { PostCategory, PostSeries, PostItem } from "@/utils/content/local";
 
 interface SearchPostItem {
     title: string;
@@ -25,32 +26,42 @@ type SearchStatus = "Idle" | "Loading" | "Error" | "Ready";
 
 const normalize = (value: string) => value.toLowerCase();
 
-const SearchPage: React.FC = () => {
+const SearchPage: React.FC<{ initialPosts?: PostItem[]; initialLocale?: string }> = ({ initialPosts, initialLocale }) => {
     const { t, locale } = useI18n();
-    const [status, setStatus] = useState<SearchStatus>("Idle");
-    const [posts, setPosts] = useState<SearchPostItem[]>([]);
+    const [status, setStatus] = useState<SearchStatus>(initialPosts ? "Ready" : "Loading");
+    usePageReadyTask(status === 'Loading');
+    const [posts, setPosts] = useState<SearchPostItem[]>(initialPosts || []);
     const [query, setQuery] = useState("");
 
     useEffect(() => {
+        if (initialPosts && initialLocale === locale) {
+            setPosts(initialPosts);
+            setStatus("Ready");
+            return;
+        }
+        const controller = new AbortController();
         const fetchAll = async () => {
             const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
             try {
                 setStatus("Loading");
-                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch posts: ${response.status}`);
                 }
                 const data = await response.json();
+                if (controller.signal.aborted) return;
                 setPosts(Array.isArray(data.items) ? data.items : []);
                 setStatus("Ready");
             } catch (error) {
+                if (controller.signal.aborted) return;
                 console.error("Search index fetch error:", error);
                 setStatus("Error");
             }
         };
 
         fetchAll();
-    }, [locale]);
+        return () => controller.abort();
+    }, [locale, initialLocale, initialPosts]);
 
     const results = useMemo(() => {
         const trimmed = query.trim();
@@ -100,7 +111,7 @@ const SearchPage: React.FC = () => {
                         />
                     </div>
                     {status === "Loading" && (
-                        <div className={style.blog_tip_loading}>{t("Status.Loading")}</div>
+                        null
                     )}
                     {status === "Error" && (
                         <>

@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from '@/components/Common/TransitionLink';
 import style from "./Blog.module.css";
+import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Background from "../Common/Background/Background";
 import { useI18n } from "@/context/I18nContext";
-import type { PostCategory, PostSeries } from "@/utils/content/local";
+import type { PostCategory, PostSeries, PostItem } from "@/utils/content/local";
 
 interface TagPostItem {
     title: string;
@@ -44,31 +45,41 @@ const getTagClassName = (value: string) => {
     return `${style.blog_taxonomy_link} ${variantClass}`.trim();
 };
 
-const TagsPage: React.FC = () => {
+const TagsPage: React.FC<{ initialPosts?: PostItem[]; initialLocale?: string }> = ({ initialPosts, initialLocale }) => {
     const { t, locale } = useI18n();
-    const [status, setStatus] = useState<TagsStatus>("Loading");
-    const [posts, setPosts] = useState<TagPostItem[]>([]);
+    const [status, setStatus] = useState<TagsStatus>(initialPosts ? "Done" : "Loading");
+    usePageReadyTask(status === 'Loading');
+    const [posts, setPosts] = useState<TagPostItem[]>(initialPosts || []);
 
     useEffect(() => {
+        if (initialPosts && initialLocale === locale) {
+            setPosts(initialPosts);
+            setStatus("Done");
+            return;
+        }
+        const controller = new AbortController();
         const fetchAll = async () => {
             const queryLocale = locale === "zh-CN" ? "zh-CN" : "en";
             try {
                 setStatus("Loading");
-                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`);
+                const response = await fetch(`/api/blog/list?offset=0&limit=1000&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch posts: ${response.status}`);
                 }
                 const data = await response.json();
+                if (controller.signal.aborted) return;
                 setPosts(Array.isArray(data.items) ? data.items : []);
                 setStatus("Done");
             } catch (error) {
+                if (controller.signal.aborted) return;
                 console.error("Tags fetch error:", error);
                 setStatus("Error");
             }
         };
 
         fetchAll();
-    }, [locale]);
+        return () => controller.abort();
+    }, [locale, initialLocale, initialPosts]);
 
     const tags: TagInfo[] = useMemo(() => {
         const counter = new Map<string, number>();
@@ -95,7 +106,7 @@ const TagsPage: React.FC = () => {
                 <div className={style.blog_container}>
                     <h1 className={style.blog_title}>{t("Tags.Title")}</h1>
                     {status === "Loading" && (
-                        <div className={style.blog_tip_loading}>{t("Status.Loading")}</div>
+                        null
                     )}
                     {status === "Error" && (
                         <>

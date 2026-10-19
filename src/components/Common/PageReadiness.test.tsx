@@ -20,12 +20,13 @@ afterEach(() => {
     route.locale = 'zh-CN';
 });
 
-describe('文章页统一显示', () => {
+describe('统一页面过渡', () => {
     it('服务端输出内容与加载状态，首次绘制即隐藏待加载内容', () => {
         const html = renderToString(<PageReadiness><Component pending /></PageReadiness>);
         expect(html).toContain('文章内容');
-        expect(html).toContain('visibility:hidden');
-        expect(html).toContain('正在准备页面');
+        expect(html).toContain('data-page-status="loading"');
+        expect(html).toContain('正在加载内容');
+        expect(html).not.toContain('inert=""');
         expect(html).toContain('<noscript>');
     });
 
@@ -35,7 +36,7 @@ describe('文章页统一显示', () => {
         expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
         rerender(<PageReadiness><Component pending={false} /></PageReadiness>);
         await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
-        expect(screen.queryByText('正在准备页面')).not.toBeInTheDocument();
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
     it('路由切换后重新等待新页面组件', async () => {
@@ -74,10 +75,42 @@ describe('文章页统一显示', () => {
         expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
     });
 
-    it('其他页面不受文章加载屏障影响', () => {
+    it('列表页同样等待真实任务，取消文章专用屏障', async () => {
         route.pathname = '/blog';
-        const { container } = render(<PageReadiness><Component pending /></PageReadiness>);
-        expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true');
-        expect(screen.queryByText('正在准备页面')).not.toBeInTheDocument();
+        const { container, rerender } = render(<PageReadiness><Component pending /></PageReadiness>);
+        expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
+        rerender(<PageReadiness><Component pending={false} /></PageReadiness>);
+        await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
+    });
+
+    it('旧页面完成不能提前结束新导航，快速跳转后由最新页面任务结束', async () => {
+        const { container, rerender } = render(<PageReadiness><Component pending={false} /></PageReadiness>);
+        await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
+        act(() => window.dispatchEvent(new CustomEvent('app-navigation-start', { detail: '/archive' })));
+        expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
+        await new Promise(resolve => setTimeout(resolve, 80));
+        expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
+        route.pathname = '/archive';
+        rerender(<PageReadiness><Component pending /></PageReadiness>);
+        route.pathname = '/links';
+        rerender(<PageReadiness><Component pending={false} /></PageReadiness>);
+        await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
+        expect(container.querySelectorAll('[data-page-overlay]')).toHaveLength(1);
+    });
+
+    it('已显示页面的后续加载也由同一过渡层覆盖', async () => {
+        const { container, rerender } = render(<PageReadiness><Component pending={false} /></PageReadiness>);
+        await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
+        rerender(<PageReadiness><Component pending /></PageReadiness>);
+        expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
+    });
+
+    it('等待导航时点击当前路由可以取消等待，不遗留遮罩', async () => {
+        const { container } = render(<PageReadiness><Component pending={false} /></PageReadiness>);
+        await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
+        act(() => window.dispatchEvent(new CustomEvent('app-navigation-start', { detail: '/archive' })));
+        expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'false');
+        act(() => window.dispatchEvent(new CustomEvent('app-navigation-start', { detail: '/blog/example' })));
+        await waitFor(() => expect(container.querySelector('[data-page-ready]')).toHaveAttribute('data-page-ready', 'true'));
     });
 });

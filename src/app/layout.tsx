@@ -127,13 +127,13 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
         <I18nProvider initialLocale={htmlLang}>
-          <PageReadiness>
           <Header />
+          <PageReadiness>
           <main style={{ minHeight: '100vh' }}>
             {children}
           </main>
-          <ClientShell />
           </PageReadiness>
+          <ClientShell />
         </I18nProvider>
       </body>
     </html>
