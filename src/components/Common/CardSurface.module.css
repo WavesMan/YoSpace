@@ -1,0 +1,31 @@
+/* 与 LinksCard 保持一致的可见外框与交互，供列表卡片共享。 */
+.interactive {
+    border-radius: 8px;
+    transition: scale 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .interactive:hover {
+        scale: 1.02;
+        --card-title-color: var(--color-accent-hover);
+    }
+}
+
+.interactive:has(:focus-visible) {
+    scale: 1.02;
+    --card-title-color: var(--color-accent-hover);
+}
+
+.interactive:active {
+    scale: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .interactive,
+    .interactive:hover,
+    .interactive:has(:focus-visible),
+    .interactive:active {
+        scale: none;
+        transition: none;
+    }
+}

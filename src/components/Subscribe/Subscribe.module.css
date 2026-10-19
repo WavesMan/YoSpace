@@ -18,17 +18,11 @@
 }
 
 .feed_card {
+  composes: interactive from '../Common/CardSurface.module.css';
   background: var(--color-background-secondary);
-  border-radius: 16px;
   padding: 24px;
   border: 1px solid var(--color-accent-stroke);
-  transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
-
-.feed_card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
 .card_header {
@@ -42,7 +36,7 @@
   font-family: var(--font-family-main);
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  color: var(--card-title-color, var(--color-text-primary));
   margin: 0;
 }
 
