@@ -7,6 +7,58 @@
     background-color: #1e1e1e; /* VS Code dark bg */
 }
 
+.code_wrapper pre.code_plain {
+    margin: 0;
+    padding: 1.25rem;
+    background: transparent;
+    color: #d4d4d4;
+    font-family: var(--font-family-mono);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    tab-size: 4;
+}
+
+.code_wrapper pre.code_plain code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    border: 0;
+}
+
+.code_wrapper .code_line {
+    display: block;
+    position: relative;
+    padding-left: 3em;
+    min-height: 1.5em;
+    white-space: pre-wrap;
+}
+
+.code_line_number {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3em;
+    text-align: right;
+    padding-right: 1em;
+    color: #858585;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.code_line_content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    text-align: left;
+}
+
+.code_highlight_arrival { animation: highlightArrival 200ms ease-out; }
+@keyframes highlightArrival { from { opacity: 0.65; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .code_highlight_arrival { animation: none; } }
+
 .code_wrapper :global(pre) {
     overflow: auto;
     scrollbar-width: thin;

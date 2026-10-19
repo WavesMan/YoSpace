@@ -23,7 +23,43 @@ afterEach(() => {
 });
 
 describe('正文代码渲染', () => {
-    it('服务端直接输出代码高亮和复制按钮', () => {
+    it('没有语言标记的围栏代码也使用逐字代码框', () => {
+        const html = renderToString(<BlogPostMarkdown content={'```\n纯文本输出\n```'} locale="zh-CN" />);
+        expect(html).toContain('data-stream-variant="code"');
+        expect(html).toContain('Copy code');
+        expect(html).toContain('纯文本输出');
+        expect(html).not.toContain('<pre><div');
+    });
+    it('屏外图表保持源码占位，接近视口才加载，离开后保留结果', async () => {
+        let notify: IntersectionObserverCallback;
+        const observer = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
+        vi.stubGlobal('IntersectionObserver', class {
+            constructor(callback: IntersectionObserverCallback) { notify = callback; }
+            observe = observer.observe;
+            unobserve = observer.unobserve;
+            disconnect = observer.disconnect;
+        });
+        const { container } = render(<BlogPostMarkdown content={'```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
+        expect(mermaidMock.render).not.toHaveBeenCalled();
+        const placeholder = container.querySelector('[data-lazy-diagram="idle"]')!;
+        expect(placeholder).toHaveTextContent('查看图表源码');
+        notify!([{ isIntersecting: true, target: placeholder } as IntersectionObserverEntry], observer as unknown as IntersectionObserver);
+        await screen.findByRole('img', { name: 'Mermaid diagram' });
+        expect(mermaidMock.render).toHaveBeenCalledTimes(1);
+        expect(observer.unobserve).toHaveBeenCalledWith(placeholder);
+    });
+
+    it('父组件更新不会重复挂载已完成的图表', async () => {
+        const content = '```mermaid\nflowchart LR\n A --> B\n```';
+        const { rerender } = render(<div><BlogPostMarkdown content={content} locale="zh-CN" /></div>);
+        await screen.findByRole('img', { name: 'Mermaid diagram' });
+        const calls = mermaidMock.render.mock.calls.length;
+        rerender(<div data-parent-update="true"><BlogPostMarkdown content={content} locale="zh-CN" /></div>);
+        expect(mermaidMock.render).toHaveBeenCalledTimes(calls);
+        expect(screen.queryByText('正在加载图表…')).not.toBeInTheDocument();
+    });
+
+    it('服务端输出可复制的代码正文，高亮无需阻塞首屏', () => {
         const html = renderToString(<BlogPostMarkdown content={'```javascript\nconst answer = 42;\n```'} locale="zh-CN" />);
         expect(html).toContain('Copy code');
         expect(html).toContain('javascript');
@@ -120,7 +156,7 @@ describe('BlogPostMarkdown Mermaid', () => {
         render(<BlogPostMarkdown content={'```mermaid\nflowchart LR\n A --> B\n```'} locale="zh-CN" />);
 
         const canvas = await screen.findByRole('img', { name: 'Mermaid diagram' });
-        const content = canvas.firstElementChild as HTMLElement;
+        const content = canvas.querySelector('[style*="translate"]') as HTMLElement;
 
         fireEvent.pointerDown(canvas, { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
         fireEvent.pointerDown(canvas, { pointerId: 2, pointerType: 'touch', clientX: 200, clientY: 100 });

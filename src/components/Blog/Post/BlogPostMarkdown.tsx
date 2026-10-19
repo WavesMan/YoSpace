@@ -8,7 +8,10 @@ import rehypeRaw from 'rehype-raw';
 import style from '../BlogPost.module.css';
 import ImageSharpenFilter from './ImageSharpenFilter';
 import MarkdownImageLightbox from './MarkdownImageLightbox';
-import CodeBlock from '../CodeBlock';
+import CodeBlock from './LazyCodeBlock';
+import PlainCodeBlock from '../PlainCodeBlock';
+import StreamingText, { finishStreamingWithin } from './StreamingText';
+import { useViewportEntry } from './useViewportEntry';
 import {
     slugifyHeading,
     transformTabsSyntax,
@@ -78,6 +81,7 @@ const MarkdownTabs: React.FC<MarkdownTabsProps> = ({ children }) => {
 const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     const [svg, setSvg] = useState('');
     const [hasError, setHasError] = useState(false);
+    const { ref: viewportRef, entered } = useViewportEntry<HTMLDivElement>();
     const [theme, setTheme] = useState<MermaidTheme>(getMermaidTheme);
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -86,6 +90,10 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const reactId = useId().replace(/:/g, '');
     const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+    const setWrapperRef = React.useCallback((element: HTMLDivElement | null) => {
+        wrapperRef.current = element;
+        viewportRef.current = element;
+    }, [viewportRef]);
     const dragStateRef = React.useRef({
         startX: 0,
         startY: 0,
@@ -124,14 +132,21 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     };
 
     useEffect(() => {
+        if (!entered) return;
         const observer = new MutationObserver(() => {
             setTheme(getMermaidTheme());
         });
         observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
         return () => observer.disconnect();
-    }, []);
+    }, [entered]);
 
     useEffect(() => {
+        if (!entered) return;
+        const currentTheme = getMermaidTheme();
+        if (currentTheme !== theme) {
+            setTheme(currentTheme);
+            return;
+        }
         let isActive = true;
         const render = async () => {
             try {
@@ -180,9 +195,10 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
         return () => {
             isActive = false;
         };
-    }, [code, reactId, theme]);
+    }, [code, reactId, theme, entered]);
 
     useEffect(() => {
+        if (!entered) return;
         const handleChange = () => {
             const isActive = document.fullscreenElement === wrapperRef.current;
             setIsFullscreen(isActive);
@@ -194,13 +210,18 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
         return () => {
             document.removeEventListener('fullscreenchange', handleChange);
         };
-    }, []);
+    }, [entered]);
 
     if (hasError || !svg) {
         return (
-            <div aria-busy={!hasError}>
-                <p role="status">{hasError ? '图表加载失败，以下为源代码。' : '正在加载图表…'}</p>
-                <CodeBlock language="mermaid" value={code} />
+            <div ref={setWrapperRef} className={style.md_mermaid_placeholder}
+                aria-busy={entered && !hasError} data-diagram-pending={entered && !hasError}
+                data-lazy-diagram={hasError ? 'error' : entered ? 'loading' : 'idle'}>
+                <p role="status">{hasError ? '图表加载失败，以下为源代码。' : entered ? '正在加载图表…' : '图表将在接近阅读位置时加载'}</p>
+                <details open={hasError}>
+                    <summary>查看图表源码</summary>
+                    <PlainCodeBlock language="mermaid" value={code} />
+                </details>
             </div>
         );
     }
@@ -322,7 +343,9 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
     };
 
     return (
-        <div className={`${style.md_mermaid} ${isFullscreen ? style.md_mermaid_fullscreen : ''}`} ref={wrapperRef}>
+        <div className={`${style.md_mermaid} ${isFullscreen ? style.md_mermaid_fullscreen : ''}`} ref={setWrapperRef} data-lazy-diagram="ready"
+            onPointerDownCapture={() => finishStreamingWithin(wrapperRef.current)}
+            onFocusCapture={() => finishStreamingWithin(wrapperRef.current)}>
             <div className={style.md_mermaid_toolbar}>
                 <button
                     type="button"
@@ -375,11 +398,13 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
                 role="img"
                 aria-label="Mermaid diagram"
             >
-                <div
+                <StreamingText as="div" variant="diagram">
+                  <div
                     className={style.md_mermaid_content}
                     style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
                     dangerouslySetInnerHTML={{ __html: svg }}
                 />
+                </StreamingText>
             </div>
             {isFullscreen ? (
                 <button
@@ -430,8 +455,8 @@ type MarkdownComponents = Components & {
     tabs?: React.ComponentType<{ children?: React.ReactNode }>;
 };
 
-export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, locale }) => {
-    const components: MarkdownComponents = {
+export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = React.memo(function BlogPostMarkdown({ content, locale }) {
+    const components = React.useMemo<MarkdownComponents>(() => ({
         pre({ children }) {
             // 自定义图表和高亮组件已提供块级容器，避免生成 pre > div > pre。
             const child = React.Children.toArray(children)[0];
@@ -441,6 +466,8 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
                 if (/language-([^\s]+)/i.test(codeProps.className || '') || looksLikeMermaid(value)) {
                     return <>{children}</>;
                 }
+                // 没有语言标记的围栏代码同样使用渐进代码框；行内 code 仍由段落揭示。
+                return <CodeBlock language="text" value={String(codeProps.children ?? '').replace(/\n$/, '')} />;
             }
             return <pre>{children}</pre>;
         },
@@ -455,23 +482,26 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
 
                 if (buttonIndex >= 0) {
                     return (
-                        <p {...props}>
+                        <StreamingText {...props}>
                             {items.slice(0, buttonIndex)}
                             <br />
                             <span className={style.md_inline_indent}>
                                 {items[buttonIndex]}
                             </span>
                             {items.slice(buttonIndex + 1)}
-                        </p>
+                        </StreamingText>
                     );
                 }
             }
 
             return (
-                <p {...props}>
+                <StreamingText {...props}>
                     {children}
-                </p>
+                </StreamingText>
             );
+        },
+        li({ children, ...props }) {
+            return <StreamingText as="li" {...props}>{children}</StreamingText>;
         },
         a({ href, children, target, rel, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) {
             const nextHref = href || '';
@@ -660,7 +690,7 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
                 </div>
             );
         },
-    };
+    }), [locale]);
 
     return (
         <>
@@ -671,8 +701,8 @@ export const BlogPostMarkdown: React.FC<BlogPostMarkdownProps> = ({ content, loc
                 urlTransform={transformMarkdownUrl}
                 components={components}
             >
-                {transformTabsSyntax(content)}
+                {transformTabsSyntax(content.replace(/\r\n?/g, '\n'))}
             </ReactMarkdown>
         </>
     );
-};
+});
