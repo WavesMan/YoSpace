@@ -6,25 +6,7 @@ import ClientShell from "@/components/Common/ClientShell";
 import { I18nProvider } from "@/context/I18nContext";
 import PageReadiness from "@/components/Common/PageReadiness";
 import { resolveRequestLocale } from '@/utils/requestLocale';
-
-const themeInitScript = `
-  (() => {
-    try {
-      const saved = window.localStorage.getItem('theme');
-      const hasSaved = saved === 'light' || saved === 'dark';
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = hasSaved ? saved : prefersDark ? 'dark' : 'light';
-
-      if (!hasSaved) {
-        window.localStorage.setItem('theme', theme);
-      }
-
-      document.body.className = theme;
-      document.body.setAttribute('data-theme', theme);
-    } catch (e) {
-    }
-  })();
-`;
+import { themeInitScript } from '@/utils/theme';
 
 const localeInitScript = `
   (() => {
@@ -136,14 +118,14 @@ export default async function RootLayout({
   const atomFeedPath = process.env.NEXT_PUBLIC_ATOM_FEED_PATH || "/feeds/atom.xml";
 
   return (
-    <html lang={htmlLang}>
+    <html lang={htmlLang} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <link rel="alternate" type="application/rss+xml" href={rssFeedPath} title="RSS订阅" />
         <link rel="alternate" type="application/atom+xml" href={atomFeedPath} title="ATOM订阅" />
       </head>
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <I18nProvider initialLocale={htmlLang}>
           <PageReadiness>
           <Header />

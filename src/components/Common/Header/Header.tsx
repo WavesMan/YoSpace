@@ -1,67 +1,16 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AiFillSun, AiFillMoon, AiFillHome } from "react-icons/ai";
 import { FaLink, FaBook, FaBars, FaTags, FaFolderOpen, FaArchive, FaRss } from "react-icons/fa";
 import { FiX } from "react-icons/fi";
-import { MdTranslate } from "react-icons/md";
+import { MdBrightnessAuto, MdTranslate } from "react-icons/md";
 import { profile } from "../../../profile";
 import style from "./Header.module.css";
 import { useI18n } from "@/context/I18nContext";
-import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
-
-type Theme = 'light' | 'dark';
-
-const DEFAULT_THEME: Theme = 'light';
-let themeSnapshot: Theme = DEFAULT_THEME;
-const themeListeners = new Set<() => void>();
-
-const readPreferredTheme = (): Theme => {
-  if (typeof window === 'undefined') return DEFAULT_THEME;
-  const saved = readBrowserStorage('localStorage', 'theme');
-  if (saved === 'light' || saved === 'dark') return saved;
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  return prefersDark ? 'dark' : 'light';
-};
-
-const emitThemeChange = () => {
-  themeListeners.forEach((listener) => listener());
-};
-
-const setThemeSnapshot = (nextTheme: Theme) => {
-  if (themeSnapshot === nextTheme) return;
-  themeSnapshot = nextTheme;
-
-  if (typeof window !== 'undefined') {
-    writeBrowserStorage('localStorage', 'theme', nextTheme);
-  }
-
-  emitThemeChange();
-};
-
-const onThemeStorage = (event: StorageEvent) => {
-  if (event.key !== 'theme') return;
-  setThemeSnapshot(readPreferredTheme());
-};
-
-const subscribeTheme = (listener: () => void) => {
-  themeListeners.add(listener);
-  if (themeListeners.size === 1 && typeof window !== 'undefined') {
-    window.addEventListener('storage', onThemeStorage);
-  }
-
-  return () => {
-    themeListeners.delete(listener);
-    if (themeListeners.size === 0 && typeof window !== 'undefined') {
-      window.removeEventListener('storage', onThemeStorage);
-    }
-  };
-};
-
-const getThemeSnapshot = () => themeSnapshot;
-const getThemeServerSnapshot = () => DEFAULT_THEME;
+import { subscribeTheme, getThemeSnapshot, getThemeServerSnapshot, setThemePreference } from '@/utils/themeStore';
 
 /**
  * 顶部导航栏组件
@@ -79,26 +28,12 @@ const Header: React.FC = () => {
   const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL;
   const isI18nEnabled = process.env.NEXT_PUBLIC_I18N !== 'false';
 
-  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
+  const { theme, preference } = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
   const [isMenuOpenState, setIsMenuOpenState] = useState<{ isOpen: boolean; path: string }>(() => {
     return { isOpen: false, path: pathname || '' };
   });
 
   const isMenuOpen = isMenuOpenState.isOpen && isMenuOpenState.path === (pathname || '');
-
-  useEffect(() => {
-    setThemeSnapshot(readPreferredTheme());
-  }, []);
-
-  // 监听主题变化并应用到 body
-  useEffect(() => {
-    document.body.className = theme;
-    document.body.setAttribute('data-theme', theme);
-    
-    if (themeToggle.current) {
-      themeToggle.current.setAttribute('aria-label', theme === 'light' ? '切换到暗色模式' : '切换到亮色模式');
-    }
-  }, [theme]);
 
   // 滚动状态管理
   const [isScrolled, setIsScrolled] = useState(false);
@@ -114,11 +49,9 @@ const Header: React.FC = () => {
     };
   }, []);
 
-  const themeToggle = useRef<HTMLButtonElement | null>(null);
-  
   // 切换主题处理函数
   const handleThemeToggle = () => {
-    setThemeSnapshot(theme === 'light' ? 'dark' : 'light');
+    setThemePreference(theme === 'light' ? 'dark' : 'light');
   };
 
   // 切换语言处理函数
@@ -210,12 +143,17 @@ const Header: React.FC = () => {
           )}
           <button 
             className={`${style.nav_item} ${style.nav_toggle}`} 
-            ref={themeToggle} 
+            aria-label={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
             onClick={handleThemeToggle}
             type="button"
           >
             {theme === 'light' ? <AiFillMoon /> : <AiFillSun />}
           </button>
+          {preference !== 'system' && (
+            <button className={`${style.nav_item} ${style.nav_toggle}`} type="button" aria-label="跟随系统主题" title="跟随系统主题" onClick={() => setThemePreference('system')}>
+              <MdBrightnessAuto />
+            </button>
+          )}
         </div>
 
         <button 
@@ -318,6 +256,11 @@ const Header: React.FC = () => {
                     >
                         {theme === 'light' ? <><AiFillMoon /> 暗色模式</> : <><AiFillSun /> 亮色模式</>}
                     </button>
+                    {preference !== 'system' && (
+                        <button className={style.mobile_control_btn} type="button" onClick={() => { setThemePreference('system'); closeMenu(); }}>
+                            <MdBrightnessAuto /> 跟随系统主题
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
