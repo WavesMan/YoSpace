@@ -509,13 +509,15 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                         className={`${style.post_toc_toggle} ${isTocOpen ? style.post_toc_toggle_open : ''}`}
                         onClick={() => setIsTocOpen(!isTocOpen)}
                         aria-label={locale === 'zh-CN' ? '切换目录' : 'Toggle table of contents'}
+                        aria-expanded={isTocOpen}
+                        aria-controls="post-toc-panel"
                     >
                         <span className={style.post_toc_toggle_icon}>
                             {isTocOpen ? '×' : '☰'}
                         </span>
                     </button>
                     {isTocOpen && (
-                        <div className={style.post_toc_panel}>
+                        <nav id="post-toc-panel" className={style.post_toc_panel} aria-label={locale === 'zh-CN' ? '文章目录' : 'Table of contents'}>
                             <div className={style.post_toc_panel_header}>
                                 <div className={style.post_toc_title}>
                                     {locale === 'zh-CN' ? '目录' : 'Contents'}
@@ -547,7 +549,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                                     ))}
                                 </ul>
                             </div>
-                        </div>
+                        </nav>
                     )}
                 </div>
             )}
