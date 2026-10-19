@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -10,6 +10,8 @@ export default defineConfig({
         },
     },
     test: {
+        // 构建脚本使用 node:test 独立运行，不交给 Vitest 重复收集。
+        exclude: [...configDefaults.exclude, 'scripts/**/*.test.mjs'],
         environment: 'jsdom',
         globals: false,
         setupFiles: ['./vitest.setup.ts'],
