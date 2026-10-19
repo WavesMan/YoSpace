@@ -1,3 +1,6 @@
+## 切换分支或依赖目录损坏时仍检查安装状态，避免只凭快速缓存跳过恢复。
+optimisticRepeatInstall: false
+
 allowBuilds:
   esbuild: true
   sharp: true

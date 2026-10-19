@@ -69,6 +69,8 @@
 pnpm install
 ```
 
+若出现 `Can't resolve '@babel/runtime/helpers/defineProperty'` 等错误，先检查本地依赖是否完整。项目已关闭 pnpm 的重复安装快速检查，避免依赖目录缺失时仍直接跳过安装；可执行 `pnpm install --frozen-lockfile --force` 按原锁文件恢复，然后重启开发服务器。无需为此额外添加代码高亮包已经声明的间接依赖。该配置的行为见 [pnpm 官方说明](https://github.com/pnpm/pnpm.io/blob/main/docs/settings/other.md#optimisticrepeatinstall)。
+
 2) 配置环境变量
 
 将 `.env.example` 复制为 `.env` 或 `.env.local`，按需修改。
