@@ -12,7 +12,8 @@
     "lint:fix": "oxlint --fix",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "generate-feeds": "tsx scripts/generate-feeds.js"
+    "generate-feeds": "tsx scripts/generate-feeds.js",
+    "strip-sourcemaps": "node scripts/strip-sourcemaps.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
