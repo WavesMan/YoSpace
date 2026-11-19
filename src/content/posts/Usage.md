@@ -136,12 +136,9 @@ The repo keeps Contentful-related variables, but the current blog implementation
 - `NEXT_PUBLIC_MUSIC_API_BASE`: music API base URL
 - `NEXT_PUBLIC_MUSIC_PLAYLIST_ID`: playlist ID
 
-By default, [next.config.ts](./next.config.ts) contains a rewrite proxy for the music API:
+播放器的歌单、可用性检查、歌曲链接和歌词接口均由浏览器直连 `NEXT_PUBLIC_MUSIC_API_BASE` 配置的源站，默认为 `https://netmusic.waveyo.cn/`。源站需允许浏览器跨域请求。
 
-- Local path: `/api/music-proxy/*`
-- Proxied to: `https://netmusic.waveyo.cn/*`
-
-If `NEXT_PUBLIC_MUSIC_API_BASE` is set to `https://netmusic.waveyo.cn/`, the player will prefer the in-app proxy path to reduce CORS issues.
+普通歌曲链接接口无法返回完整链接或仅返回 VIP 试听时，会额外尝试源站的 `/song/url/match?id=` 接口。
 
 > The API provided by `netmusic.waveyo.cn` is free to use, but it costs resources to operate and maintain. If you use this API, consider supporting it at [dq.waveyo.cn](https://dq.waveyo.cn) and note that the donation is for the Music API.
 

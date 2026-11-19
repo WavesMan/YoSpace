@@ -26,7 +26,7 @@ process.on('exit', cleanup);
             const page = await context.newPage();
             const errors = [];
             page.on('pageerror', error => errors.push(error.message));
-            await page.route('**/api/music-proxy/**', route => route.fulfill({ json: { code: 200, songs: [] } }));
+            await page.route('https://netmusic.waveyo.cn/**', route => route.fulfill({ json: { code: 200, songs: [] } }));
             let listRequests = 0;
             page.on('request', request => { if (request.url().includes('/api/blog/list')) listRequests++; });
             for (const route of ['/', `/blog/${slug}`, '/archive', '/tags', '/categories', '/search', '/blog', '/links']) {

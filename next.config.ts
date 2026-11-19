@@ -26,7 +26,6 @@ const serverActionsAllowedOrigins = Array.from(
 );
 
 const imageHostnames = parseImageHostnames(process.env.IMAGE_HOSTNAMES);
-const musicApiBase = (process.env.NEXT_PUBLIC_MUSIC_API_BASE || 'https://netmusic.waveyo.cn/').replace(/\/$/, '');
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -45,14 +44,6 @@ const nextConfig: NextConfig = {
       allowedOrigins: serverActionsAllowedOrigins.length > 0 ? serverActionsAllowedOrigins : undefined,
     },
   } as NonNullable<NextConfig['experimental']>,
-  async rewrites() {
-    return [
-      {
-        source: '/api/music-proxy/:path*',
-        destination: `${musicApiBase}/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;

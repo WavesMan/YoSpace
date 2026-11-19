@@ -131,22 +131,20 @@ export const usePlaylist = (): UsePlaylistReturn => {
 
     const track = playlist[index];
 
-    // 1. 检查可用性
-    const cachedAvailability = availabilityCacheRef.current.get(track.id);
-    const isAvailable = cachedAvailability ?? await checkSongAvailability(track.id);
-    availabilityCacheRef.current.set(track.id, isAvailable);
-    if (!isAvailable) {
-      return { url: null, error: `歌曲 "${track.name}" 暂不可用` };
-    }
-
-    // 2. 获取 URL
     const cachedUrl = urlCacheRef.current.get(track.id);
     if (cachedUrl) {
       return { url: cachedUrl, error: null };
     }
+
+    // 可用性检查仅用于失败提示，灰色歌曲仍可能通过匹配音源获得完整链接。
+    const cachedAvailability = availabilityCacheRef.current.get(track.id);
+    const isAvailable = cachedAvailability ?? await checkSongAvailability(track.id);
+    availabilityCacheRef.current.set(track.id, isAvailable);
     const url = await getSongUrl(track.id);
     if (!url) {
-      return { url: null, error: `无法获取 "${track.name}" 的播放链接` };
+      return { url: null, error: isAvailable
+        ? `无法获取 "${track.name}" 的播放链接`
+        : `歌曲 "${track.name}" 暂不可用` };
     }
     urlCacheRef.current.set(track.id, url);
 

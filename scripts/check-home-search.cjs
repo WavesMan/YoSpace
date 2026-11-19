@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
             const page = await context.newPage();
             const errors = [];
             page.on('pageerror', error => errors.push(error.message));
-            await page.route('**/api/music-proxy/**', route => route.fulfill({ json: { code: 200, songs: [] } }));
+            await page.route('https://netmusic.waveyo.cn/**', route => route.fulfill({ json: { code: 200, songs: [] } }));
             let requests = 0;
             let release;
             const gate = new Promise(resolve => { release = resolve; });

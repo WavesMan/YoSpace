@@ -169,12 +169,9 @@ SEO 功能包含：
 - `NEXT_PUBLIC_MUSIC_API_BASE`：音乐 API 基地址
 - `NEXT_PUBLIC_MUSIC_PLAYLIST_ID`：播放列表 ID
 
-默认情况下，项目在 [next.config.ts](./next.config.ts) 中配置了音乐 API 的反向代理：
+播放器的歌单、可用性检查、歌曲链接和歌词接口均由浏览器直连 `NEXT_PUBLIC_MUSIC_API_BASE` 配置的源站，默认为 `https://netmusic.waveyo.cn/`。源站需允许浏览器跨域请求。
 
-- 本地访问：`/api/music-proxy/*`
-- 转发到：`https://netmusic.waveyo.cn/*`
-
-如果 `NEXT_PUBLIC_MUSIC_API_BASE` 配置为 `https://netmusic.waveyo.cn/`，播放器会优先走站内代理路径，减少跨域问题。
+普通歌曲链接接口无法返回完整链接或仅返回 VIP 试听时，会额外尝试源站的 `/song/url/match?id=` 接口。
 
 > `netmusic.waveyo.cn` 所提供的API支持是免费的，但是运行维护是需要消耗资源的，如果您使用此API，希望能够前往 [dq.waveyo.cn](https://dq.waveyo.cn) 提供一些支持，并且备注信息赞助Music API，以支撑API运营。
 

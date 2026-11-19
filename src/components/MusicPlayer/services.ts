@@ -2,13 +2,8 @@ import { Track } from './types';
 
 const PLAYLIST_ID = process.env.NEXT_PUBLIC_MUSIC_PLAYLIST_ID || '12752948320';
 const ENV_BASE = process.env.NEXT_PUBLIC_MUSIC_API_BASE || 'https://netmusic.waveyo.cn/';
-const CLEAN_ENV_BASE = ENV_BASE.replace(/\/$/, '');
-
-// 当使用官方托管的 netmusic.waveyo.cn 时，优先通过站内代理路径，避免浏览器直接跨域请求导致 Failed to fetch
-const BASE_URL = CLEAN_ENV_BASE === 'https://netmusic.waveyo.cn'
-  ? '/api/music-proxy'
-  : CLEAN_ENV_BASE;
-const FALLBACK_BASE_URL = CLEAN_ENV_BASE;
+// 所有音乐接口均由浏览器直连配置的源站。
+const BASE_URL = ENV_BASE.replace(/\/$/, '');
 
 const normalizeHttps = (url: string | null | undefined) => {
   if (!url) return null;
@@ -21,18 +16,8 @@ const normalizeHttps = (url: string | null | undefined) => {
 export const fetchPlaylistData = async (): Promise<{ code: number; songs: Track[] }> => {
   try {
     const target = `${BASE_URL}/playlist/track/all?id=${PLAYLIST_ID}`;
-    let res = await fetch(target);
-    const shouldFallback = BASE_URL !== FALLBACK_BASE_URL
-      && (res.status >= 300 && res.status < 400);
-    if (shouldFallback) {
-      res = await fetch(`${FALLBACK_BASE_URL}/playlist/track/all?id=${PLAYLIST_ID}`);
-    }
-    let contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json') && BASE_URL !== FALLBACK_BASE_URL) {
-      const retryRes = await fetch(`${FALLBACK_BASE_URL}/playlist/track/all?id=${PLAYLIST_ID}`);
-      res = retryRes;
-      contentType = res.headers.get('content-type') || '';
-    }
+    const res = await fetch(target);
+    const contentType = res.headers.get('content-type') || '';
 
     if (!contentType.includes('application/json')) {
       const text = await res.text().catch(() => '');
@@ -58,18 +43,8 @@ export const fetchPlaylistData = async (): Promise<{ code: number; songs: Track[
 export const checkSongAvailability = async (id: number): Promise<boolean> => {
   try {
     const target = `${BASE_URL}/check/music?id=${id}&timestamp=${Date.now()}`;
-    let res = await fetch(target);
-    const shouldFallback = BASE_URL !== FALLBACK_BASE_URL
-      && (res.status >= 300 && res.status < 400);
-    if (shouldFallback) {
-      res = await fetch(`${FALLBACK_BASE_URL}/check/music?id=${id}&timestamp=${Date.now()}`);
-    }
-    let contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json') && BASE_URL !== FALLBACK_BASE_URL) {
-      const retryRes = await fetch(`${FALLBACK_BASE_URL}/check/music?id=${id}&timestamp=${Date.now()}`);
-      res = retryRes;
-      contentType = res.headers.get('content-type') || '';
-    }
+    const res = await fetch(target);
+    const contentType = res.headers.get('content-type') || '';
 
     if (!contentType.includes('application/json')) {
       const text = await res.text().catch(() => '');
@@ -88,44 +63,55 @@ export const checkSongAvailability = async (id: number): Promise<boolean> => {
   }
 };
 
-/**
- * 获取歌曲播放链接
- * @param id 歌曲ID
- */
-export const getSongUrl = async (id: number): Promise<string | null> => {
+interface SongUrlResponse {
+  code: number;
+  data?: string | { url?: string | null; freeTrialInfo?: unknown }[];
+}
+
+// 两种歌曲链接接口均直连源站，单次失败不阻断后续音源匹配。
+const fetchSongUrlResponse = async (path: string): Promise<SongUrlResponse | null> => {
   try {
-    const target = `${BASE_URL}/song/url/v1?id=${id}&level=exhigh&timestamp=${Date.now()}`;
-    let res = await fetch(target);
-    const shouldFallback = BASE_URL !== FALLBACK_BASE_URL
-      && (res.status >= 300 && res.status < 400);
-    if (shouldFallback) {
-      res = await fetch(`${FALLBACK_BASE_URL}/song/url/v1?id=${id}&level=exhigh&timestamp=${Date.now()}`);
-    }
-    let contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json') && BASE_URL !== FALLBACK_BASE_URL) {
-      const retryRes = await fetch(`${FALLBACK_BASE_URL}/song/url/v1?id=${id}&level=exhigh&timestamp=${Date.now()}`);
-      res = retryRes;
-      contentType = res.headers.get('content-type') || '';
-    }
+    const target = `${BASE_URL}${path}`;
+    const res = await fetch(target);
+    const contentType = res.headers.get('content-type') || '';
 
     if (!contentType.includes('application/json')) {
-      const text = await res.text().catch(() => '');
-      console.error('getSongUrl non-JSON response', {
+      console.warn('歌曲链接接口返回非 JSON 响应', {
+        endpoint: path.split('?')[0],
         status: res.status,
-        body: text.slice(0, 200),
       });
       return null;
     }
 
-    const data = await res.json();
-    if (data.code === 200 && data.data?.[0]?.url) {
-      return normalizeHttps(data.data[0].url);
+    const data: SongUrlResponse = await res.json();
+    if (!res.ok || data?.code !== 200) {
+      return null;
     }
-    return null;
+    return data;
   } catch (error) {
-    console.error('getSongUrl error', error);
+    console.warn('歌曲链接请求或解析失败', {
+      endpoint: path.split('?')[0],
+      errorType: error instanceof Error ? error.name : '未知错误',
+    });
     return null;
   }
+};
+
+/**
+ * 获取完整歌曲播放链接；普通接口无链接、仅提供试听或请求失败时尝试匹配音源。
+ * @param id 歌曲ID
+ * @returns HTTPS 播放链接；两种解析均失败时返回 null，不返回试听片段。
+ */
+export const getSongUrl = async (id: number): Promise<string | null> => {
+  const response = await fetchSongUrlResponse(`/song/url/v1?id=${id}&level=exhigh&timestamp=${Date.now()}`);
+  const song = Array.isArray(response?.data) ? response.data[0] : null;
+  if (typeof song?.url === 'string' && song.url && !song.freeTrialInfo) {
+    return normalizeHttps(song.url);
+  }
+
+  // 匹配接口的 data 是 URL 字符串，与普通接口的歌曲数组结构不同。
+  const matched = await fetchSongUrlResponse(`/song/url/match?id=${id}&timestamp=${Date.now()}`);
+  return typeof matched?.data === 'string' ? normalizeHttps(matched.data) : null;
 };
 
 /**
@@ -141,18 +127,8 @@ export const fetchLyricData = async (id: number): Promise<{ yrc: string; lrc: st
   const empty = { yrc: '', lrc: '' };
   try {
     const yrcTarget = `${BASE_URL}/lyric/new?id=${id}&timestamp=${Date.now()}`;
-    let yrcRes = await fetch(yrcTarget);
-    const shouldFallbackYrc = BASE_URL !== FALLBACK_BASE_URL
-      && (yrcRes.status >= 300 && yrcRes.status < 400);
-    if (shouldFallbackYrc) {
-      yrcRes = await fetch(`${FALLBACK_BASE_URL}/lyric/new?id=${id}&timestamp=${Date.now()}`);
-    }
-    let yrcType = yrcRes.headers.get('content-type') || '';
-    if (!yrcType.includes('application/json') && BASE_URL !== FALLBACK_BASE_URL) {
-      const retryRes = await fetch(`${FALLBACK_BASE_URL}/lyric/new?id=${id}&timestamp=${Date.now()}`);
-      yrcRes = retryRes;
-      yrcType = yrcRes.headers.get('content-type') || '';
-    }
+    const yrcRes = await fetch(yrcTarget);
+    const yrcType = yrcRes.headers.get('content-type') || '';
     const yrcJson = yrcType.includes('application/json') ? await yrcRes.json().catch(() => null) : null;
     const yrcText = typeof yrcJson?.yrc?.lyric === 'string' ? yrcJson.yrc.lyric : '';
 
@@ -161,18 +137,8 @@ export const fetchLyricData = async (id: number): Promise<{ yrc: string; lrc: st
     }
 
     const lrcTarget = `${BASE_URL}/lyric?id=${id}&timestamp=${Date.now()}`;
-    let lrcRes = await fetch(lrcTarget);
-    const shouldFallbackLrc = BASE_URL !== FALLBACK_BASE_URL
-      && (lrcRes.status >= 300 && lrcRes.status < 400);
-    if (shouldFallbackLrc) {
-      lrcRes = await fetch(`${FALLBACK_BASE_URL}/lyric?id=${id}&timestamp=${Date.now()}`);
-    }
-    let lrcType = lrcRes.headers.get('content-type') || '';
-    if (!lrcType.includes('application/json') && BASE_URL !== FALLBACK_BASE_URL) {
-      const retryRes = await fetch(`${FALLBACK_BASE_URL}/lyric?id=${id}&timestamp=${Date.now()}`);
-      lrcRes = retryRes;
-      lrcType = lrcRes.headers.get('content-type') || '';
-    }
+    const lrcRes = await fetch(lrcTarget);
+    const lrcType = lrcRes.headers.get('content-type') || '';
     const lrcJson = lrcType.includes('application/json') ? await lrcRes.json().catch(() => null) : null;
     const lrcText = typeof lrcJson?.lrc?.lyric === 'string' ? lrcJson.lrc.lyric : '';
     return { yrc: '', lrc: lrcText || '' };
