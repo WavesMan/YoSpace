@@ -38,19 +38,18 @@
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .toggleBtn:hover {
-    background-color: var(--color-theme-main-600);
-  }
-
-  .toggleBtn.open:hover {
-    background-color: var(--color-text-primary);
-  }
-}
-
 @media (max-width: 768px) {
   .toggleBtn {
     width: 3.5rem; 
     height: 3.5rem;
   }
+}
+
+.toggleBtn {
+  --player-button-hover: var(--color-theme-main-600);
+  --player-button-hover-text: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning { animation: none; }
 }

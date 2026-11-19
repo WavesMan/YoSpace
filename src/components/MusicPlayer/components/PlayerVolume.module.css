@@ -26,10 +26,3 @@
   user-select: none;
   -webkit-user-select: none;
 }
-
-@media (hover: hover) and (pointer: fine) {
-  .iconBtn:hover {
-    background-color: var(--color-accent-stroke);
-    color: var(--color-theme-main);
-  }
-}

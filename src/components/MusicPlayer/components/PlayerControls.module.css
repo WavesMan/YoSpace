@@ -50,18 +50,8 @@
   -webkit-user-select: none;
 }
 
-.playBtn:active {
-  transform: scale(0.95);
-}
 
-@media (hover: hover) and (pointer: fine) {
-  .iconBtn:hover {
-    background-color: var(--color-accent-stroke);
-    color: var(--color-theme-main);
-  }
-
-  .playBtn:hover {
-    background-color: var(--color-theme-main-600);
-    transform: scale(1.05);
-  }
+.playBtn {
+  --player-button-hover: var(--color-theme-main-600);
+  --player-button-hover-text: white;
 }

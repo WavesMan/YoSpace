@@ -1,3 +1,4 @@
+import PlayerButton from './PlayerButton';
 import Image from 'next/image';
 import React from 'react';
 import { FiX, FiMusic } from 'react-icons/fi';
@@ -14,7 +15,7 @@ interface PlayerHeaderProps {
 
 /**
  * 播放器头部组件
- * 
+ *
  * 职责：
  * 1. 显示当前歌曲信息（封面、歌名、歌手）
  * 2. 提供关闭播放器面板的按钮
@@ -22,28 +23,23 @@ interface PlayerHeaderProps {
 const PlayerHeader: React.FC<PlayerHeaderProps> = ({ currentTrack, onClose }) => {
   const coverUrl = currentTrack ? getCover(currentTrack) : '';
 
-  const blurOnPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
-    event.currentTarget.blur();
-  };
-
   return (
     <div className={styles.header}>
-      <button 
+      <PlayerButton
         onClick={onClose}
-        onPointerUp={blurOnPointerUp}
         className={styles.closeBtn}
-        aria-label="Close player"
+        aria-label="关闭播放器"
       >
         <FiX size={18} />
-      </button>
+      </PlayerButton>
 
       <div className={styles.trackInfo}>
         {/* 封面图占位或实际图片 */}
         <div className={styles.cover}>
           {coverUrl ? (
-            <Image 
+            <Image
               src={coverUrl}
-              alt="Cover" 
+              alt="Cover"
               className={styles.coverImg}
               width={40}
               height={40}
@@ -53,7 +49,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({ currentTrack, onClose }) =>
             <FiMusic size={24} />
           )}
         </div>
-        
+
         {/* 歌曲元数据 */}
         <div className={styles.meta}>
           <h3 className={styles.title}>

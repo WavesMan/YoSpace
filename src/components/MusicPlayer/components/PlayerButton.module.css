@@ -1,0 +1,63 @@
+.button {
+  position: relative;
+  transition: background-color 160ms, color 160ms, box-shadow 160ms, transform 100ms, opacity 160ms;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-theme-main);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--color-bg);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.94);
+  filter: brightness(0.9);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+.button[data-loading='true'] {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.button[data-loading='true'] > .content {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  width: 1.25rem;
+  height: 1.25rem;
+  inset: 0;
+  margin: auto;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) {
+    background-color: var(--player-button-hover, var(--color-accent-stroke));
+    color: var(--player-button-hover-text, var(--color-theme-main));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button { transition: none; }
+  .button:active:not(:disabled) { transform: none; }
+  .spinner { animation: none; }
+}

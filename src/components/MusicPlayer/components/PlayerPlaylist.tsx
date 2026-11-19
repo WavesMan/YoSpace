@@ -1,10 +1,11 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { FiMusic } from 'react-icons/fi';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Track } from '../types';
 import { getArtists } from '../utils';
 import styles from './PlayerPlaylist.module.css';
+import PlayerButton from './PlayerButton';
 
 interface PlayerPlaylistProps {
   /** 是否显示播放列表 */
@@ -15,6 +16,9 @@ interface PlayerPlaylistProps {
   currentTrackIndex: number;
   /** 是否正在播放 */
   isPlaying: boolean;
+  disabled: boolean;
+  loadingTrackId?: number;
+  onTransitionComplete: () => void;
   /** 点击曲目的回调 */
   onPlayTrack: (index: number) => void;
   /** 列表排序回调 */
@@ -36,9 +40,13 @@ const PlayerPlaylist: React.FC<PlayerPlaylistProps> = ({
   playlist,
   currentTrackIndex,
   isPlaying,
+  disabled,
+  loadingTrackId,
+  onTransitionComplete,
   onPlayTrack,
   onReorder
 }) => {
+  const reducedMotion = useReducedMotion();
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) {
@@ -53,12 +61,14 @@ const PlayerPlaylist: React.FC<PlayerPlaylistProps> = ({
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onTransitionComplete}>
       {showPlaylist && (
         <motion.div
           initial={{ height: 0 }}
           animate={{ height: 250 }}
           exit={{ height: 0 }}
+          transition={{ duration: reducedMotion ? 0 : 0.2 }}
+          onAnimationComplete={onTransitionComplete}
           className={`${styles.playlist} themed-scrollbar`}
         >
           <DragDropContext onDragEnd={onDragEnd}>
@@ -74,28 +84,38 @@ const PlayerPlaylist: React.FC<PlayerPlaylistProps> = ({
                       key={track.id} 
                       draggableId={track.id.toString()} 
                       index={idx}
+                      isDragDisabled={disabled}
+                      disableInteractiveElementBlocking
                     >
                       {(provided, snapshot) => (
                         <li 
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          onClick={() => onPlayTrack(idx)}
-                          className={`${styles.playlistItem} ${idx === currentTrackIndex ? styles.active : ''}`}
                           style={{
                             ...provided.draggableProps.style,
                             backgroundColor: snapshot.isDragging ? 'rgba(var(--color-bg-rgb), 0.9)' : undefined,
                             boxShadow: snapshot.isDragging ? '0 4px 12px rgba(0,0,0,0.1)' : undefined,
                           }}
                         >
+                          <PlayerButton
+                            {...provided.dragHandleProps}
+                            onClick={() => onPlayTrack(idx)}
+                            disabled={disabled}
+                            loading={loadingTrackId === track.id}
+                            loadingLabel={`正在播放 ${track.name}`}
+                            aria-label={`播放 ${track.name}`}
+                            aria-current={idx === currentTrackIndex ? 'true' : undefined}
+                            className={`${styles.playlistItem} ${idx === currentTrackIndex ? styles.active : ''}`}
+                          >
                           <span className={styles.trackIndex}>{idx + 1}</span>
-                          <div className={styles.trackMeta}>
-                            <div className={styles.trackName}>{track.name}</div>
-                            <div className={styles.trackArtist}>{getArtists(track)}</div>
-                          </div>
+                          <span className={styles.trackMeta}>
+                            <span className={styles.trackName}>{track.name}</span>
+                            <span className={styles.trackArtist}>{getArtists(track)}</span>
+                          </span>
                           {idx === currentTrackIndex && isPlaying && (
                             <FiMusic className="animate-bounce ml-2" />
                           )}
+                          </PlayerButton>
                         </li>
                       )}
                     </Draggable>

@@ -17,7 +17,7 @@ import { writeBrowserStorage } from '@/utils/browserStorage';
 // 子组件
 import PlayerHeader from './components/PlayerHeader';
 import PlayerProgressBar from './components/PlayerProgressBar';
-import PlayerControls from './components/PlayerControls';
+import PlayerControls, { type PlaybackAction } from './components/PlayerControls';
 import PlayerVolume from './components/PlayerVolume';
 import PlayerPlaylist from './components/PlayerPlaylist';
 import PlayerToggleButton from './components/PlayerToggleButton';
@@ -34,6 +34,11 @@ export default function MusicPlayer() {
   // --- UI State ---
   const [isOpen, setIsOpen] = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(false);
+  const [isPlaylistLoading, setIsPlaylistLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PlaybackAction | null>(null);
+  // ref 在 React 提交禁用状态前立即加锁，拦住同一帧的重复触发。
+  const playbackPendingRef = useRef(false);
+  const playlistPendingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const playRequestIdRef = useRef(0);
   const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -72,6 +77,7 @@ export default function MusicPlayer() {
     currentTrackIndex,
     currentTrack,
     mode,
+    isLoading,
     fetchPlaylist,
     handleNext: getNextIndex,
     handlePrev: getPrevIndex,
@@ -85,8 +91,10 @@ export default function MusicPlayer() {
   // --- Combined Logic ---
 
   // 播放指定索引的歌曲
-  const playTrack = useCallback(async (index: number) => {
-    if (index < 0 || index >= playlist.length) return;
+  const playTrack = useCallback(async (index: number, action: PlaybackAction = 'track') => {
+    if (playbackPendingRef.current || index < 0 || index >= playlist.length) return;
+    playbackPendingRef.current = true;
+    setPendingAction(action);
 
     const requestId = (playRequestIdRef.current += 1);
 
@@ -97,26 +105,29 @@ export default function MusicPlayer() {
     setIsLoading(true);
     setAudioError(null);
 
-    // 准备资源
-    const { url, error } = await prepareTrack(index);
+    try {
+      const { url, error } = await prepareTrack(index);
 
-    if (requestId !== playRequestIdRef.current) {
-      return;
-    }
-    
-    if (error || !url) {
-      setAudioError(error || '获取资源失败');
+      if (requestId !== playRequestIdRef.current) return;
+
+      if (error || !url) {
+        setAudioError(error || '获取资源失败');
+        return;
+      }
+
+      await playUrl(url);
+    } catch {
+      setAudioError('播放失败，请重试');
+    } finally {
+      playbackPendingRef.current = false;
+      setPendingAction(null);
       setIsLoading(false);
-      return;
     }
-
-    // 播放
-    await playUrl(url);
-    setIsLoading(false);
   }, [playlist, prepareTrack, setCurrentTrackIndex, setAudioError, setIsLoading, playUrl]);
 
   // 切歌逻辑
   const handleNext = useCallback((auto = false) => {
+    if (playbackPendingRef.current) return;
     const nextIndex = getNextIndex(auto);
     
     // 如果是单曲循环且自动播放结束，只需重播
@@ -127,26 +138,45 @@ export default function MusicPlayer() {
     }
 
     if (nextIndex !== -1) {
-      playTrack(nextIndex);
+      playTrack(nextIndex, 'next');
     }
   }, [getNextIndex, mode, audioRef, playTrack]);
 
   const handlePrev = useCallback(() => {
     const prevIndex = getPrevIndex();
     if (prevIndex !== -1) {
-      playTrack(prevIndex);
+      playTrack(prevIndex, 'prev');
     }
   }, [getPrevIndex, playTrack]);
 
-  const handleTogglePlay = useCallback(() => {
+  const handleTogglePlay = useCallback(async () => {
+    if (playbackPendingRef.current) return;
     if (!audioRef.current?.src && playlist.length > 0) {
       // 如果没有源，尝试播放当前或第一首
       const idx = currentTrackIndex >= 0 ? currentTrackIndex : 0;
-      playTrack(idx);
+      await playTrack(idx, 'play');
     } else {
-      toggleAudio();
+      playbackPendingRef.current = true;
+      setPendingAction('play');
+      try {
+        await toggleAudio();
+      } finally {
+        playbackPendingRef.current = false;
+        setPendingAction(null);
+      }
     }
   }, [audioRef, playlist, currentTrackIndex, playTrack, toggleAudio]);
+
+  // 关闭时清理列表过渡状态；焦点交还入口，键盘用户可以继续操作。
+  const closePlayer = useCallback(() => {
+    setIsOpen(false);
+    setShowPlaylist(false);
+    playlistPendingRef.current = false;
+    setIsPlaylistLoading(false);
+    requestAnimationFrame(() => {
+      containerRef.current?.querySelector<HTMLButtonElement>('button[aria-label="打开播放器"]')?.focus();
+    });
+  }, []);
 
   /**
    * 重置歌词状态，避免切歌残留
@@ -375,13 +405,19 @@ export default function MusicPlayer() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setShowPlaylist(false);
+        closePlayer();
       }
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (isOpen && event.key === 'Escape') closePlayer();
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, closePlayer]);
 
   // --- Render ---
 
@@ -404,7 +440,7 @@ export default function MusicPlayer() {
           >
             <PlayerHeader 
               currentTrack={currentTrack}
-              onClose={() => setIsOpen(false)}
+              onClose={closePlayer}
             />
 
             <PlayerProgressBar
@@ -417,6 +453,10 @@ export default function MusicPlayer() {
             <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                <PlayerControls 
                  isPlaying={isPlaying}
+                 disabled={playlist.length === 0 || (isLoading && !pendingAction)}
+                 pendingAction={pendingAction}
+                 isPlaylistFetching={isLoading && !pendingAction}
+                 isPlaylistLoading={isPlaylistLoading}
                  mode={mode}
                  showPlaylist={showPlaylist}
                  onTogglePlay={handleTogglePlay}
@@ -427,7 +467,12 @@ export default function MusicPlayer() {
                    const next = modes[(modes.indexOf(mode) + 1) % modes.length];
                    setMode(next);
                  }}
-                 onTogglePlaylist={() => setShowPlaylist(!showPlaylist)}
+                 onTogglePlaylist={() => {
+                   if (playlistPendingRef.current) return;
+                   playlistPendingRef.current = true;
+                   setIsPlaylistLoading(true);
+                   setShowPlaylist(!showPlaylist);
+                 }}
                />
 
                <PlayerVolume 
@@ -448,17 +493,23 @@ export default function MusicPlayer() {
               playlist={playlist}
               currentTrackIndex={currentTrackIndex}
               isPlaying={isPlaying}
-              onPlayTrack={playTrack}
+              disabled={!!pendingAction}
+              loadingTrackId={pendingAction === 'track' ? currentTrack?.id : undefined}
+              onTransitionComplete={() => {
+                playlistPendingRef.current = false;
+                setIsPlaylistLoading(false);
+              }}
+              onPlayTrack={(index) => { void playTrack(index); }}
               onReorder={handleReorder}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      <PlayerToggleButton 
+      <PlayerToggleButton
         isOpen={isOpen}
         isPlaying={isPlaying}
-        onToggle={() => setIsOpen(!isOpen)}
+        onToggle={() => { if (isOpen) closePlayer(); else setIsOpen(true); }}
       />
     </motion.div>
   );

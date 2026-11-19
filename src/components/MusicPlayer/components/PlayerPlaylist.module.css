@@ -15,6 +15,11 @@
 }
 
 .playlistItem {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
   padding: 0.75rem;
   display: flex;
   align-items: center;
@@ -23,6 +28,15 @@
   transition: background-color 0.2s;
   color: var(--color-text-primary);
   touch-action: pan-y;
+}
+
+.playlistItem > span {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.playlistItem:focus-visible {
+  outline-offset: -3px;
 }
 
 .playlistItem.active {
@@ -44,6 +58,7 @@
 }
 
 .trackName {
+  display: block;
   font-weight: 500;
   font-size: 0.875rem;
   white-space: nowrap;
@@ -52,6 +67,7 @@
 }
 
 .trackArtist {
+  display: block;
   font-size: 0.75rem;
   opacity: 0.7;
   white-space: nowrap;
@@ -64,11 +80,5 @@
 @media (prefers-color-scheme: dark) {
   .playlistItem {
     border-color: rgba(55, 65, 81, 0.5);
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .playlistItem:hover {
-    background-color: var(--color-accent-stroke);
   }
 }

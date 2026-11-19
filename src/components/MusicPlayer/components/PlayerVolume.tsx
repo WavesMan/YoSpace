@@ -1,3 +1,4 @@
+import PlayerButton from './PlayerButton';
 import React from 'react';
 import { FiVolume2, FiVolumeX } from 'react-icons/fi';
 import DraggableProgressBar from '../../Common/ProgressBar/DraggableProgressBar';
@@ -14,7 +15,7 @@ interface PlayerVolumeProps {
 
 /**
  * 音量控制组件
- * 
+ *
  * 职责：
  * 1. 显示和调节音量
  * 2. 提供静音切换
@@ -24,20 +25,16 @@ const PlayerVolume: React.FC<PlayerVolumeProps> = ({
   onVolumeChange,
   onToggleMute
 }) => {
-  const blurOnPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
-    event.currentTarget.blur();
-  };
-
   return (
     <div className={styles.volumeControl}>
-      <button 
+      <PlayerButton
         onClick={onToggleMute}
-        onPointerUp={blurOnPointerUp}
         className={styles.iconBtn}
-        aria-label="Toggle mute"
+        aria-label={volume === 0 ? '恢复音量' : '静音'}
+        aria-pressed={volume === 0}
       >
         {volume === 0 ? <FiVolumeX size={16} /> : <FiVolume2 size={16} />}
-      </button>
+      </PlayerButton>
       <DraggableProgressBar
         value={volume}
         max={1}

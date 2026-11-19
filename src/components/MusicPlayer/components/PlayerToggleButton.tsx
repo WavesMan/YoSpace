@@ -1,5 +1,5 @@
+import PlayerButton from './PlayerButton';
 import React from 'react';
-import { motion } from 'framer-motion';
 import { FiMusic, FiX } from 'react-icons/fi';
 import styles from './PlayerToggleButton.module.css';
 
@@ -24,22 +24,15 @@ const PlayerToggleButton: React.FC<PlayerToggleButtonProps> = ({
   isPlaying,
   onToggle
 }) => {
-  const blurOnPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
-    event.currentTarget.blur();
-  };
-
   return (
-    <motion.button
-      layout
+    <PlayerButton
       onClick={onToggle}
-      onPointerUp={blurOnPointerUp}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
       className={`${styles.toggleBtn} ${isOpen ? styles.open : ''} ${isPlaying && !isOpen ? styles.spinning : ''}`}
-      aria-label={isOpen ? "Close player" : "Open player"}
+      aria-label={isOpen ? '关闭播放器' : '打开播放器'}
+      aria-expanded={isOpen}
     >
       {isOpen ? <FiX size={24} /> : <FiMusic size={24} />}
-    </motion.button>
+    </PlayerButton>
   );
 };
 

@@ -40,6 +40,7 @@ export const usePlaylist = (): UsePlaylistReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const urlCacheRef = useRef<Map<number, string>>(new Map());
   const availabilityCacheRef = useRef<Map<number, boolean>>(new Map());
+  const pendingTracksRef = useRef(new Map<number, Promise<{ url: string | null; error: string | null }>>());
 
   const currentTrack = currentTrackIndex >= 0 && currentTrackIndex < playlist.length 
     ? playlist[currentTrackIndex] 
@@ -136,19 +137,30 @@ export const usePlaylist = (): UsePlaylistReturn => {
       return { url: cachedUrl, error: null };
     }
 
-    // 可用性检查仅用于失败提示，灰色歌曲仍可能通过匹配音源获得完整链接。
-    const cachedAvailability = availabilityCacheRef.current.get(track.id);
-    const isAvailable = cachedAvailability ?? await checkSongAvailability(track.id);
-    availabilityCacheRef.current.set(track.id, isAvailable);
-    const url = await getSongUrl(track.id);
-    if (!url) {
-      return { url: null, error: isAvailable
-        ? `无法获取 "${track.name}" 的播放链接`
-        : `歌曲 "${track.name}" 暂不可用` };
-    }
-    urlCacheRef.current.set(track.id, url);
+    // 预加载和用户点击可能同时准备同一首歌，共用在途请求以避免重复解析。
+    const pendingTrack = pendingTracksRef.current.get(track.id);
+    if (pendingTrack) return pendingTrack;
 
-    return { url, error: null };
+    const preparation = (async () => {
+      // 可用性检查仅用于失败提示，灰色歌曲仍可能通过匹配音源获得完整链接。
+      const cachedAvailability = availabilityCacheRef.current.get(track.id);
+      const isAvailable = cachedAvailability ?? await checkSongAvailability(track.id);
+      availabilityCacheRef.current.set(track.id, isAvailable);
+      const url = await getSongUrl(track.id);
+      if (!url) {
+        return { url: null, error: isAvailable
+          ? `无法获取 "${track.name}" 的播放链接`
+          : `歌曲 "${track.name}" 暂不可用` };
+      }
+      urlCacheRef.current.set(track.id, url);
+      return { url, error: null };
+    })();
+    pendingTracksRef.current.set(track.id, preparation);
+    try {
+      return await preparation;
+    } finally {
+      pendingTracksRef.current.delete(track.id);
+    }
   }, [playlist]);
 
   return {
