@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import Link from '../TransitionLink';
 import style from './Pagination.module.css';
 import { useI18n } from '@/context/I18nContext';
 

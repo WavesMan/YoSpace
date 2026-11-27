@@ -3,11 +3,15 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TransitionLink from './TransitionLink';
 
-vi.mock('next/link', () => ({ default: ({ onNavigate, href, children }: { onNavigate?: (event: { preventDefault: () => void }) => void; href: string; children: React.ReactNode }) =>
-    <a href={href} onClick={event => { event.preventDefault(); if (!event.ctrlKey && !event.metaKey) onNavigate?.({ preventDefault: vi.fn() }); }}>{children}</a> }));
+vi.mock('next/link', () => ({ default: ({ onNavigate, href, children, prefetch }: { prefetch?: boolean; onNavigate?: (event: { preventDefault: () => void }) => void; href: string; children: React.ReactNode }) =>
+    <a href={href} data-prefetch={String(prefetch)} onClick={event => { event.preventDefault(); if (!event.ctrlKey && !event.metaKey) onNavigate?.({ preventDefault: vi.fn() }); }}>{children}</a> }));
 afterEach(() => vi.restoreAllMocks());
 
 describe('统一导航开始信号', () => {
+    it('禁用自动预取以阻断 EO 缓存响应引发的请求循环', () => {
+        render(<TransitionLink href="/blog">文章列表</TransitionLink>);
+        expect(screen.getByText('文章列表')).toHaveAttribute('data-prefetch', 'false');
+    });
     it('站内路由跳转发出目标路径，而锚点与外链不触发', () => {
         const signal = vi.fn();
         window.addEventListener('app-navigation-start', signal);

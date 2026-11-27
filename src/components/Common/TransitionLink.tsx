@@ -5,7 +5,8 @@ import type { ComponentProps } from 'react';
 
 /** 使用 Next 的导航回调，排除新标签页、下载、外链和被业务取消的跳转。 */
 export default function TransitionLink({ onNavigate, href, ...props }: ComponentProps<typeof Link>) {
-    return <Link {...props} href={href} onNavigate={event => {
+    // EO 的缓存预取响应会触发客户端持续重新预取，改为用户导航时再请求。
+    return <Link {...props} prefetch={false} href={href} onNavigate={event => {
         let cancelled = false;
         onNavigate?.({ preventDefault: () => { cancelled = true; event.preventDefault(); } });
         if (cancelled) return;
