@@ -1,6 +1,8 @@
 # 正式站 SEO 与 GEO
 
-正式域名配置在 `src/data/seo.json`。Next.js 页面 canonical、robots、Sitemap、RSS、Atom 及搜索引擎提交脚本使用 `https://yospace.waveyo.cn`。`redirectHosts` 仅填写由本部署负责的别名。列出的别名保留路径和查询参数，返回 `308` 到站点域名。
+正式域名配置在 `src/data/seo.json`。Next.js 页面 canonical、robots、Sitemap、RSS、Atom 及搜索引擎提交脚本使用 `https://yospace.waveyo.cn`。域名跳转在 EO 边缘规则中按客户端访问域名配置。应用层直接提供页面和资源，避免 EO 改写回源 Host 后触发跳回当前 URL 的循环。两个独立站点分别使用各自的 siteUrl。
+
+部署本修复后，清除 EO 中先前缓存的 308 响应，覆盖页面、/_next/ 资源和元数据路径。浏览器也可能缓存永久跳转，可通过新浏览器会话或禁用缓存检查。验收时查看页面及其实际引用的 JS/CSS，请求应直接返回 200，Location 不应指向当前 URL。
 
 ## 内容发布
 

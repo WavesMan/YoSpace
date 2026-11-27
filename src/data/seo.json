@@ -5,6 +5,5 @@
   "defaultDescription": "WaveYo 的技术博客，记录 Go 后端架构、YoBFF 网关、数据库故障排查与部署实战。",
   "defaultOgImage": "/WaveYo.jpg",
   "twitterHandle": "",
-  "twitterSite": "",
-  "redirectHosts": []
+  "twitterSite": ""
 }
