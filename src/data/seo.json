@@ -1,13 +1,9 @@
 {
-  "siteUrl": "https://yospace.waveyo.cn",
-  "siteName": "YoSpace",
-  "defaultTitle": "YoSpace",
-  "defaultDescription": "从群众出发，扎根群众。向前，无限进步",
-  "defaultOgImage": "",
+  "siteUrl": "https://www.waveyo.cn",
+  "siteName": "WaveYo",
+  "defaultTitle": "WaveYo 技术博客 | Go 后端、网关与部署实战",
+  "defaultDescription": "WaveYo 的技术博客，记录 Go 后端架构、YoBFF 网关、数据库故障排查与部署实战。",
+  "defaultOgImage": "/WaveYo.jpg",
   "twitterHandle": "",
-  "twitterSite": "",
-  "sitemap": {
-    "changeFrequency": "weekly",
-    "priority": 0.7
-  }
+  "twitterSite": ""
 }

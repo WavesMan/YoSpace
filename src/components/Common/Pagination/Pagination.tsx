@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import style from './Pagination.module.css';
 import { useI18n } from '@/context/I18nContext';
 
@@ -10,7 +11,8 @@ interface PaginationProps {
     itemsLimitPerPage: number; // 每页显示的条目数
     visiblePages: number; // 总共显示的分页按钮数量
     currentPage: number; // 当前页码
-    handlePageChange: (page: number) => void; // 页码切换的回调函数
+    handlePageChange?: (page: number) => void;
+    getPageHref?: (page: number) => string;
 }
 
 /**
@@ -29,7 +31,8 @@ const Pagination: React.FC<PaginationProps> = ({
     itemsLimitPerPage, 
     currentPage, 
     visiblePages, 
-    handlePageChange 
+    handlePageChange,
+    getPageHref,
 }) => {
     const { t } = useI18n();
     const totalPages = Math.ceil(totalItems / itemsLimitPerPage);
@@ -56,65 +59,29 @@ const Pagination: React.FC<PaginationProps> = ({
     // 生成页码数组
     const pages = Array.from({ length: endPage - startPage + 1 }, (_, index) => startPage + index);
 
+    const control = (page: number, label: string, text: React.ReactNode, disabled = false, active = false) => {
+        const className = `${style.pagination_pageButton}${active ? ` ${style.active}` : ''}`;
+        const ariaCurrent = active ? 'page' : undefined;
+        if (getPageHref && !disabled) {
+            return <Link key={label} href={getPageHref(page)} className={className} aria-label={label} aria-current={ariaCurrent}>{text}</Link>;
+        }
+        return <button key={label} type="button" className={className} disabled={disabled} aria-label={label} aria-current={ariaCurrent} onClick={() => handlePageChange?.(page)}>
+            {text}
+        </button>;
+    };
+
     return (
-        <div className={style.pagination_wrapper}>
+        <nav className={style.pagination_wrapper} aria-label="文章分页">
             <div className={style.pagination_container}>
                 <div className={style.pagination}>
-                    {/* 首页按钮 */}
-                    <button
-                        className={style.pagination_pageButton}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(1)}
-                        aria-label="前往首页"
-                    >
-                        {t('Controller.Pagination.First')}
-                    </button>
-
-                    {/* 上一页按钮 */}
-                    <button
-                        className={style.pagination_pageButton}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        aria-label="上一页"
-                    >
-                        {t('Controller.Pagination.Previous')}
-                    </button>
-
-                    {/* 页码按钮 */}
-                    {pages.map((page) => (
-                        <button
-                            key={page}
-                            className={`${style.pagination_pageButton} ${currentPage === page ? style.active : ''}`}
-                            onClick={() => handlePageChange(page)}
-                            aria-current={currentPage === page ? 'page' : undefined}
-                            aria-label={`前往第 ${page} 页`}
-                        >
-                            {page}
-                        </button>
-                    ))}
-
-                    {/* 下一页按钮 */}
-                    <button
-                        className={style.pagination_pageButton}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        aria-label="下一页"
-                    >
-                        {t('Controller.Pagination.Next')}
-                    </button>
-
-                    {/* 末页按钮 */}
-                    <button
-                        className={style.pagination_pageButton}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(totalPages)}
-                        aria-label="末页"
-                    >
-                        {t('Controller.Pagination.End')}
-                    </button>
+                    {control(1, '前往首页', t('Controller.Pagination.First'), currentPage === 1)}
+                    {control(currentPage - 1, '上一页', t('Controller.Pagination.Previous'), currentPage === 1)}
+                    {pages.map(page => control(page, `前往第 ${page} 页`, page, false, currentPage === page))}
+                    {control(currentPage + 1, '下一页', t('Controller.Pagination.Next'), currentPage === totalPages)}
+                    {control(totalPages, '末页', t('Controller.Pagination.End'), currentPage === totalPages)}
                 </div>
             </div>
-        </div>
+        </nav>
     );
 };
 

@@ -28,8 +28,8 @@
 
 线上示例与详细博客说明可访问：
 
-- 站点首页：https://yospace.waveyo.cn/
-- 博客与使用说明（推荐查看 `博客内容模型与前端功能使用指南` 一文）：https://yospace.waveyo.cn/blog
+- 站点首页：https://www.waveyo.cn/
+- 博客与使用说明（推荐查看 `博客内容模型与前端功能使用指南` 一文）：https://www.waveyo.cn/blog
 
 ### 界面预览
 
@@ -116,7 +116,7 @@ pnpm lint
 - `SERVER_ACTIONS_ALLOWED_ORIGINS`：允许触发 Server Actions 的来源域名白名单（逗号分隔）。
 - 适用场景：站点在 CDN / 反向代理套壳后，出现 `x-forwarded-host` 与 `origin` 不一致，导致 `Invalid Server Actions request`。
 - 填写规则：仅填写域名（可包含端口），不要带协议（`https://`）与路径。
-- 示例：`yospace.waveyo.cn,yospace-vercel.waveyo.cn`
+- 示例：`www.waveyo.cn`
 
 ### Contentful（可选）
 
@@ -150,7 +150,8 @@ pnpm lint
 
 站点 SEO 统一使用配置文件管理：
 
-- [`src/data/seo.json`](/src/data/seo.json)：SEO 配置入口（站点域名、默认标题/描述、分享图、sitemap 策略）
+- [`src/data/seo.json`](/src/data/seo.json)：SEO 配置入口（正式域名、默认标题和描述、分享图）
+- [搜索引擎验证与发布流程](src/data/seo.md)：Sitemap、IndexNow、百度收录与上线验收
 - [`src/data/seo.md`](/src/data/seo.md)：SEO 配置说明与示例
 
 SEO 功能包含：

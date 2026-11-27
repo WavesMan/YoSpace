@@ -1,4 +1,5 @@
-import { PostItem } from './content/local';
+import type { PostItem } from './content/local';
+import { seoConfig, toSeoDate } from './seo';
 
 /**
  * RSS/ATOM 订阅生成工具
@@ -14,20 +15,21 @@ import { PostItem } from './content/local';
  * @param baseUrl 网站基础URL
  * @returns RSS XML 内容
  */
-export function generateRSS(posts: PostItem[], baseUrl: string = process.env.NEXT_PUBLIC_SITE_URL || 'https://yospace.waveyo.cn'): string {
-  const siteTitle = process.env.NEXT_PUBLIC_SITE_TITLE || 'WaveYo';
-  const siteDescription = process.env.NEXT_PUBLIC_SITE_DESCRIPTION || '从群众出发，扎根群众。向前，无限进步';
+export function generateRSS(posts: PostItem[], baseUrl: string = seoConfig.siteUrl): string {
+  const siteTitle = seoConfig.siteName;
+  const siteDescription = seoConfig.defaultDescription;
   
   const items = posts.map(post => {
-    const postUrl = `${baseUrl}/blog/${post.slug}`;
-    const pubDate = new Date(post.publishedTime).toUTCString();
+    const postUrl = `${baseUrl}/blog/${encodeURIComponent(post.slug)}`;
+    const published = toSeoDate(post.publishedTime);
+    const pubDate = published ? new Date(published).toUTCString() : undefined;
     
     return `
       <item>
         <title>${escapeXML(post.title)}</title>
         <link>${postUrl}</link>
         <guid isPermaLink="true">${postUrl}</guid>
-        <pubDate>${pubDate}</pubDate>
+        ${pubDate ? `<pubDate>${pubDate}</pubDate>` : ''}
         <description>${escapeXML(post.description || '')}</description>
       </item>`;
   }).join('');
@@ -52,26 +54,27 @@ export function generateRSS(posts: PostItem[], baseUrl: string = process.env.NEX
  * @param baseUrl 网站基础URL
  * @returns ATOM XML 内容
  */
-export function generateATOM(posts: PostItem[], baseUrl: string = process.env.NEXT_PUBLIC_SITE_URL || 'https://yospace.waveyo.cn'): string {
-  const siteTitle = process.env.NEXT_PUBLIC_SITE_TITLE || 'Blog';
+export function generateATOM(posts: PostItem[], baseUrl: string = seoConfig.siteUrl): string {
+  const siteTitle = seoConfig.siteName;
   const siteUrl = baseUrl;
-  const updated = new Date().toISOString();
+  const updated = posts.map(post => toSeoDate(post.updatedTime) ?? toSeoDate(post.publishedTime))
+    .filter(Boolean).sort().at(-1) || new Date().toISOString();
   
   const entries = posts.map(post => {
-    const postUrl = `${baseUrl}/blog/${post.slug}`;
-    const published = new Date(post.publishedTime).toISOString();
-    const updated = new Date(post.publishedTime).toISOString();
+    const postUrl = `${baseUrl}/blog/${encodeURIComponent(post.slug)}`;
+    const published = toSeoDate(post.publishedTime);
+    const modified = toSeoDate(post.updatedTime) ?? published ?? updated;
     
     return `
     <entry>
       <title type="html">${escapeXML(post.title)}</title>
       <link href="${postUrl}" rel="alternate"/>
       <id>${postUrl}</id>
-      <published>${published}</published>
-      <updated>${updated}</updated>
+      ${published ? `<published>${published}</published>` : ''}
+      <updated>${modified}</updated>
       <summary type="html">${escapeXML(post.description || '')}</summary>
       <author>
-        <name>${process.env.NEXT_PUBLIC_AUTHOR_NAME || 'Author'}</name>
+        <name>${escapeXML(seoConfig.siteName)}</name>
       </author>
     </entry>`;
   }).join('');
@@ -80,11 +83,11 @@ export function generateATOM(posts: PostItem[], baseUrl: string = process.env.NE
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>${escapeXML(siteTitle)}</title>
   <link href="${siteUrl}" rel="alternate"/>
-  <link href="${baseUrl}/feeds/atom.xml" rel="self"/>
+  <link href="${baseUrl}${process.env.NEXT_PUBLIC_ATOM_FEED_PATH || '/feeds/atom.xml'}" rel="self"/>
   <id>${siteUrl}</id>
   <updated>${updated}</updated>
   <author>
-    <name>${process.env.NEXT_PUBLIC_AUTHOR_NAME || 'Author'}</name>
+    <name>${escapeXML(seoConfig.siteName)}</name>
   </author>
   ${entries}
 </feed>`;

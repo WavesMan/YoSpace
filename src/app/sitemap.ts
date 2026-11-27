@@ -1,86 +1,25 @@
-import { MetadataRoute } from "next";
-import { getAllLocalPostSlugs, getLocalPostsList } from "@/utils/content/local";
-import { buildUrl, seoConfig } from "@/utils/seo";
+import type { MetadataRoute } from "next";
+import { getLocalPostsList } from "@/utils/content/local";
+import { buildUrl, toSeoDate } from "@/utils/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const now = new Date();
-    const list = await getLocalPostsList(0, 5000, "en");
-    const slugs = await getAllLocalPostSlugs();
+    const { items } = await getLocalPostsList(0, Number.MAX_SAFE_INTEGER, "zh-CN");
+    const categories = new Set<string>();
+    const tags = new Map<string, number>();
 
-    const tagSet = new Set<string>();
-    const categorySet = new Set<string>();
-    const dateMap = new Map<string, string>();
-
-    list.items.forEach((item) => {
-        if (Array.isArray(item.tags)) {
-            item.tags.forEach((tag) => tagSet.add(tag));
-        }
-        if (item.category?.id) {
-            categorySet.add(item.category.id);
-        }
-        if (item.slug && item.publishedTime) {
-            dateMap.set(item.slug, item.publishedTime);
-        }
-    });
-
-    const baseFrequency = seoConfig.sitemap.changeFrequency as MetadataRoute.Sitemap[number]["changeFrequency"];
-    const basePriority = seoConfig.sitemap.priority;
-
-    const staticEntries: MetadataRoute.Sitemap = [
-        {
-            url: buildUrl("/"),
-            lastModified: now,
-            changeFrequency: baseFrequency,
-            priority: basePriority,
-        },
-        {
-            url: buildUrl("/blog"),
-            lastModified: now,
-            changeFrequency: "weekly",
-            priority: 0.7,
-        },
-        {
-            url: buildUrl("/tags"),
-            lastModified: now,
-            changeFrequency: "weekly",
-            priority: 0.5,
-        },
-        {
-            url: buildUrl("/categories"),
-            lastModified: now,
-            changeFrequency: "weekly",
-            priority: 0.5,
-        },
-    ];
-
-    const postEntries: MetadataRoute.Sitemap = slugs.map((item) => {
-        const date = dateMap.get(item.slug);
-        return {
-            url: buildUrl(`/blog/${encodeURIComponent(item.slug)}`),
-            lastModified: date ? new Date(date) : now,
-            changeFrequency: "monthly",
-            priority: 0.6,
-        };
-    });
-
-    const tagEntries: MetadataRoute.Sitemap = Array.from(tagSet).map((tag) => ({
-        url: buildUrl(`/tag/${encodeURIComponent(tag)}`),
-        lastModified: now,
-        changeFrequency: "monthly",
-        priority: 0.4,
-    }));
-
-    const categoryEntries: MetadataRoute.Sitemap = Array.from(categorySet).map((categoryId) => ({
-        url: buildUrl(`/category/${encodeURIComponent(categoryId)}`),
-        lastModified: now,
-        changeFrequency: "monthly",
-        priority: 0.4,
-    }));
+    for (const post of items) {
+        if (post.category) categories.add(post.category.id);
+        for (const tag of new Set(post.tags)) tags.set(tag, (tags.get(tag) ?? 0) + 1);
+    }
 
     return [
-        ...staticEntries,
-        ...postEntries,
-        ...tagEntries,
-        ...categoryEntries,
+        ...["/", "/blog", "/archive", "/categories", "/tags"].map(path => ({ url: buildUrl(path) })),
+        ...items.map(post => ({
+            url: buildUrl(`/blog/${encodeURIComponent(post.slug)}`),
+            lastModified: toSeoDate(post.updatedTime) ?? toSeoDate(post.publishedTime),
+        })),
+        ...Array.from(categories, id => ({ url: buildUrl(`/category/${encodeURIComponent(id)}`) })),
+        ...Array.from(tags).filter(([, count]) => count >= 2)
+            .map(([tag]) => ({ url: buildUrl(`/tag/${encodeURIComponent(tag)}`) })),
     ];
 }

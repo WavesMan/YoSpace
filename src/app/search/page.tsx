@@ -1,11 +1,8 @@
+import { pageMetadata } from "@/utils/seo";
 import { getInitialPosts } from '@/utils/content/initialPosts';
-import { Metadata } from "next";
 import SearchPage from "@/components/Blog/SearchPage";
 
-export const metadata: Metadata = {
-    title: `Search - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
-    description: "Search posts on this site",
-};
+export const metadata = { ...pageMetadata("/search", "站内搜索", "搜索 WaveYo 技术博客中的文章。"), robots: { index: false, follow: true } };
 
 export const revalidate = 3600;
 

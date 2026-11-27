@@ -1,59 +1,30 @@
-# SEO 配置说明
+# 正式站 SEO 与 GEO
 
-本文件用于说明 seo.json 的字段含义与使用范围，便于统一管理站点 SEO 配置。
+正式域名配置在 `src/data/seo.json`。Next.js 页面 canonical、robots、Sitemap、RSS、Atom 及搜索引擎提交脚本使用 `https://www.waveyo.cn`。根域名与旧 `yospace` 域名接入本应用时按原路径返回 `308`。如果旧域名仍由独立部署响应，需要在该部署或 CDN 配置相同的跳转；旧演示路径没有对应文章时最终返回 `404`。
 
-## 字段说明
+## 内容发布
 
-### siteUrl
-站点主域名，用于生成 canonical、open graph 与 sitemap 相关链接。
+- 正式博客列表和 Sitemap 读取 `*.zh-CN.md`。文章路径保持稳定。
+- 文章使用真实的 `date`，实质修订才增加或更新 `updatedAt`。中文旧文中未标时区的时分按北京时间解释。
+- `author` 可覆盖默认站点作者。可选 `image` 填适合代表文章内容的可公开抓取图片 URL 或站内路径。
+- 文章优先在开头回答读者的问题，写明适用版本、验证方法与结果。架构文章可以链接到相关实现和复盘。
+- 分类、归档、主要列表均可抓取。标签至少关联两篇文章才进入 Sitemap，单篇标签页和站内搜索通过 `noindex` 保留给用户浏览。
+- 有正式英文译文时再为译文增加稳定的语言路径和双向 `hreflang`。
 
-### siteName
-站点名称，用于社交分享与页面标题拼接。
+## 发布验证
 
-### defaultTitle
-默认页面标题，用于未提供页面级标题时的兜底。
+1. 检查 `/robots.txt`、`/sitemap.xml`、RSS 和 Atom 中的正式域名，核对文章更新时间与页面正文。确认无效文章、分类、标签及分页返回 `404`。
+2. 在关闭 JavaScript 的浏览器打开 `/blog?page=2`，检查页面有独立标题和第二页文章，分页能点击。
+3. 在 Google Search Console、Bing Webmaster Tools 和百度搜索资源平台验证正式域名。使用 HTML 标签验证时，分别配置 `GOOGLE_SITE_VERIFICATION`、`BING_SITE_VERIFICATION` 与 `BAIDU_SITE_VERIFICATION`。提交 `https://www.waveyo.cn/sitemap.xml`，抽查文章及专题页。
+4. 用 28 天为周期观察 Google 非品牌搜索与生成式 AI 展示、Bing 搜索及 AI Performance 引用、百度索引量与关键词表现。百度站点已开放 AI 流量分析时，也可查看相关数据。
 
-### defaultDescription
-默认页面描述，用于未提供页面级描述时的兜底。
+## 主动提交变更
 
-### defaultOgImage
-默认分享图路径，建议指向 public 内的静态资源相对路径。
+正式部署成功后再运行。IndexNow 提交新增、实质修改和删除的 URL。先在正式域名根目录发布与 `INDEXNOW_KEY` 同名的 `.txt` 文件，文件内容为该密钥。百度普通收录提交新增或实质更新的可访问 URL，令牌由对应站点的后台提供。
 
-### twitterHandle
-作者账号，用于 Twitter 分享卡片的 creator 字段。
-
-### twitterSite
-站点账号，用于 Twitter 分享卡片的 site 字段。
-
-### sitemap
-站点地图配置，影响全站默认的变更频率与权重。
-
-#### sitemap.changeFrequency
-默认更新频率，适用于大部分页面。
-
-#### sitemap.priority
-默认优先级，适用于大部分页面。
-
-## 示例
-
-```json
-{
-  "siteUrl": "https://your-domain.com",
-  "siteName": "YoSpace",
-  "defaultTitle": "YoSpace",
-  "defaultDescription": "从群众出发，扎根群众。向前，无限进步",
-  "defaultOgImage": "/og-default.png",
-  "twitterHandle": "@your_handle",
-  "twitterSite": "@your_site",
-  "sitemap": {
-    "changeFrequency": "weekly",
-    "priority": 0.7
-  }
-}
+```powershell
+node scripts/submit-search-urls.mjs indexnow /blog/文章路径
+node scripts/submit-search-urls.mjs baidu /blog/文章路径
 ```
 
-### 使用建议
-
-- siteUrl 使用线上域名，避免使用 localhost
-- defaultOgImage 指向 public 下的静态文件相对路径
-- twitterHandle 与 twitterSite 可按需留空
+脚本从运行环境读取 `INDEXNOW_KEY` 或 `BAIDU_PUSH_TOKEN`。提交回执表示平台接收到 URL，后续抓取、收录和展示由平台决定。

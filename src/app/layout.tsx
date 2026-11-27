@@ -6,6 +6,7 @@ import ClientShell from "@/components/Common/ClientShell";
 import { I18nProvider } from "@/context/I18nContext";
 import PageReadiness from "@/components/Common/PageReadiness";
 import { resolveRequestLocale } from '@/utils/requestLocale';
+import { seoConfig } from '@/utils/seo';
 import { themeInitScript } from '@/utils/theme';
 
 const localeInitScript = `
@@ -13,13 +14,7 @@ const localeInitScript = `
     try {
       const flag = ${JSON.stringify(process.env.NEXT_PUBLIC_I18N ?? "")};
       const isEnabled = !flag || flag === 'true';
-      if (!isEnabled) {
-        const titleZh = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
-        if (titleZh) {
-          document.title = titleZh;
-        }
-        return;
-      }
+      if (!isEnabled) return;
 
       const saved = window.localStorage.getItem('locale');
       const browserLang = (window.navigator.language || '').toLowerCase();
@@ -35,22 +30,22 @@ const localeInitScript = `
       document.cookie = 'locale=' + locale + '; path=/; max-age=31536000; samesite=lax';
       document.documentElement.lang = locale;
 
-      const titleZh = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
-      const titleEn = ${JSON.stringify(process.env.NEXT_PUBLIC_SITE_TITLE_EN || process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace")};
-
-      if (locale === 'en-US' && titleEn) {
-        document.title = titleEn;
-      } else if (titleZh) {
-        document.title = titleZh;
-      }
     } catch (e) {
     }
   })();
 `;
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace",
-  description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "从群众出发，扎根群众。向前，无限进步",
+  metadataBase: new URL(seoConfig.siteUrl),
+  title: seoConfig.defaultTitle,
+  description: seoConfig.defaultDescription,
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: {
+      ...(process.env.BING_SITE_VERIFICATION && { 'msvalidate.01': process.env.BING_SITE_VERIFICATION }),
+      ...(process.env.BAIDU_SITE_VERIFICATION && { 'baidu-site-verification': process.env.BAIDU_SITE_VERIFICATION }),
+    },
+  },
   icons: {
     icon: [
       {
@@ -109,11 +104,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const savedLocale = cookieStore.get('locale')?.value;
-  const requestHeaders = await headers();
-  const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-  const htmlLang = resolveRequestLocale(savedLocale, acceptLang);
+  let htmlLang: 'zh-CN' | 'en-US' = 'zh-CN';
+  if (process.env.NEXT_PUBLIC_I18N !== 'false') {
+    const [cookieStore, requestHeaders] = await Promise.all([cookies(), headers()]);
+    htmlLang = resolveRequestLocale(cookieStore.get('locale')?.value, requestHeaders.get('accept-language') || '');
+  }
   const rssFeedPath = process.env.NEXT_PUBLIC_RSS_FEED_PATH || "/feeds/rss.xml";
   const atomFeedPath = process.env.NEXT_PUBLIC_ATOM_FEED_PATH || "/feeds/atom.xml";
 

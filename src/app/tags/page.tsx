@@ -1,11 +1,8 @@
+import { pageMetadata } from "@/utils/seo";
 import { getInitialPosts } from '@/utils/content/initialPosts';
-import { Metadata } from "next";
 import TagsPage from "@/components/Blog/TagsPage";
 
-export const metadata: Metadata = {
-    title: `Tags - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
-    description: "All tags of posts",
-};
+export const metadata = pageMetadata("/tags", "文章标签", "按技术标签查找 WaveYo 的实践文章。");
 
 export const revalidate = 3600;
 

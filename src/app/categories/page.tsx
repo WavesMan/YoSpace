@@ -1,11 +1,8 @@
+import { pageMetadata } from "@/utils/seo";
 import { getInitialPosts } from '@/utils/content/initialPosts';
-import { Metadata } from "next";
 import CategoriesPage from "@/components/Blog/CategoriesPage";
 
-export const metadata: Metadata = {
-    title: `Categories - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
-    description: "All categories of posts",
-};
+export const metadata = pageMetadata("/categories", "文章分类", "按主题浏览 WaveYo 的后端架构、数据库与部署文章。");
 
 export const revalidate = 3600;
 

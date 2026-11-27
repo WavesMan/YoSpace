@@ -1,46 +1,30 @@
-import { Metadata } from "next";
-import TagDetail from "@/components/Blog/TagDetail";
-import { getLocalPostsList, type PostItem } from "@/utils/content/local";
-import { cookies, headers } from "next/headers";
+import { cache } from 'react';
+import { notFound } from 'next/navigation';
+import TagDetail from '@/components/Blog/TagDetail';
+import { getLocalPostsList } from '@/utils/content/local';
+import { pageMetadata } from '@/utils/seo';
 
-export const metadata: Metadata = {
-    title: `Tag - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
-};
+type TaxonomyParams = { params: Promise<{ slug: string }> };
 
-export const revalidate = 3600;
+const getPosts = cache(async (slug: string) => {
+    const { items } = await getLocalPostsList(0, Number.MAX_SAFE_INTEGER, 'zh-CN');
+    const posts = items.filter(item => item.tags?.includes(slug));
+    if (!posts.length) notFound();
+    return posts;
+});
 
-interface TagPageParams {
-    slug: string;
+export async function generateMetadata({ params }: TaxonomyParams) {
+    const slug = decodeURIComponent((await params).slug);
+    const posts = await getPosts(slug);
+    const label = slug;
+    return {
+        ...pageMetadata('/tag/' + encodeURIComponent(slug), label + ' · 标签', '浏览 WaveYo 关于' + label + '的技术文章。'),
+        robots: { index: posts.length >= 2, follow: true },
+    };
 }
 
-/**
- *
- * TagPage 页面
- *
- * 首屏根据 cookie 与请求头推断语言，直出标签文章列表。
- *
- * @param params 动态路由参数
- * @returns 标签详情页
- *
- */
-export default async function TagPage({ params }: { params: Promise<TagPageParams> }) {
-    const { slug } = await params;
-    const cookieStore = await cookies();
-    const savedLocale = cookieStore.get('locale')?.value;
-    const requestHeaders = await headers();
-    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = savedLocale === 'en-US' || savedLocale === 'zh-CN'
-        ? savedLocale
-        : acceptLang.startsWith('en')
-            ? 'en-US'
-            : 'zh-CN';
-    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
-    let initialPosts: PostItem[];
-    try {
-        const list = await getLocalPostsList(0, 2000, locale);
-        initialPosts = list.items;
-    } catch {
-        initialPosts = [];
-    }
-    return <TagDetail slug={slug} initialPosts={initialPosts} initialLocale={locale} />;
+export default async function TaxonomyPage({ params }: TaxonomyParams) {
+    const slug = decodeURIComponent((await params).slug);
+    const posts = await getPosts(slug);
+    return <TagDetail slug={slug} initialPosts={posts} initialLocale="zh-CN" />;
 }

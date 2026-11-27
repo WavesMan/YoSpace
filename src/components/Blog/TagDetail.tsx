@@ -52,17 +52,9 @@ const TagDetail: React.FC<TagDetailProps> = ({ slug, initialPosts, initialLocale
         return () => controller.abort();
     }, [initialLocale, initialPosts, locale]);
 
-    const decodedTag = useMemo(() => {
-        try {
-            return decodeURIComponent(slug);
-        } catch {
-            return slug;
-        }
-    }, [slug]);
-
     const filtered = useMemo(() => {
-        return posts.filter(item => Array.isArray(item.tags) && item.tags.includes(decodedTag));
-    }, [posts, decodedTag]);
+        return posts.filter(item => Array.isArray(item.tags) && item.tags.includes(slug));
+    }, [posts, slug]);
 
     const renderPostCard = (post: PostItem, index: number) => (
         <BlogCard
@@ -82,7 +74,7 @@ const TagDetail: React.FC<TagDetailProps> = ({ slug, initialPosts, initialLocale
         <>
             <div className={style.blog_wrapper}>
                 <div className={style.blog_container}>
-                    <h1 className={style.blog_title}>{decodedTag}</h1>
+                    <h1 className={style.blog_title}>{slug}</h1>
                     {status === "Loading" && (
                         null
                     )}
@@ -101,7 +93,7 @@ const TagDetail: React.FC<TagDetailProps> = ({ slug, initialPosts, initialLocale
                     )}
                 </div>
             </div>
-            <Background text={decodedTag} />
+            <Background text={slug} />
         </>
     );
 };

@@ -532,3 +532,15 @@
         transition: none;
     }
 }
+
+.home_blog_links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-block: 0.75rem;
+}
+
+.home_blog_links a {
+    color: var(--color-text-primary);
+    text-underline-offset: 0.2em;
+}

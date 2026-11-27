@@ -128,14 +128,6 @@ export const I18nProvider = ({ children, initialLocale = DEFAULT_LOCALE }: { chi
     // 设置 html lang 属性
     document.documentElement.lang = locale;
 
-    // 更新页面标题
-    const siteTitle = locale === 'en-US'
-      ? (process.env.NEXT_PUBLIC_SITE_TITLE_EN || process.env.NEXT_PUBLIC_SITE_TITLE)
-      : process.env.NEXT_PUBLIC_SITE_TITLE;
-    
-    if (siteTitle) {
-      document.title = siteTitle;
-    }
   }, [locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {

@@ -11,6 +11,7 @@ import { BlogPostMarkdown } from './Post/BlogPostMarkdown';
 import { readBrowserStorage, writeBrowserStorage } from '@/utils/browserStorage';
 import { extractTocFromMarkdown } from './Post/markdownUtils';
 import { usePageReadyTask, usePageVisible } from '@/components/Common/PageReadiness';
+import { seoConfig, toSeoDate } from '@/utils/seo';
 import { useTocViewport } from './Post/useTocViewport';
 
 interface BlogPostProps {
@@ -374,7 +375,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
 
     return (
         <div className={style.post_wrapper}>
-            <div className={style.post_container}>
+            <article className={style.post_container} lang={articleContent?.locale}>
                 <Link href="/blog" className={style.post_backlink}>
                     &lt; Back to blog list
                 </Link>
@@ -395,10 +396,16 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                                 : t('Status.Loading')
                     }
                 </h1>
+                {status === 'Done' && articleContent && (
+                    <div className={style.post_date}>作者：{articleContent.author || seoConfig.siteName}</div>
+                )}
                 {
                     status === "Done" && articleContent?.publishedTime && (
                         <div className={style.post_date}>
-                            {t('Blog.PublishedOn')} {formatDate(articleContent.publishedTime)}
+                            {t('Blog.PublishedOn')} <time dateTime={toSeoDate(articleContent.publishedTime)}>{formatDate(articleContent.publishedTime)}</time>
+                            {articleContent.updatedTime && toSeoDate(articleContent.updatedTime) !== toSeoDate(articleContent.publishedTime) && (
+                                <> · 更新于 <time dateTime={toSeoDate(articleContent.updatedTime)}>{formatDate(articleContent.updatedTime)}</time></>
+                            )}
                         </div>
                     )
                 }
@@ -500,7 +507,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ initialContent, initialLocale, init
                         </ul>
                     </section>
                 )}
-            </div>
+            </article>
             {tocItems.length > 0 && isCompactToc && (
                 <div ref={floatingTocRef} className={style.post_toc_container}>
                     <button

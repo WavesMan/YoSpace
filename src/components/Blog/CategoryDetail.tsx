@@ -63,28 +63,20 @@ const CategoryDetail: React.FC<CategoryDetailProps> = ({ slug, initialPosts, ini
         return () => controller.abort();
     }, [initialLocale, initialPosts, locale]);
 
-    const decodedId = useMemo(() => {
-        try {
-            return decodeURIComponent(slug);
-        } catch {
-            return slug;
-        }
-    }, [slug]);
-
     const filtered = useMemo(() => {
-        return posts.filter(item => item.category && item.category.id === decodedId);
-    }, [posts, decodedId]);
+        return posts.filter(item => item.category && item.category.id === slug);
+    }, [posts, slug]);
 
     const titleLabel = useMemo(() => {
         if (filtered.length === 0) {
-            return decodedId;
+            return slug;
         }
         const anyCategory = filtered[0].category;
         if (!anyCategory) {
-            return decodedId;
+            return slug;
         }
         return resolveCategoryLabel(anyCategory, locale);
-    }, [filtered, locale, decodedId]);
+    }, [filtered, locale, slug]);
 
     const renderPostCard = (post: PostItem, index: number) => (
         <BlogCard

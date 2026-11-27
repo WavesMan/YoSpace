@@ -1,3 +1,5 @@
+export const metadata = { robots: { index: false, follow: false } };
+
 import StatusPage from '@/components/Common/StatusPage/StatusPage';
 
 // 403 错误页面

@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { buildUrl, seoConfig } from "@/utils/seo";
+import { buildUrl } from "@/utils/seo";
 
 export default function robots(): MetadataRoute.Robots {
     return {
@@ -8,6 +8,5 @@ export default function robots(): MetadataRoute.Robots {
             allow: "/",
         },
         sitemap: buildUrl("/sitemap.xml"),
-        host: seoConfig.siteUrl,
     };
 }

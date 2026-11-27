@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { blogPagePath } from "@/utils/seo";
 import style from "./Blog.module.css";
 import { usePageReadyTask } from '@/components/Common/PageReadiness';
 import Background from "../Common/Background/Background";
@@ -29,211 +29,73 @@ export interface PostsListShape {
 }
 
 interface BlogProps {
+    currentPage: number;
+    itemsLimit: number;
     initialPosts?: PostsListShape[];
     initialTotal?: number;
     initialLocale?: string;
 }
 
-/**
- * Blog 组件
- * 
- * 博客列表页面组件。
- * 通过调用 API Route `/api/blog/list` 从本地 Markdown 内容中获取文章列表，
- * 支持服务端预渲染注入的初始数据，避免首屏重复请求。
- * 内部管理分页、加载状态与错误提示。
- */
-const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }) => {
+/** 按 URL 页码展示文章，记住排序和每页滚动位置。 */
+const Blog: React.FC<BlogProps> = ({ currentPage, itemsLimit, initialPosts, initialTotal, initialLocale }) => {
     const { t, locale } = useI18n();
-    const pathname = usePathname();
-    const itemsLimit = parseInt(process.env.NEXT_PUBLIC_BLOG_ITEMS_PER_PAGE || '10') || 10;
-
-    const [totalItems, setTotalItems] = useState<number>(initialTotal || 0);
-    const totalPages = Math.max(1, Math.ceil(totalItems / itemsLimit));
-    const [posts, setPosts] = useState<PostsListShape[]>(initialPosts || []);
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [totalItems, setTotalItems] = useState(initialTotal || 0);
+    const [posts, setPosts] = useState(initialPosts || []);
     const [sortMode, setSortMode] = useState<"recommend" | "date-desc" | "date-asc">("recommend");
-    
-    // 如果有初始数据且在第一页，状态默认为 Done，否则为 Loading
-    const [status, setStatus] = useState<"Loading" | "Error" | "Done">(
-        initialPosts ? "Done" : "Loading"
-    );
+    const [status, setStatus] = useState<"Loading" | "Error" | "Done">(initialPosts ? "Done" : "Loading");
+    const sortKey = `blog:sort:${locale}`;
+    const scrollKey = `blog:scroll:${locale}:${currentPage}`;
     usePageReadyTask(status === 'Loading');
-    const [errorMsg, setErrorMsg] = useState<string>("");
-
-    const hasRestoredRef = useRef(false);
-    const restoredScrollRef = useRef(false);
-    const restoreStateRef = useRef<{ scrollY: number; page: number; sortMode: "recommend" | "date-desc" | "date-asc" } | null>(null);
-    const restoreTargetPageRef = useRef<number | null>(null);
-    const skipScrollToTopRef = useRef(false);
-
-    const storageKey = useMemo(() => {
-        if (!pathname) return "blog:list:unknown";
-        return `blog:list:${pathname}:${locale}`;
-    }, [pathname, locale]);
-
-    /**
-     * 重置列表恢复状态，避免跨语言或路由误复用。
-     *
-     * 使用示例：
-     * hasRestoredRef.current = false;
-     *
-     * @returns void
-     */
-    useEffect(() => {
-        hasRestoredRef.current = false;
-        restoredScrollRef.current = false;
-        restoreTargetPageRef.current = null;
-        restoreStateRef.current = null;
-    }, [storageKey]);
-
-    /**
-     * 读取列表页记忆状态，恢复分页与滚动位置。
-     *
-     * 使用示例：
-     * readBrowserStorage('sessionStorage', storageKey);
-     *
-     * @returns void
-     */
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        if (hasRestoredRef.current) return;
-        const raw = readBrowserStorage('sessionStorage', storageKey);
-        if (!raw) return;
-        try {
-            const parsed = JSON.parse(raw) as { scrollY?: number; page?: number; sortMode?: "recommend" | "date-desc" | "date-asc" };
-            const nextPage = Number(parsed.page);
-            const nextSortMode = parsed.sortMode;
-            const nextScrollY = Number(parsed.scrollY);
-            restoreStateRef.current = {
-                page: Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1,
-                sortMode: nextSortMode === "date-desc" || nextSortMode === "date-asc" ? nextSortMode : "recommend",
-                scrollY: Number.isFinite(nextScrollY) && nextScrollY >= 0 ? nextScrollY : 0,
-            };
-            restoreTargetPageRef.current = restoreStateRef.current.page;
-            if (restoreStateRef.current.page !== currentPage) {
-                skipScrollToTopRef.current = true;
-                setCurrentPage(restoreStateRef.current.page);
-            }
-            if (restoreStateRef.current.sortMode !== sortMode) {
-                setSortMode(restoreStateRef.current.sortMode);
-            }
-            hasRestoredRef.current = true;
-        } catch {
-        }
-    }, [storageKey, currentPage, sortMode]);
 
     useEffect(() => {
-        const controller = new AbortController();
-        const fetchPosts = async () => {
-            // NOTE: 将上下文中的语言映射为内容文件使用的语言标识
-            const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
+        const saved = readBrowserStorage('sessionStorage', sortKey);
+        setSortMode(saved === 'date-desc' || saved === 'date-asc' ? saved : 'recommend');
+    }, [sortKey]);
 
-            // NOTE: 如果是首渲染且已有与当前语言匹配的服务端初始数据，并且停留在第一页
-            //       则跳过客户端请求，直接使用注入的列表，减少一次无意义的网络请求
-            if (initialPosts && currentPage === 1 && initialLocale === queryLocale) {
-                setPosts(initialPosts);
-                setTotalItems(initialTotal || 0);
-                setStatus("Done");
-                return;
-            }
-
-            try {
-                setStatus("Loading");
-                // NOTE: 通过 API Route 访问本地 Markdown 列表，offset 从 0 开始，因此这里减 1
-                const offset = (currentPage - 1) * itemsLimit;
-                const response = await fetch(`/api/blog/list?offset=${offset}&limit=${itemsLimit}&locale=${encodeURIComponent(queryLocale)}`, { signal: controller.signal });
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch posts: ${response.status}`);
-                }
-                const res = await response.json();
-                if (controller.signal.aborted) return;
-                setTotalItems(res.total);
-                setPosts(res.items);
-                setStatus("Done");
-            } catch (err) {
-                if (controller.signal.aborted) return;
-                console.error("Blog fetch error:", err);
-                setStatus("Error");
-                // NOTE: 对用户只展示统一错误提示，隐藏服务端具体异常信息，防止后端信息泄露
-                setErrorMsg(t('Status.Error') || "Failed to load blog posts.");
-            }
-        };
-        fetchPosts();
-        return () => controller.abort();
-    }, [currentPage, locale, initialPosts, initialLocale, initialTotal, itemsLimit, t]); // 依赖项包含 locale，切换语言时会自动重新获取
+    function changeSortMode(value: typeof sortMode) {
+        setSortMode(value);
+        writeBrowserStorage('sessionStorage', sortKey, value);
+    }
 
     useEffect(() => {
-        if (typeof window === "undefined") return;
-        const saveState = (nextScrollY?: number) => {
-            const payload = {
-                page: currentPage,
-                sortMode,
-                scrollY: typeof nextScrollY === "number" ? nextScrollY : window.scrollY,
-            };
-            writeBrowserStorage('sessionStorage', storageKey, JSON.stringify(payload));
-        };
-        saveState();
-    }, [currentPage, sortMode, storageKey]);
+        if (status !== 'Done') return;
+        const saved = readBrowserStorage('sessionStorage', scrollKey);
+        if (saved !== null) window.scrollTo({ top: Number(saved), behavior: 'instant' });
+        const saveScroll = () => writeBrowserStorage('sessionStorage', scrollKey, String(window.scrollY));
+        window.addEventListener('scroll', saveScroll, { passive: true });
+        return () => window.removeEventListener('scroll', saveScroll);
+    }, [scrollKey, status]);
 
     useEffect(() => {
-        if (typeof window === "undefined") return;
-        let ticking = false;
-        const handleScroll = () => {
-            if (ticking) return;
-            ticking = true;
-            window.requestAnimationFrame(() => {
-                ticking = false;
-                const payload = {
-                    page: currentPage,
-                    sortMode,
-                    scrollY: window.scrollY,
-                };
-                writeBrowserStorage('sessionStorage', storageKey, JSON.stringify(payload));
-            });
-        };
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [currentPage, sortMode, storageKey]);
-
-    /**
-     * 在列表数据就绪后恢复滚动位置，确保分页一致。
-     *
-     * 使用示例：
-     * window.scrollTo({ top, behavior: "auto" });
-     *
-     * @returns void
-     */
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        if (status !== "Done") return;
-        if (restoredScrollRef.current) return;
-        if (!restoreStateRef.current) return;
-        if (restoreTargetPageRef.current !== null && restoreTargetPageRef.current !== currentPage) return;
-        restoredScrollRef.current = true;
-        restoreTargetPageRef.current = null;
-        window.scrollTo({ top: restoreStateRef.current.scrollY, behavior: "auto" });
-    }, [status, currentPage]);
-
-    /**
-     * 处理分页切换
-     *
-     * 更新当前页并平滑滚动到页面顶部，保证用户在翻页后仍能从列表起始位置阅读。
-     */
-    const handlePageChange = (page: number) => {
-        const nextPage = Math.min(totalPages, Math.max(1, page));
-        setCurrentPage(nextPage);
-        if (skipScrollToTopRef.current) {
-            skipScrollToTopRef.current = false;
+        const queryLocale = locale === 'zh-CN' ? 'zh-CN' : 'en';
+        if (initialPosts && initialLocale === queryLocale) {
+            setPosts(initialPosts);
+            setTotalItems(initialTotal || 0);
+            setStatus('Done');
             return;
         }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
 
-    useEffect(() => {
-        if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [currentPage, totalPages]);
+        const controller = new AbortController();
+        const fetchPosts = async () => {
+            try {
+                setStatus('Loading');
+                const offset = (currentPage - 1) * itemsLimit;
+                const response = await fetch(`/api/blog/list?offset=${offset}&limit=${itemsLimit}&locale=${queryLocale}`, { signal: controller.signal });
+                if (!response.ok) throw new Error(`Failed to fetch posts: ${response.status}`);
+                const data = await response.json();
+                if (controller.signal.aborted) return;
+                setTotalItems(data.total);
+                setPosts(data.items);
+                setStatus('Done');
+            } catch (error) {
+                if (controller.signal.aborted) return;
+                console.error('读取博客列表失败', error);
+                setStatus('Error');
+            }
+        };
+        void fetchPosts();
+        return () => controller.abort();
+    }, [currentPage, locale, initialPosts, initialLocale, initialTotal, itemsLimit]);
 
     const pinnedStyle = process.env.NEXT_PUBLIC_BLOG_PINNED_STYLE || 'separate-section';
 
@@ -336,7 +198,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                             <button
                                 type="button"
                                 className={sortMode === "recommend" ? style.blog_sort_button_active : style.blog_sort_button}
-                                onClick={() => setSortMode("recommend")}
+                                onClick={() => changeSortMode("recommend")}
                                 role="radio"
                                 aria-checked={sortMode === "recommend"}
                             >
@@ -345,7 +207,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                             <button
                                 type="button"
                                 className={sortMode === "date-desc" ? style.blog_sort_button_active : style.blog_sort_button}
-                                onClick={() => setSortMode("date-desc")}
+                                onClick={() => changeSortMode("date-desc")}
                                 role="radio"
                                 aria-checked={sortMode === "date-desc"}
                             >
@@ -354,7 +216,7 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                             <button
                                 type="button"
                                 className={sortMode === "date-asc" ? style.blog_sort_button_active : style.blog_sort_button}
-                                onClick={() => setSortMode("date-asc")}
+                                onClick={() => changeSortMode("date-asc")}
                                 role="radio"
                                 aria-checked={sortMode === "date-asc"}
                             >
@@ -401,14 +263,13 @@ const Blog: React.FC<BlogProps> = ({ initialPosts, initialTotal, initialLocale }
                                 ) : status === "Error" ? (
                                     <>
                                         <div className={style.blog_tip_error}>{t('Status.Error')}</div>
-                                        <div className={style.blog_tip_error_details} id="error_details">{errorMsg}</div>
                                     </>
                                 ) : (
                                     null
                                 )
                         }
                     </div>
-                    <Pagination totalItems={totalItems} itemsLimitPerPage={itemsLimit} visiblePages={5} currentPage={currentPage} handlePageChange={handlePageChange} />
+                    <Pagination totalItems={totalItems} itemsLimitPerPage={itemsLimit} visiblePages={5} currentPage={currentPage} getPageHref={blogPagePath} />
                 </div>
             </div>
             <Background text="BLOG" />

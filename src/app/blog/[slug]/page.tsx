@@ -1,148 +1,94 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { cache, Suspense } from 'react';
 import BlogPost from '@/components/Blog/BlogPost';
-import { Metadata } from 'next';
-import { getLocalPostContent, getAllLocalPostSlugs } from '@/utils/content/local';
-import { Suspense } from 'react';
 import RelatedPosts from '@/components/Blog/Post/RelatedPosts';
-import { buildUrl, seoConfig } from '@/utils/seo';
-import { cookies, headers } from 'next/headers';
-import { resolveRequestLocale } from '@/utils/requestLocale';
+import { getAllLocalPostSlugs, getLocalPostContent, PostNotFoundError } from '@/utils/content/local';
+import { buildUrl, pageMetadata, seoConfig, serializeJsonLd, toSeoDate } from '@/utils/seo';
 
-// ISR: 每小时重新验证一次
-export const revalidate = 3600;
-
-// 预生成所有文章路径 (SSG)
-export async function generateStaticParams() {
+const getPost = cache(async (slug: string) => {
     try {
-        const slugs = await getAllLocalPostSlugs();
-        return slugs.map((post) => ({
-            slug: post.slug,
-        }));
+        return await getLocalPostContent(slug, 'zh-CN');
     } catch (error) {
-        console.error("Failed to generate static params for blog posts:", error);
-        return [];
+        if (error instanceof PostNotFoundError) notFound();
+        throw error;
     }
+});
+
+const postPath = (slug: string) => `/blog/${encodeURIComponent(slug)}`;
+type ArticleParams = { params: Promise<{ slug: string }> };
+
+export function generateStaticParams() {
+    return getAllLocalPostSlugs();
 }
 
-/**
- *
- * 生成文章详情页 SEO 元信息
- *
- * 根据 cookie 与请求头推断语言，优先返回对应语言的标题与摘要。
- *
- * @param params 动态路由参数
- * @returns 页面元信息
- *
- */
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: ArticleParams): Promise<Metadata> {
     const { slug } = await params;
-    const cookieStore = await cookies();
-    const savedLocale = cookieStore.get('locale')?.value;
-    const requestHeaders = await headers();
-    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = resolveRequestLocale(savedLocale, acceptLang);
-    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
-    const canonical = buildUrl(`/blog/${encodeURIComponent(slug)}`);
-    const ogImages = seoConfig.defaultOgImage ? [buildUrl(seoConfig.defaultOgImage)] : undefined;
+    const post = await getPost(slug);
+    const description = post.description?.trim().replace(/\s+/g, ' ') || seoConfig.defaultDescription;
+    const metadata = pageMetadata(postPath(slug), post.title, description);
+    const image = buildUrl(post.image || seoConfig.defaultOgImage);
 
-    try {
-        const post = await getLocalPostContent(slug, locale);
-        const title = `${post.title} - ${seoConfig.siteName}`;
-        const descRaw = post.description || seoConfig.defaultDescription;
-        const description = descRaw.replace(/\s+/g, ' ').trim().slice(0, 180);
-        const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
-        return {
-            title,
-            description,
-            alternates: {
-                canonical,
-            },
-            openGraph: {
-                title,
-                description,
-                url: canonical,
-                siteName: seoConfig.siteName,
-                type: "article",
-                images: ogImages,
-            },
-            twitter: {
-                card: cardType,
-                title,
-                description,
-                images: ogImages,
-                site: seoConfig.twitterSite || undefined,
-                creator: seoConfig.twitterHandle || undefined,
-            },
-        };
-    } catch {
-        const title = `${seoConfig.defaultTitle} - ${seoConfig.siteName}`;
-        const description = seoConfig.defaultDescription.replace(/\s+/g, ' ').trim().slice(0, 180);
-        const cardType = ogImages && ogImages.length > 0 ? "summary_large_image" : "summary";
-        return {
-            title,
-            description,
-            alternates: {
-                canonical,
-            },
-            openGraph: {
-                title,
-                description,
-                url: canonical,
-                siteName: seoConfig.siteName,
-                type: "article",
-                images: ogImages,
-            },
-            twitter: {
-                card: cardType,
-                title,
-                description,
-                images: ogImages,
-                site: seoConfig.twitterSite || undefined,
-                creator: seoConfig.twitterHandle || undefined,
-            },
-        };
-    }
+    return {
+        ...metadata,
+        openGraph: {
+            ...metadata.openGraph,
+            type: 'article',
+            locale: post.locale === 'en' ? 'en_US' : 'zh_CN',
+            publishedTime: toSeoDate(post.publishedTime),
+            modifiedTime: toSeoDate(post.updatedTime),
+            authors: [post.author || seoConfig.siteName],
+            tags: post.tags,
+            images: [image],
+        },
+        twitter: { ...metadata.twitter, card: 'summary_large_image', images: [image] },
+    };
 }
 
-// 博客文章页面
-/**
- *
- * BlogPostPage 页面
- *
- * 首屏根据 cookie 与请求头推断语言，直出对应语言的文章内容。
- *
- * @param params 动态路由参数
- * @returns 博客文章详情页
- *
- */
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function BlogPostPage({ params }: ArticleParams) {
     const { slug } = await params;
-    const cookieStore = await cookies();
-    const savedLocale = cookieStore.get('locale')?.value;
-    const requestHeaders = await headers();
-    const acceptLang = requestHeaders.get('accept-language')?.toLowerCase() || '';
-    const uiLocale = resolveRequestLocale(savedLocale, acceptLang);
-    const locale = uiLocale === 'en-US' ? 'en' : 'zh-CN';
-    let initialContent;
+    const post = await getPost(slug);
+    const url = buildUrl(postPath(slug));
+    const author = post.author || seoConfig.siteName;
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [{
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: post.description || undefined,
+            mainEntityOfPage: url,
+            url,
+            inLanguage: post.locale,
+            datePublished: toSeoDate(post.publishedTime),
+            dateModified: toSeoDate(post.updatedTime),
+            image: post.image ? buildUrl(post.image) : undefined,
+            author: {
+                '@type': 'Person',
+                name: author,
+                ...(author === seoConfig.siteName && { url: buildUrl('/') }),
+            },
+        }, {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: '技术博客', item: buildUrl('/blog') },
+                { '@type': 'ListItem', position: 2, name: post.title, item: url },
+            ],
+        }],
+    };
     const relatedEnabled = process.env.NEXT_PUBLIC_BLOG_SERIES_ENABLED !== 'false' || process.env.NEXT_PUBLIC_BLOG_RECOMMEND_ENABLED !== 'false';
-    
-    try {
-        initialContent = await getLocalPostContent(slug, locale);
-    } catch (e) {
-        console.error(`Failed to fetch content for slug: ${slug}`, e);
-        // 如果服务端获取失败，不中断渲染，让客户端尝试或显示错误
-    }
+    const locale = post.locale || 'zh-CN';
 
-    // 渲染博客文章组件
-    return (
-        <BlogPost 
-            key={`${slug}:${locale}`}
-            initialContent={initialContent} 
-            initialLocale={locale} 
-            relatedSlot={relatedEnabled && initialContent ? (
-                <Suspense key={`related:${slug}:${locale}`} fallback={null}>
-                    <RelatedPosts slug={slug} locale={locale} seriesId={initialContent.series?.id} />
+    return <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+        <BlogPost
+            key={slug}
+            initialContent={post}
+            initialLocale="zh-CN"
+            relatedSlot={relatedEnabled ? (
+                <Suspense fallback={null}>
+                    <RelatedPosts slug={slug} locale={locale} seriesId={post.series?.id} />
                 </Suspense>
             ) : undefined}
         />
-    );
+    </>;
 }

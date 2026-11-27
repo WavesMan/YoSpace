@@ -22,6 +22,7 @@ export interface PostItem {
     description: string;
     slug: string;
     publishedTime: string;
+    updatedTime?: string;
     isPinned?: boolean;
     isRecommended?: boolean;
     recommendRank?: number;
@@ -41,15 +42,25 @@ export interface PostContentResponse {
     title: string;
     content: string;
     publishedTime: string;
+    updatedTime?: string;
     isPinned?: boolean;
     isRecommended?: boolean;
     recommendRank?: number;
     pinnedRank?: number;
     locale?: string;
     description?: string;
+    author?: string;
+    image?: string;
     category?: PostCategory;
     tags?: string[];
     series?: PostSeries;
+}
+
+/** 已请求的文章路径没有对应内容文件。 */
+export class PostNotFoundError extends Error {
+    constructor(slug: string) {
+        super(`找不到文章 ${slug}`);
+    }
 }
 
 const postsDirectory = path.join(process.cwd(), 'src/content/posts');
@@ -173,6 +184,7 @@ export const getLocalPostsList = async (offset: number, limit: number, locale: s
             title: (fm.title as string) || slug,
             description: (fm.description as string) || '',
             publishedTime: (fm.date as string) || '',
+            updatedTime: typeof fm.updatedAt === 'string' ? fm.updatedAt : undefined,
             isPinned: (fm.isPinned as boolean) || false,
             isRecommended: (fm.isRecommended as boolean) || false,
             recommendRank,
@@ -207,6 +219,8 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
     const now = Date.now();
     const candidates: { fileName: string; locale: string }[] = [];
 
+    if (!slug || /[\\/]/.test(slug) || /[\\/]/.test(locale)) throw new PostNotFoundError(slug);
+
     if (locale === 'en') {
         candidates.push({ fileName: `${slug}.md`, locale: 'en' });
         candidates.push({ fileName: `${slug}.zh-CN.md`, locale: 'zh-CN' });
@@ -228,7 +242,7 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
 
     for (const item of candidates) {
         const fullPathCandidate = path.join(postsDirectory, item.fileName);
-        if (fs.existsSync(fullPathCandidate)) {
+        if (fs.statSync(fullPathCandidate, { throwIfNoEntry: false })?.isFile()) {
             selectedPath = fullPathCandidate;
             selectedLocale = item.locale;
             break;
@@ -236,7 +250,7 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
     }
 
     if (!selectedPath) {
-        throw new Error(`Post not found: ${slug} (${locale})`);
+        throw new PostNotFoundError(slug);
     }
 
     const stat = fs.statSync(selectedPath);
@@ -298,6 +312,9 @@ export const getLocalPostContent = async (slug: string, locale: string = 'en'): 
         title: (fm.title as string) || slug,
         content: content,
         publishedTime: (fm.date as string) || '',
+        updatedTime: typeof fm.updatedAt === 'string' ? fm.updatedAt : undefined,
+        author: typeof fm.author === 'string' ? fm.author : undefined,
+        image: typeof fm.image === 'string' ? fm.image : undefined,
         isPinned: (fm.isPinned as boolean) || false,
         isRecommended: (fm.isRecommended as boolean) || false,
         recommendRank,
@@ -320,6 +337,6 @@ export const getAllLocalPostSlugs = async () => {
     }
     const fileNames = fs.readdirSync(postsDirectory);
     // NOTE: 使用 Set 去重得到所有唯一的 slug
-    const slugs = new Set(fileNames.map(fileName => parseFileMetadata(fileName).slug));
+    const slugs = new Set(fileNames.filter(fileName => fileName.endsWith('.md')).map(fileName => parseFileMetadata(fileName).slug));
     return Array.from(slugs).map(slug => ({ slug }));
 };

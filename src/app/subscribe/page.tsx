@@ -1,10 +1,7 @@
-import { Metadata } from "next";
+import { pageMetadata } from "@/utils/seo";
 import Subscribe from "@/components/Subscribe/Subscribe";
 
-export const metadata: Metadata = {
-  title: `Subscribe - ${process.env.NEXT_PUBLIC_SITE_TITLE || "YoSpace"}`,
-  description: "Subscribe to RSS and Atom feeds for the latest content updates",
-};
+export const metadata = pageMetadata("/subscribe", "订阅博客", "通过 RSS 或 Atom 订阅 WaveYo 最新技术文章。");
 
 export const revalidate = 3600;
 

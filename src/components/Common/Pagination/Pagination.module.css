@@ -13,6 +13,8 @@
 }
 
 .pagination_pageButton {
+    display: inline-block;
+    text-decoration: none;
     font-family: var(--font-family-mono);
     padding: 10px 18px;
     background-color: transparent;

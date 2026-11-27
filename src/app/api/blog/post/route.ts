@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLocalPostContent } from '@/utils/content/local';
+import { getLocalPostContent, PostNotFoundError } from '@/utils/content/local';
 
 /**
  * 博客文章详情 API
@@ -25,8 +25,10 @@ export async function GET(request: NextRequest) {
     const data = await getLocalPostContent(slug, locale);
     return NextResponse.json(data);
   } catch (error) {
-    // NOTE: 未找到文章或解析失败时统一返回 404，避免暴露具体失败原因
-    console.error(`API /api/blog/post error for slug ${slug}:`, error);
-    return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+    if (error instanceof PostNotFoundError) {
+      return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+    }
+    console.error('读取博客文章失败', error);
+    return NextResponse.json({ message: 'Failed to read post' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import blogStyle from "../Blog/Blog.module.css";
 import style from "./Subscribe.module.css";
 import Background from "../Common/Background/Background";
+import { buildUrl } from "@/utils/seo";
 import { useI18n } from "@/context/I18nContext";
 
 /**
@@ -16,14 +17,12 @@ const Subscribe: React.FC = () => {
   const { t } = useI18n();
   const [copyStatus, setCopyStatus] = useState<{ [key: string]: boolean }>({});
 
-  const envBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://yospace.waveyo.cn";
   const rssFeedPath = process.env.NEXT_PUBLIC_RSS_FEED_PATH || "/feeds/rss.xml";
   const atomFeedPath = process.env.NEXT_PUBLIC_ATOM_FEED_PATH || "/feeds/atom.xml";
 
-  const normalizedBase = envBaseUrl.replace(/\/+$/, "");
   const feedUrls = {
-    rss: normalizedBase ? `${normalizedBase}${rssFeedPath}` : rssFeedPath,
-    atom: normalizedBase ? `${normalizedBase}${atomFeedPath}` : atomFeedPath,
+    rss: buildUrl(rssFeedPath),
+    atom: buildUrl(atomFeedPath),
   };
 
   /**

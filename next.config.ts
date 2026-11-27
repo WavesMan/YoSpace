@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import seoData from "./src/data/seo.json";
 
 const parseImageHostnames = (value: string | undefined) => {
   return Array.from(
@@ -30,6 +31,14 @@ const imageHostnames = parseImageHostnames(process.env.IMAGE_HOSTNAMES);
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
+  async redirects() {
+    return [{
+      source: "/:path*",
+      has: [{ type: "host", value: "(?:yospace\\.waveyo\\.cn|waveyo\\.cn)" }],
+      destination: `${seoData.siteUrl}/:path*`,
+      permanent: true,
+    }];
+  },
   reactCompiler: true,
   allowedDevOrigins: parseAllowedOrigins(process.env.ALLOWED_DEV_ORIGINS ?? '192.168.1.3'),
   images: {
