@@ -1,9 +1,10 @@
 {
-  "siteUrl": "https://www.waveyo.cn",
+  "siteUrl": "https://yospace.waveyo.cn",
   "siteName": "WaveYo",
   "defaultTitle": "WaveYo 技术博客 | Go 后端、网关与部署实战",
   "defaultDescription": "WaveYo 的技术博客，记录 Go 后端架构、YoBFF 网关、数据库故障排查与部署实战。",
   "defaultOgImage": "/WaveYo.jpg",
   "twitterHandle": "",
-  "twitterSite": ""
+  "twitterSite": "",
+  "redirectHosts": []
 }

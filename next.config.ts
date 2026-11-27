@@ -32,12 +32,12 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
   async redirects() {
-    return [{
+    return seoData.redirectHosts.map(host => ({
       source: "/:path*",
-      has: [{ type: "host", value: "(?:yospace\\.waveyo\\.cn|waveyo\\.cn)" }],
+      has: [{ type: "host", value: host.replaceAll(".", "\\.") }],
       destination: `${seoData.siteUrl}/:path*`,
       permanent: true,
-    }];
+    }));
   },
   reactCompiler: true,
   allowedDevOrigins: parseAllowedOrigins(process.env.ALLOWED_DEV_ORIGINS ?? '192.168.1.3'),

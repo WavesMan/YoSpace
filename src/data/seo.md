@@ -1,6 +1,6 @@
 # 正式站 SEO 与 GEO
 
-正式域名配置在 `src/data/seo.json`。Next.js 页面 canonical、robots、Sitemap、RSS、Atom 及搜索引擎提交脚本使用 `https://www.waveyo.cn`。根域名与旧 `yospace` 域名接入本应用时按原路径返回 `308`。如果旧域名仍由独立部署响应，需要在该部署或 CDN 配置相同的跳转；旧演示路径没有对应文章时最终返回 `404`。
+正式域名配置在 `src/data/seo.json`。Next.js 页面 canonical、robots、Sitemap、RSS、Atom 及搜索引擎提交脚本使用 `https://yospace.waveyo.cn`。`redirectHosts` 仅填写由本部署负责的别名。列出的别名保留路径和查询参数，返回 `308` 到站点域名。
 
 ## 内容发布
 
@@ -15,7 +15,7 @@
 
 1. 检查 `/robots.txt`、`/sitemap.xml`、RSS 和 Atom 中的正式域名，核对文章更新时间与页面正文。确认无效文章、分类、标签及分页返回 `404`。
 2. 在关闭 JavaScript 的浏览器打开 `/blog?page=2`，检查页面有独立标题和第二页文章，分页能点击。
-3. 在 Google Search Console、Bing Webmaster Tools 和百度搜索资源平台验证正式域名。使用 HTML 标签验证时，分别配置 `GOOGLE_SITE_VERIFICATION`、`BING_SITE_VERIFICATION` 与 `BAIDU_SITE_VERIFICATION`。提交 `https://www.waveyo.cn/sitemap.xml`，抽查文章及专题页。
+3. 在 Google Search Console、Bing Webmaster Tools 和百度搜索资源平台验证正式域名。使用 HTML 标签验证时，分别配置 `GOOGLE_SITE_VERIFICATION`、`BING_SITE_VERIFICATION` 与 `BAIDU_SITE_VERIFICATION`。提交 `https://yospace.waveyo.cn/sitemap.xml`，抽查文章及专题页。
 4. 用 28 天为周期观察 Google 非品牌搜索与生成式 AI 展示、Bing 搜索及 AI Performance 引用、百度索引量与关键词表现。百度站点已开放 AI 流量分析时，也可查看相关数据。
 
 ## 主动提交变更

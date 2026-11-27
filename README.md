@@ -28,8 +28,8 @@
 
 线上示例与详细博客说明可访问：
 
-- 站点首页：https://www.waveyo.cn/
-- 博客与使用说明（推荐查看 `博客内容模型与前端功能使用指南` 一文）：https://www.waveyo.cn/blog
+- 站点首页：https://yospace.waveyo.cn/
+- 博客与使用说明（推荐查看 `博客内容模型与前端功能使用指南` 一文）：https://yospace.waveyo.cn/blog
 
 ### 界面预览
 
@@ -116,7 +116,7 @@ pnpm lint
 - `SERVER_ACTIONS_ALLOWED_ORIGINS`：允许触发 Server Actions 的来源域名白名单（逗号分隔）。
 - 适用场景：站点在 CDN / 反向代理套壳后，出现 `x-forwarded-host` 与 `origin` 不一致，导致 `Invalid Server Actions request`。
 - 填写规则：仅填写域名（可包含端口），不要带协议（`https://`）与路径。
-- 示例：`www.waveyo.cn`
+- 示例：`yospace.waveyo.cn`
 
 ### Contentful（可选）
 
